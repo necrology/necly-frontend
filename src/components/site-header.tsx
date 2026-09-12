@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Menu, Search, UserRound, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { Menu, Search, ShoppingBag, X } from "lucide-react";
 import { useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
-import { useHydrated } from "@/hooks/use-hydrated";
-import { useCartStore } from "@/stores/cart-store";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -14,32 +12,32 @@ const links = [
   { label: "Layanan", href: "/products" },
   { label: "Cara Berlangganan", href: "/cara-berlangganan" },
   { label: "FAQ", href: "/faq" },
+  { label: "Blog", href: "/about" },
   { label: "Laporan Kendala", href: "/laporan-kendala" },
 ];
 
 export function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const hydrated = useHydrated();
-  const count = useCartStore((state) => state.itemCount());
 
   return (
-    <header className="site-header">
-      <nav className="container site-nav" aria-label="Navigasi utama">
-        <BrandLogo />
+    <header className={cn("site-header", open && "mobile-menu-open")}>
+      <nav className="commerce-container site-nav" aria-label="Navigasi utama">
+        <button className="commerce-menu-trigger desktop-menu-trigger" type="button" aria-label="Buka menu"><Menu size={23} /></button>
+        <button className="commerce-menu-trigger mobile-menu-trigger" type="button" aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? "Tutup navigasi" : "Buka navigasi"} onClick={() => setOpen((value) => !value)}>{open ? <X size={26} /> : <Menu size={29} />}</button>
+        <BrandLogo compact className="commerce-header-logo" />
         <div className="nav-links">
-          {links.map((link) => <Link className={cn("nav-link", pathname === link.href && "active")} href={link.href} key={link.href}>{link.label}</Link>)}
+          {links.map((link) => <Link className={cn("nav-link", (pathname === link.href || (link.href === "/products" && pathname.startsWith("/products"))) && "active")} href={link.href} key={link.href}>{link.label}</Link>)}
         </div>
         <div className="nav-actions">
-          <Link className="icon-button" href="/products" aria-label="Cari layanan"><Search size={17} /></Link>
-          <Link className="icon-button cart-link" href="/cart" aria-label={`Keranjang dengan ${hydrated ? count : 0} produk`}><ShoppingBag size={17} />{hydrated && count > 0 && <span className="cart-count">{count}</span>}</Link>
-          <Link className="button button-primary" href="/login">Log In</Link>
-          <button className="icon-button mobile-menu-button" type="button" aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? "Tutup navigasi" : "Buka navigasi"} onClick={() => setOpen((value) => !value)}>{open ? <X size={18} /> : <Menu size={18} />}</button>
+          <Link className="commerce-header-search" href="/products" aria-label="Cari layanan"><Search size={21} /></Link>
+          <Link className="commerce-login-link" href="/login"><UserRound size={18} /><span>Log In</span></Link>
+          <Link className="commerce-mobile-profile" href="/login" aria-label="Log in"><UserRound size={27} /></Link>
         </div>
       </nav>
-      <nav id="mobile-navigation" className={cn("mobile-nav", open && "open")} aria-label="Navigasi seluler">
-        {links.map((link) => <Link className={cn("nav-link", pathname === link.href && "active")} href={link.href} key={link.href} onClick={() => setOpen(false)}>{link.label}</Link>)}
-        <div className="mobile-nav-actions"><Link className="button button-primary" href="/login" onClick={() => setOpen(false)}>Log In</Link><Link className="button button-secondary" href="/register" onClick={() => setOpen(false)}>Daftar</Link></div>
+      <nav id="mobile-navigation" className="commerce-mobile-nav" aria-label="Navigasi seluler" aria-hidden={!open}>
+        {links.map((link) => <Link className={cn("commerce-mobile-nav-link", pathname === link.href && "active")} href={link.href} key={link.href} onClick={() => setOpen(false)}>{link.label}</Link>)}
+        <Link className="commerce-mobile-login" href="/login" onClick={() => setOpen(false)}>Log In</Link>
       </nav>
     </header>
   );

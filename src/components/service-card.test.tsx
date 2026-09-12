@@ -8,8 +8,10 @@ describe("ServiceCard", () => {
     const product = services[0];
     render(<ServiceCard product={product} />);
     expect(screen.getByLabelText(`Lihat ${product.name}`)).toBeInTheDocument();
-    expect(screen.getByText("Mulai dari")).toBeInTheDocument();
+    expect(screen.getByText("Lihat Skema Harga")).toBeInTheDocument();
+    expect(screen.getByText("Pesan")).toBeInTheDocument();
     expect(screen.queryByText("Starting at")).not.toBeInTheDocument();
+    expect(screen.queryByText("See pricing")).not.toBeInTheDocument();
   });
 
   it("tidak menampilkan rating atau jumlah ulasan lama", () => {

@@ -1,22 +1,14 @@
 import type { Metadata } from "next";
-import { CheckoutClient } from "./checkout-client";
+import Image from "next/image";
+import { CheckoutCommerceClient } from "@/components/checkout-commerce-client";
 
-export const metadata: Metadata = {
-  title: "Penyelesaian pesanan",
-  description: "Periksa data pemesan dan selesaikan pesanan slot langganan akun bersama di Necly.",
-};
+export const metadata: Metadata = { title: "Checkout", description: "Lengkapi detail pesanan dan pilih metode pembayaran." };
 
 export default function CheckoutPage() {
   return (
-    <div className="container">
-      <header className="page-hero">
-        <span className="eyebrow">Langkah 1 dari 2</span>
-        <h1 className="h1" style={{ marginTop: 12 }}>Lengkapi data pesanan.</h1>
-        <p className="lede" style={{ marginTop: 16, fontSize: 14 }}>
-          Pastikan alamat email Anda aktif untuk pengiriman undangan resmi sebelum menuju tahap pembayaran.
-        </p>
-      </header>
-      <CheckoutClient />
-    </div>
+    <main className="commerce-checkout-page">
+      <section className="commerce-checkout-hero"><div className="commerce-container commerce-checkout-hero-inner"><div><nav>⌂　›　Beranda　›　<span>Checkout</span></nav><h1>Checkout</h1><p>Lengkapi detail pesanan dan pilih metode pembayaran untuk melanjutkan.</p></div><Image src="/illustrations/product-workspace.svg" width={480} height={360} alt="Ilustrasi checkout" /></div></section>
+      <div className="commerce-container"><CheckoutCommerceClient /></div>
+    </main>
   );
 }

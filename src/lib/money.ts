@@ -7,6 +7,11 @@ export function formatIDR(value: number): string {
   return `Rp${formatted}`;
 }
 
+/** Storefront price label: "Rp 81.500" (spaced), matching the public catalog design. */
+export function formatRupiahLabel(value: number): string {
+  return `Rp ${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value)}`;
+}
+
 export function formatDateID(value: string): string {
   // Handle ISO dates or already formatted dates
   try {

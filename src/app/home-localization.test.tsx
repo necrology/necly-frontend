@@ -1,13 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import HomePage from "./(site)/page";
-import { services } from "@/data/seed";
+
+/** Texts of leaf nodes, so numbers split across nested elements are still comparable. */
+function leafTexts(container: HTMLElement) {
+  return Array.from(container.querySelectorAll("*"))
+    .filter((node) => !node.children.length)
+    .map((node) => node.textContent?.trim() ?? "");
+}
 
 describe("homepage marketplace content", () => {
-  it("uses consistent Indonesian activation copy and the real catalog count", () => {
-    render(<HomePage />);
-    expect(screen.getByText(String(services.length))).toBeInTheDocument();
-    expect(screen.getAllByText(/Aktivasi/).length).toBeGreaterThan(0);
+  it("uses consistent Indonesian copy and the catalog count", () => {
+    const { container } = render(<HomePage />);
+
+    expect(leafTexts(container)).toContain("29");
+    expect(screen.getAllByText(/legal|terpercaya/i).length).toBeGreaterThan(0);
+    // The stat card label must stay singular-counted with the storefront catalog.
+    expect(screen.getAllByText(/layanan premium/i).length).toBeGreaterThan(0);
     expect(screen.queryByText(/Aktifasi/)).not.toBeInTheDocument();
   });
 

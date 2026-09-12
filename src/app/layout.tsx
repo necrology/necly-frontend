@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: "Necly Services", description: siteDescription, images: ["/brand/necly-reference.jpg"] },
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#fbfbf8", colorScheme: "light" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#5420e8", colorScheme: "light" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

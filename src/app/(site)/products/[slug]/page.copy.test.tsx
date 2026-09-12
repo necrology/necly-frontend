@@ -2,7 +2,10 @@ import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { services } from "@/data/seed";
 
-vi.mock("next/navigation", () => ({ notFound: vi.fn(() => { throw new Error("NOT_FOUND"); }) }));
+vi.mock("next/navigation", () => ({
+  notFound: vi.fn(() => { throw new Error("NOT_FOUND"); }),
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+}));
 
 import ProductPage from "./page";
 

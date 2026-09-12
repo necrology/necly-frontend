@@ -29,7 +29,7 @@ export function ServiceCard({ product }: { product: SubscriptionProduct }) {
           {product.benefits.slice(0, 2).map((benefit) => <li key={benefit}><CheckCircle2 size={13} />{benefit}</li>)}
         </ul>
         <div className="catalog-card-actions">
-          <Link className="catalog-detail-link" href={`/products/${product.slug}`}><Eye size={14} />Lihat Skema Harga</Link>
+          <Link className="catalog-detail-link" href={`/products/${product.slug}`} aria-label={`Lihat ${product.name}`}><Eye size={14} />Lihat Skema Harga</Link>
           <Link className="catalog-order-button" href={`/products/${product.slug}`}>Pesan</Link>
         </div>
       </div>

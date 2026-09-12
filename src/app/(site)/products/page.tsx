@@ -1,37 +1,22 @@
 import type { Metadata } from "next";
-import { Headphones, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
-import { ProductsClient } from "./products-client";
+import Image from "next/image";
+import { ProductSearchBar } from "@/components/product-search-bar";
 
 export const metadata: Metadata = {
-  title: "Produk digital",
-  description: "Temukan layanan premium dengan harga lebih hemat dan terpercaya di Necly Services.",
+  title: "Produk Digital",
+  description: "Temukan berbagai layanan premium favorit dengan harga lebih hemat dan terpercaya.",
 };
 
-const benefits = [
-  { title: "Produk 100% Original", detail: "Aktivasi melalui akses resmi", Icon: ShieldCheck },
-  { title: "Layanan Pelanggan 24/7", detail: "Tim siap membantu kapan saja", Icon: Headphones },
-  { title: "Pembayaran Aman", detail: "Diproses oleh mitra tepercaya", Icon: LockKeyhole },
-  { title: "Harga Lebih Hemat", detail: "Pilihan paket sesuai kebutuhan", Icon: Sparkles },
-];
-
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
-  const { category } = await searchParams;
+export default function ProductsPage() {
   return (
     <>
-      <section className="catalog-hero">
-        <div className="container catalog-hero-content">
-          <div>
-            <p className="catalog-kicker">NECLY SERVICES</p>
-            <h1>Produk <span>Digital</span></h1>
-            <p>Temukan berbagai layanan premium favorit kamu<br className="desktop-only" /> dengan harga lebih hemat dan terpercaya.</p>
-          </div>
-          <div className="catalog-hero-illustration" aria-hidden="true"><span>★</span><b>Lebih hemat,<br />lebih mudah.</b></div>
+      <section className="commerce-catalog-hero">
+        <div className="commerce-container commerce-catalog-hero-inner">
+          <div><h1>Produk <span>Digital</span></h1><p>Temukan berbagai layanan premium favorit kamu<br />dengan harga lebih hemat dan terpercaya.</p></div>
+          <div className="commerce-catalog-hero-art"><Image src="/illustrations/product-workspace.svg" width={480} height={360} alt="Ilustrasi produk digital" /><span>Hiburan<br />Tanpa Batas<br />Lebih Hemat!</span></div>
         </div>
       </section>
-      <ProductsClient initialCategory={category} />
-      <section className="container catalog-benefit-strip" aria-label="Keunggulan berbelanja di Necly">
-        {benefits.map(({ title, detail, Icon }) => <div className="catalog-benefit" key={title}><Icon size={31} /><div><strong>{title}</strong><span>{detail}</span></div></div>)}
-      </section>
+      <main className="commerce-catalog-page"><div className="commerce-container"><ProductSearchBar /></div></main>
     </>
   );
 }

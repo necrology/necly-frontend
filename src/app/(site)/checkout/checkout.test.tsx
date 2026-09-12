@@ -48,7 +48,7 @@ describe("Halaman dan Alur Checkout", () => {
   });
 
   it("memiliki metadata bahasa Indonesia yang jelas", () => {
-    expect(checkoutMetadata.title).toBe("Penyelesaian pesanan");
+    expect(checkoutMetadata.title).toBe("Checkout");
     expect(checkoutMetadata.description).not.toContain("project brief");
   });
 
