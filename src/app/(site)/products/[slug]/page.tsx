@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Check, CheckCircle2, PackageCheck } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AddToCart } from "@/components/add-to-cart";
+import { ProductOrderPanel } from "@/components/product-order-panel";
 import { ServiceCard } from "@/components/service-card";
 import { getRelatedServices, getService, services, type SubscriptionProduct } from "@/data/seed";
 import { catalogApi, DEMO_MODE } from "@/lib/api";
@@ -125,15 +125,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <section className="content-block"><h2>Cara aktivasi</h2><div className="detail-process">{productData.activationSteps.map((step, index) => <div className="detail-step" key={step.title}><span className="step-number">{String(index + 1).padStart(2, "0")}</span><div><h3 className="h3">{step.title}</h3><p style={{ margin: "4px 0 0", fontSize: 12 }}>{step.description}</p></div></div>)}</div></section>
           <section className="content-block"><h2>Catatan syarat & ketentuan</h2><p className="muted" style={{ fontSize: 13 }}>{productData.termsNote}</p></section>
         </article>
-        <aside className="card purchase-panel">
-          <span className="eyebrow">Mulai dari</span>
-          <div className="purchase-price tabular">{formatIDR(productData.price)}</div>
-          <p className="muted small" style={{ marginTop: 3 }}>Biaya layanan dihitung saat menyelesaikan pesanan</p>
-          <div className="purchase-row"><span>Jenis akses</span><strong>{productData.accessType}</strong></div>
-          <div className="stock-note"><CheckCircle2 size={14} />{productData.stock > 0 ? `${productData.stock} slot tersedia` : "Daftar tunggu dibuka"}</div>
-          <AddToCart product={productData} />
-          {DEMO_MODE && <p className="muted" style={{ margin: "14px 0 0", fontSize: 9, textAlign: "center" }}>Mode demo. Tidak memproses pembayaran.</p>}
-        </aside>
+        <ProductOrderPanel product={productData} />
       </div>
       {related.length > 0 && <section className="section section-rule"><div className="container"><div className="section-heading"><div><span className="eyebrow">Jelajahi juga</span><h2 className="h2" style={{ marginTop: 10 }}>Produk {productData.category.toLowerCase()} lainnya.</h2></div></div><div className="service-grid">{related.map((item) => <ServiceCard product={item} key={item.id} />)}</div></div></section>}
     </>

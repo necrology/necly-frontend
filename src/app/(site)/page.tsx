@@ -1,6 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, ChartNoAxesCombined, Palette, Search, Sparkles, Wrench } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, ChartNoAxesCombined, Palette, Sparkles, Wrench } from "lucide-react";
 import { ServiceCard } from "@/components/service-card";
+import { MobileHomeSlides } from "@/components/mobile-home-slides";
+import { HomeTrustSections } from "@/components/home-trust-sections";
 import { services } from "@/data/seed";
 import { formatIDR } from "@/lib/money";
 import { DEMO_MODE } from "@/lib/api";
@@ -20,6 +23,7 @@ export default function HomePage() {
 
   return (
     <>
+      <MobileHomeSlides />
       <section className="hero">
         <div className="container hero-grid">
           <div className="hero-copy">
@@ -32,24 +36,9 @@ export default function HomePage() {
             </div>
             <div className="hero-note"><span /> {DEMO_MODE ? "Katalog demo" : "Katalog langsung"} · Aktivasi via undangan anggota atau kursi tim</div>
           </div>
-          <div className="card discovery-panel" aria-label="Pratinjau penemuan layanan">
-            <div className="discovery-top">
-              <strong style={{ fontSize: 12 }}>Temukan langganan yang pas</strong>
-              <span className="badge status-info">{DEMO_MODE ? "Demo" : "Langsung"}</span>
-            </div>
-            <div className="discovery-search"><Search size={15} /> Apa yang Anda butuhkan?</div>
-            <div className="discovery-items">
-              {services.slice(0, 4).map((product, index) => (
-                <div className={`discovery-item ${index === 1 ? "selected" : ""}`} key={product.id}>
-                  <span className="discovery-mark" style={{ background: index === 1 ? "#2463eb" : undefined }}>{product.name.split(" ").map((word) => word[0]).slice(0, 2)}</span>
-                  <span>
-                    <strong style={{ display: "block", fontSize: 11 }}>{product.name}</strong>
-                    <small className="muted" style={{ fontSize: 9 }}>{product.duration}</small>
-                  </span>
-                  <span className="tabular" style={{ fontSize: 10, fontWeight: 600 }}>{formatIDR(product.price)}</span>
-                </div>
-              ))}
-            </div>
+          <div className="hero-art" aria-label="Ilustrasi layanan digital bersama">
+            <Image src="/illustrations/necly-hero-sharing.svg" alt="Ilustrasi orang memakai layanan digital bersama" width={720} height={560} priority />
+            <div className="hero-art-note"><span className="hero-art-note-dot" />{DEMO_MODE ? "Katalog demo" : "Slot tersedia hari ini"}</div>
           </div>
         </div>
       </section>
@@ -62,6 +51,8 @@ export default function HomePage() {
           <div className="trust-cell"><div><div className="trust-value tabular">1:1</div><div className="trust-label">profil pribadi terpisah</div></div></div>
         </div>
       </section>
+
+      <HomeTrustSections />
 
       <section className="section-sm">
         <div className="container">

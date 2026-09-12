@@ -1,0 +1,10 @@
+"use client";
+
+import type { FormEvent } from "react";
+import { useState } from "react";
+
+export default function IssueReportPage() {
+  const [sent, setSent] = useState(false);
+  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setSent(true); };
+  return <><section className="support-hero"><div className="container"><span className="eyebrow">Pusat bantuan</span><h1 className="h1">Laporan Kendala</h1><p>Sampaikan masalah pesanan, pembayaran, atau akses. Sertakan informasi yang cukup agar dapat ditindaklanjuti.</p></div></section><section className="container issue-page"><form className="card issue-form" onSubmit={submit}>{sent ? <div className="issue-success"><h2>Laporan diterima</h2><p>Catat nomor pesanan Anda. Tim akan meninjau laporan berdasarkan informasi yang dikirimkan.</p><button className="button button-secondary" type="button" onClick={() => setSent(false)}>Kirim laporan lain</button></div> : <><div className="form-grid"><label className="field"><span className="label">Nama</span><input className="input" required name="name" placeholder="Nama Anda" /></label><label className="field"><span className="label">Email</span><input className="input" required name="email" type="email" placeholder="email@contoh.id" /></label><label className="field"><span className="label">Nomor pesanan</span><input className="input" name="order" placeholder="Contoh: NCL-XXXX" /></label><label className="field"><span className="label">Kategori kendala</span><select className="select" required name="category"><option value="">Pilih kategori</option><option>Pembayaran</option><option>Akses layanan</option><option>Pesanan</option><option>Lainnya</option></select></label></div><label className="field" style={{ marginTop: 18 }}><span className="label">Jelaskan kendala</span><textarea className="textarea" required name="message" placeholder="Tuliskan kronologi, pesan kesalahan, dan waktu kejadian. Jangan sertakan kata sandi atau OTP." /></label><button className="button button-primary" type="submit" style={{ marginTop: 22 }}>Kirim laporan</button></>}</form></section></>;
+}
