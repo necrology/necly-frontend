@@ -1,0 +1,207 @@
+/* Storefront quality pass: stable colors, assets, type, and responsive sizing. */
+html, body { width: 100%; max-width: 100%; overflow-x: clip; }
+/* The first header-height of the page sits behind the curved header. */
+body { background: linear-gradient(#5420e8 0 68px, #fffafd 68px) fixed; }
+/* Footer and its page base use the same violet as the top navigation. */
+.commerce-footer { background: #5420e8; }
+main + .commerce-footer { box-shadow: 0 100vmax #5420e8; clip-path: inset(0 -100vmax); }
+body, button, input, select, textarea { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; }
+img, svg { max-width: 100%; }
+
+/* Every logo stays legible on a white, fully rounded surface. */
+.commerce-header-logo img, .commerce-footer-brand .brand img {
+  box-sizing: content-box;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  padding: 3px;
+  background: #fff;
+  box-shadow: 0 7px 15px rgb(21 5 58 / .25), inset 0 1px 0 #fff;
+}
+.product-brand { border-radius: 999px; color: #2e2740; background: #fff; box-shadow: 0 7px 15px rgb(35 15 65 / .16), 0 2px 4px rgb(35 15 65 / .08), inset 0 1px 0 #fff, inset 0 0 0 1px #ebe6f2; }
+.product-brand-disney, .product-brand-viu, .product-brand-nord, .product-brand-netflix, .product-brand-spotify { color: #2e2740; background: #fff; }
+.product-brand-disney .disney-word, .product-brand-disney .netflix-word { color: #20223b; }
+.product-brand-disney .brand-cross { color: #6a2cf0; }
+.product-brand-viu, .product-brand-viu .viu-mark { color: #e1a800; }
+.product-brand-nord, .product-brand-nord .nord-mark { color: #356ed1; }
+.product-brand-netflix, .product-brand-netflix .netflix-word { color: #e52d2d; }
+.product-brand-spotify, .product-brand-spotify .spotify-mark { color: #169b55; }
+
+/* Header stays violet while its lower edge has a soft curve. */
+.site-header { overflow: visible; border-radius: 0 0 26px 26px; background: #5420e8; }
+.site-header .site-nav { min-height: 56px; position: relative; justify-content: space-between; }
+.site-header .commerce-menu-trigger, .site-header .commerce-mobile-profile { width: 34px; height: 34px; border-radius: 10px; }
+.site-header .commerce-menu-trigger svg { width: 20px; height: 20px; }
+.site-header .commerce-mobile-profile { border-radius: 50%; }
+.site-header .commerce-mobile-profile svg { width: 21px; height: 21px; }
+.site-header .commerce-header-logo { position: absolute; left: 50%; transform: translateX(-50%); margin: 0; }
+.site-header .commerce-header-logo img { width: 24px; height: 24px; padding: 2px; border-width: 1px; }
+.site-header .nav-links { gap: 1px; margin-left: 10px; }
+.site-header .nav-link { min-height: 34px; padding: 0 8px; font-size: 11px; }
+.site-header .nav-link.active::after { right: 8px; bottom: 3px; left: 8px; }
+.site-header .commerce-login-link { min-height: 34px; padding: 0 14px; font-size: 11px; }
+.site-header .commerce-login-link svg { width: 15px; height: 15px; }
+.site-header.mobile-menu-open { border-radius: 0 0 26px 26px; }
+.commerce-mobile-nav { overflow: hidden; border-radius: 0 0 26px 26px; background: #5420e8; }
+
+/* Keep violet surfaces in the same palette across routes. */
+.commerce-home-hero { background: linear-gradient(135deg, #5420e8 0%, #6230e8 100%); }
+.commerce-catalog-hero, .commerce-checkout-hero { background: linear-gradient(135deg, #f7f4ff 0%, #ece5ff 100%); }
+.commerce-home-hero-copy h1, .commerce-catalog-hero h1, .commerce-checkout-hero h1,
+.commerce-section-header h2, .commerce-product-heading h2, .commerce-benefits-visual h2 { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; }
+
+/* Do not enlarge low-resolution raster illustration. */
+.commerce-benefits-illustration { min-height: 280px; display: grid; place-items: center; }
+.commerce-benefits-illustration img { width: min(100%, 184px); height: auto; image-rendering: auto; }
+.commerce-home-hero-art img, .commerce-catalog-hero-art img, .commerce-stat-card img { object-fit: contain; }
+
+/* Compact public-page rhythm: preserve readability while removing oversized gaps. */
+.commerce-home-hero { padding: 42px 0 36px; }
+.commerce-home-hero-inner { gap: 32px; }
+.commerce-home-hero-copy > p { margin-top: 13px; font-size: 13px; line-height: 1.6; }
+.commerce-hero-cta { min-height: 44px; margin-top: 20px; padding-inline: 21px; font-size: 13px; }
+.commerce-slider-dots { margin-top: 20px; }
+.commerce-stats-section, .commerce-benefits-section { padding: 54px 0; }
+.commerce-stats-grid { gap: 14px; }
+.commerce-stat-card { min-height: 138px; border-radius: 20px; padding: 16px; }
+.commerce-benefits-layout { gap: 38px; }
+.commerce-benefits-illustration { border-radius: 28px; padding: 22px; }
+.commerce-benefit-list { gap: 16px 20px; }
+.commerce-benefit-icon { width: 40px; height: 40px; }
+.commerce-preview-section { padding: 54px 0 30px; }
+.commerce-product-heading { margin-bottom: 22px; }
+.commerce-catalog-controls { gap: 10px; }
+.commerce-search-field, .commerce-category-field { height: 44px; font-size: 12px; }
+.commerce-offer-banner { gap: 16px; margin-top: 12px; border-radius: 16px; padding: 13px 18px; }
+.commerce-product-grid { gap: 14px; margin-top: 14px; }
+.commerce-product-card { border-radius: 18px; padding: 14px; }
+.commerce-card-copy { padding-top: 11px; }
+.commerce-stock { margin: 10px 0 12px; }
+.commerce-benefits { gap: 5px; margin: 10px 0 12px; }
+.commerce-card-actions { padding-top: 10px; }
+.commerce-catalog-hero { padding: 32px 0 28px; }
+.commerce-catalog-hero-inner { gap: 28px; }
+.commerce-catalog-page, .commerce-detail-page { padding-bottom: 56px; }
+.commerce-catalog-page { padding-top: 24px; }
+.commerce-product-detail-shell { gap: 18px; }
+.commerce-product-detail-main { gap: 16px; }
+.commerce-product-showcase { gap: 20px; border-radius: 20px; padding: 18px; }
+.commerce-product-image { min-height: 240px; border-radius: 16px; }
+.commerce-package-option { border-radius: 13px; padding: 11px 13px; }
+.commerce-detail-accordions { gap: 9px; }
+.commerce-detail-accordion { border-radius: 16px; }
+.commerce-accordion-content { padding: 14px 16px 17px; }
+.commerce-order-summary { gap: 10px; border-radius: 19px; padding: 16px; }
+.commerce-primary-button { min-height: 44px; border-radius: 13px; font-size: 13px; }
+.commerce-related-products { margin-top: 30px; }
+.commerce-checkout-page { padding-bottom: 44px; }
+.commerce-checkout-hero { padding: 26px 0 23px; }
+.commerce-checkout-layout { gap: 16px; padding-top: 18px; }
+.support-hero { padding: 52px 0 42px; }
+.guide-page { gap: 36px; padding-top: 40px; padding-bottom: 62px; }
+.guide-step { padding-bottom: 25px; }
+.guide-aside { top: 74px; border-radius: 16px; padding: 20px; }
+.faq-page, .issue-page { padding-top: 38px; padding-bottom: 60px; }
+.commerce-footer-content { gap: 24px; padding: 26px 0; }
+
+/* Narrow screens use one roomy, readable product card per row. */
+@media (max-width: 767px) {
+  .commerce-container { width: min(calc(100% - 28px), 100%); }
+  .commerce-product-grid, .commerce-product-grid.preview-grid { grid-template-columns: 1fr; gap: 16px; }
+  .commerce-product-card, .commerce-product-card * { min-width: 0; }
+  .commerce-product-card { width: 100%; padding: 16px; border-radius: 20px; overflow: hidden; }
+  .commerce-card-brand-row { flex-wrap: wrap; gap: 10px; }
+  .commerce-card-brand-row > * { min-width: 0; max-width: 100%; }
+  .commerce-card-brand-row .product-brand { flex: 1 1 170px; }
+  .commerce-card-brand-row .commerce-badge { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
+  .commerce-card-copy { padding-top: 14px; }
+  .commerce-card-copy h3, .commerce-package, .commerce-benefits li { overflow-wrap: anywhere; }
+  .commerce-price { flex-wrap: wrap; row-gap: 2px; }
+  .commerce-stock-pill { white-space: normal; text-align: center; }
+  .commerce-stock-bar { width: 100%; }
+  .commerce-card-actions { min-width: 0; }
+  .commerce-order-link, .commerce-scheme-link { min-width: 0; white-space: normal; text-align: center; }
+  .commerce-card-copy h3 { font-size: 15px; }
+  .commerce-package, .commerce-benefits { font-size: 11px; }
+  .commerce-price strong { font-size: 20px; }
+  .commerce-card-actions { flex-direction: row; align-items: center; }
+  .commerce-scheme-link { justify-content: flex-start; }
+  .commerce-order-link { width: auto; min-width: 102px; }
+  .commerce-catalog-hero { overflow: clip; }
+  .commerce-catalog-hero-inner { min-width: 0; }
+  .commerce-catalog-hero-art { width: min(100%, 230px); margin-inline: auto; }
+  .commerce-catalog-hero-art > span { right: 0; }
+  .commerce-home-hero { position: relative; z-index: 1; overflow: hidden; margin-bottom: 22px; border-radius: 0 0 50% 50% / 0 0 10% 10%; }
+  .commerce-home-hero-art { width: min(100%, 340px); }
+  .commerce-home-hero-art > span { left: 0; }
+  .commerce-offer-banner, .commerce-offer-copy, .commerce-offer-countdown { min-width: 0; }
+  .commerce-offer-copy { align-items: flex-start; }
+  .commerce-offer-copy > div { min-width: 0; }
+  .commerce-offer-countdown { flex-wrap: wrap; }
+  .commerce-time-values { max-width: 100%; }
+  .commerce-time-value { min-width: 42px; }
+  .commerce-benefits-illustration { min-height: 210px; padding: 18px; }
+  .commerce-benefits-illustration img { width: min(100%, 160px); }
+
+  /* Subscription guide: compact document flow; the help card must never float over steps. */
+  .support-hero { padding: 34px 0 30px; }
+  .support-hero .h1 { margin-top: 7px; font-size: 1.8rem; }
+  .support-hero p { margin-top: 8px; font-size: 11px; line-height: 1.55; }
+  .guide-page { grid-template-columns: 1fr; gap: 18px; padding-top: 24px; padding-bottom: 36px; }
+  .guide-steps { gap: 0; }
+  .guide-step { grid-template-columns: 32px 38px minmax(0, 1fr); gap: 9px; padding-bottom: 19px; }
+  .guide-step:not(:last-child)::before { top: 32px; left: 15px; height: calc(100% - 16px); }
+  .guide-number { width: 32px; height: 32px; font-size: 10px; }
+  .guide-icon { width: 36px; height: 36px; border-radius: 11px; }
+  .guide-icon svg { width: 18px; height: 18px; }
+  .guide-step h2 { margin: 3px 0 2px; font-size: 13px; }
+  .guide-step p { font-size: 10px; line-height: 1.5; }
+  .guide-aside { position: static; width: 100%; box-sizing: border-box; margin: 0; border-radius: 16px; padding: 16px; }
+  .guide-aside h2 { margin-bottom: 6px; font-size: 14px; }
+  .guide-aside p { font-size: 10px; line-height: 1.5; }
+  .guide-aside .button { min-height: 38px; margin-top: 12px; padding-inline: 15px; font-size: 11px; }
+}
+
+/* Desktop-only composition: eliminate collisions and restore intentional grids. */
+@media (min-width: 1025px) {
+  .commerce-container { width: min(calc(100% - 64px), 1240px); }
+  .site-header .site-nav { min-height: 56px; gap: 16px; }
+  .site-header .nav-links { min-width: 0; margin-left: 20px; }
+  .site-header .nav-link { white-space: nowrap; }
+  .commerce-home-hero { min-height: 420px; display: grid; align-items: center; }
+  .commerce-home-hero-inner { grid-template-columns: minmax(0, 1fr) minmax(360px, .9fr); gap: 48px; }
+  .commerce-home-hero-art { width: min(100%, 560px); justify-self: end; }
+  .commerce-home-hero-art > span { max-width: 108px; }
+  .commerce-stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  .commerce-stat-card { min-height: 146px; }
+  .commerce-benefits-layout { grid-template-columns: minmax(320px, .8fr) minmax(0, 1.2fr); gap: 52px; }
+  .commerce-benefit-list { min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .commerce-benefit-list article { min-width: 0; }
+  .commerce-preview-section .commerce-container { grid-template-columns: minmax(0, 1fr) 350px; column-gap: 24px; }
+  .commerce-catalog-controls { grid-template-columns: minmax(0, 1fr) 250px; }
+  .commerce-product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .commerce-product-grid.preview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .commerce-product-card { min-width: 0; }
+  .commerce-card-brand-row { align-items: flex-start; flex-wrap: wrap; }
+  .commerce-card-brand-row .product-brand { width: 100%; }
+  .commerce-card-actions { align-items: flex-start; flex-direction: column; }
+  .commerce-order-link { width: 100%; }
+  .commerce-scheme-link { min-height: 22px; }
+  .commerce-catalog-hero-inner { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); }
+  .commerce-catalog-hero-art { min-width: 0; }
+  .commerce-product-detail-shell { grid-template-columns: minmax(0, 1fr) 320px; }
+  .commerce-product-showcase { grid-template-columns: minmax(320px, .95fr) minmax(0, 1.05fr); }
+  .commerce-checkout-layout { grid-template-columns: minmax(0, 1fr) 320px; }
+  .commerce-footer-content { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto; }
+}
+
+@media (max-width: 390px) {
+  .commerce-container { width: min(calc(100% - 24px), 100%); }
+  .commerce-card-actions { flex-direction: column; align-items: stretch; }
+  .commerce-scheme-link { justify-content: center; }
+  .commerce-order-link { width: 100%; }
+  .commerce-offer-banner { padding: 14px; }
+  .commerce-time-value { min-width: 39px; padding-inline: 3px; }
+  .commerce-time-value i { right: -7px; }
+}

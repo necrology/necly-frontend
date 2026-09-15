@@ -858,8 +858,8 @@ body { background: #fffafd; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-time-value small { margin-top: 3px; color: #ddd2ff; font-size: 8px; }
 .commerce-time-value i { position: absolute; top: 9px; right: -9px; color: #fff; font-size: 15px; font-style: normal; }
 .commerce-catalog .commerce-offer-banner + .commerce-product-grid,
-.commerce-product-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin-top: 20px; }
-.commerce-product-grid.preview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 0; }
+.commerce-product-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; margin-top: 20px; }
+.commerce-product-grid.preview-grid { grid-template-columns: minmax(0, 1fr); margin-top: 0; }
 .commerce-empty-state { grid-column: 1 / -1; border: 1px dashed var(--commerce-line); border-radius: 20px; padding: 56px 22px; color: var(--commerce-muted); background: #fff; font-size: 13px; text-align: center; }
 
 /* ---------- Product card ---------- */

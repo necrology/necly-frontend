@@ -3,6 +3,7 @@ import "@fontsource/sora/400.css";
 import "@fontsource/sora/600.css";
 import "@fontsource/sora/700.css";
 import "./globals.css";
+import "./storefront-fixes.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const siteDescription = "Solusi hemat berlangganan akun premium, aman dan terpercaya. Bandingkan harga, durasi, stok slot, dan aktivasi resmi.";

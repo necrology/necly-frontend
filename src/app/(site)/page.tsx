@@ -9,8 +9,8 @@ export default function HomePage() {
       <section className="commerce-home-hero">
         <div className="commerce-container commerce-home-hero-inner">
           <div className="commerce-home-hero-copy">
-            <h1>Mau Premium?<br /><span>Patungan Aja!</span></h1>
-            <p>Temukan berbagai pilihan akun sharing<br className="desktop-break" /> dengan harga yang lebih bersahabat.</p>
+            <h1>Langganan premium,<br /><span>lebih ringan bersama.</span></h1>
+            <p>Temukan pilihan layanan digital untuk hiburan, kerja, dan kebutuhan sehari-hari dengan proses yang jelas.</p>
             <Link className="commerce-hero-cta" href="/products">Lihat Layanan <ArrowRight size={22} /></Link>
             <div className="commerce-slider-dots"><i className="active" /><i /><i /></div>
           </div>

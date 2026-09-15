@@ -29,6 +29,7 @@ export function ProductSearchBar({ mode = "catalog", limit }: ProductSearchBarPr
     return matchesQuery && matchesCategory;
   }).slice(0, limit), [category, limit, query, source]);
 
+
   return (
     <section className={`commerce-catalog ${mode === "preview" ? "is-preview" : ""}`}>
       <div className="commerce-catalog-controls">

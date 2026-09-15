@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Search, UserRound, X } from "lucide-react";
+import { Menu, UserRound, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
@@ -12,7 +12,6 @@ const links = [
   { label: "Layanan", href: "/products" },
   { label: "Cara Berlangganan", href: "/cara-berlangganan" },
   { label: "FAQ", href: "/faq" },
-  { label: "Blog", href: "/about" },
   { label: "Laporan Kendala", href: "/laporan-kendala" },
 ];
 
@@ -30,7 +29,6 @@ export function SiteHeader() {
           {links.map((link) => <Link className={cn("nav-link", (pathname === link.href || (link.href === "/products" && pathname.startsWith("/products"))) && "active")} href={link.href} key={link.href}>{link.label}</Link>)}
         </div>
         <div className="nav-actions">
-          <Link className="commerce-header-search" href="/products" aria-label="Cari layanan"><Search size={21} /></Link>
           <Link className="commerce-login-link" href="/login"><UserRound size={18} /><span>Log In</span></Link>
           <Link className="commerce-mobile-profile" href="/login" aria-label="Log in"><UserRound size={27} /></Link>
         </div>

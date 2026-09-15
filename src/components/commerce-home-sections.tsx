@@ -15,12 +15,12 @@ const stats = [
 ] as const;
 
 const benefits = [
-  ["Diskon Hingga 70%", "Dapatkan layanan premium dengan harga yang jauh lebih terjangkau.", Tag],
-  ["Privasi Anda Tetap Aman", "Data dan akun Anda kami jaga keamanannya.", LockKeyhole],
-  ["Layanan Pelanggan Cepat Tanggap", "Tim kami siap membantu Anda kapan saja.", Headphones],
-  ["Akses Legal dan Terpercaya", "Semua layanan kami sudah melalui proses yang aman dan terpercaya.", ShieldCheck],
-  ["Pilihan Metode Pembayaran Lengkap", "Bayar dengan metode favorit Anda dengan mudah dan praktis.", CreditCard],
-  ["Notifikasi Pengingat Pembayaran", "Jangan pernah melewatkan jadwal pembayaran lagi.", BellRing],
+  ["Harga lebih hemat", "Nikmati layanan pilihan dengan biaya yang lebih terjangkau.", Tag],
+  ["Privasi tetap terjaga", "Informasi pesanan dan akses Anda ditangani dengan hati-hati.", LockKeyhole],
+  ["Bantuan yang responsif", "Tim kami siap membantu saat Anda membutuhkan informasi.", Headphones],
+  ["Layanan tepercaya", "Kami memilih layanan dan proses yang jelas untuk pelanggan.", ShieldCheck],
+  ["Pembayaran fleksibel", "Pilih metode pembayaran yang paling nyaman untuk Anda.", CreditCard],
+  ["Pengingat pembayaran", "Dapatkan pengingat sebelum masa layanan Anda berakhir.", BellRing],
 ] as const;
 
 export function CommerceHomeSections() {
@@ -28,7 +28,7 @@ export function CommerceHomeSections() {
     <>
       <section className="commerce-stats-section">
         <div className="commerce-container">
-          <header className="commerce-section-header center"><h2>Saatnya Upgrade Bareng!</h2><p>Yuk Gabung sekarang!, patungan lebih hemat, dan nikmati akses premium dengan aman dan legal.</p></header>
+          <header className="commerce-section-header center"><h2>Premium yang pas untuk kebutuhanmu</h2><p>Pilih layanan favorit, tentukan durasinya, lalu nikmati harga yang lebih ringan bersama.</p></header>
           <div className="commerce-stats-grid">{stats.map(([value, label, tone, image]) => <article className={`commerce-stat-card ${tone}`} key={label}><Image src={image} alt="" width={240} height={136} /><div><strong>{value}</strong><span>{label}</span></div></article>)}</div>
         </div>
       </section>
