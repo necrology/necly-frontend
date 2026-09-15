@@ -180,6 +180,7 @@ img, svg { max-width: 100%; }
   .commerce-benefit-list article { min-width: 0; }
   .commerce-preview-section .commerce-container { grid-template-columns: minmax(0, 1fr) 350px; column-gap: 24px; }
   .commerce-catalog-controls { grid-template-columns: minmax(0, 1fr) 250px; }
+  .commerce-catalog .commerce-offer-banner + .commerce-product-grid,
   .commerce-product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .commerce-product-grid.preview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .commerce-product-card { min-width: 0; }
@@ -210,7 +211,14 @@ img, svg { max-width: 100%; }
    default below 1024px so its production mobile layout is not affected. */
 .figma-desktop-site-nav,
 .figma-desktop-home-hero,
-.figma-desktop-copy { display: none; }
+.figma-desktop-copy,
+.figma-desktop-stat-art,
+.figma-desktop-benefits-art,
+.figma-desktop-product-assets,
+.figma-desktop-auth-logo,
+.figma-desktop-subscription-guide { display: none; }
+
+.product-brand-fallback { display: contents; }
 
 @media (min-width: 1024px) {
   body:has(.figma-desktop-home-hero) { background: #f4f4f4; }
@@ -233,8 +241,8 @@ img, svg { max-width: 100%; }
     position: relative;
   }
   .figma-desktop-brand { position: absolute; top: 4px; left: 25px; width: 67px; height: 64px; display: block; }
-  .figma-desktop-brand > span { position: relative; width: 67px; height: 64px; display: block; overflow: hidden; border-radius: 50%; filter: drop-shadow(0 4px 4px rgb(0 0 0 / .61)); }
-  .figma-desktop-brand img { position: absolute; top: -10.26%; left: -60.59%; width: 213.14%; max-width: none; height: 120.91%; }
+  .figma-desktop-brand > span { position: relative; width: 67px; height: 64px; display: block; }
+  .figma-desktop-brand img { position: static; width: 64px; max-width: none; height: 64px; object-fit: contain; }
   .figma-desktop-nav-links { position: absolute; top: 26px; left: 571px; display: flex; align-items: center; gap: 35px; }
   .figma-desktop-nav-links a, .figma-desktop-nav-links span { color: #fff; font-family: "Nunito Sans", sans-serif; font-size: 20px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
   .figma-desktop-nav-links a:hover { color: #fcbd50; }
@@ -269,6 +277,8 @@ img, svg { max-width: 100%; }
   .commerce-stats-section .commerce-section-header p { margin-top: 16px; color: #494949; font-family: "Nunito Sans", sans-serif; font-size: 19px; font-weight: 600; line-height: 25px; }
   .commerce-mobile-copy { display: none; }
   .figma-desktop-copy { display: inline; }
+  .commerce-mobile-stat-art { display: none; }
+  .figma-desktop-stat-art { display: block; }
   .commerce-stats-grid { width: 805px; grid-template-columns: 166px 166px 157px 158px; gap: 52.67px; margin-inline: auto; }
   .commerce-stat-card { position: relative; min-height: 238px; border-radius: 0; padding: 0; overflow: visible; background: transparent !important; }
   .commerce-stat-card::before { content: ""; position: absolute; top: 73px; left: 5px; width: 157px; height: 165px; border-radius: 0; background: #6a2cf0; }
@@ -284,6 +294,65 @@ img, svg { max-width: 100%; }
   .commerce-stat-card:nth-child(3) > div, .commerce-stat-card:nth-child(4) > div { left: 5px; }
   .commerce-stat-card strong { font-family: "Nunito Sans", sans-serif; font-size: 20px; line-height: 25px; letter-spacing: 0; }
   .commerce-stat-card span { margin-top: 0; font-family: "Nunito Sans", sans-serif; font-size: 20px; line-height: 25px; }
+
+  .commerce-benefits-section { padding: 72px 0 96px; background: #f4f4f4; }
+  .commerce-benefits-layout { grid-template-columns: minmax(220px, 1fr) minmax(380px, 500px) minmax(220px, 1fr); gap: 24px 38px; align-items: center; }
+  .commerce-benefits-visual { display: contents; }
+  .commerce-benefits-visual h2 { grid-column: 1 / -1; margin: 0 0 36px; color: #494949; font-family: "Nunito Sans", sans-serif; font-size: 46px; font-weight: 700; line-height: 1.2; text-align: center; letter-spacing: 0; }
+  .commerce-benefits-visual h2::after { display: none; }
+  .commerce-benefits-illustration { grid-column: 2; grid-row: 2 / span 3; min-height: 0; border-radius: 0; padding: 0; background: transparent; }
+  .commerce-mobile-benefits-art { display: none; }
+  .commerce-benefits-illustration .figma-desktop-benefits-art { width: 100%; height: auto; display: block; border-radius: 0; }
+  .commerce-benefit-list { display: contents; }
+  .commerce-benefit-list article { align-items: center; gap: 18px; }
+  .commerce-benefit-list article:nth-child(-n + 3) { grid-column: 1; flex-direction: row-reverse; text-align: right; }
+  .commerce-benefit-list article:nth-child(n + 4) { grid-column: 3; }
+  .commerce-benefit-list article:nth-child(1), .commerce-benefit-list article:nth-child(4) { grid-row: 2; }
+  .commerce-benefit-list article:nth-child(2), .commerce-benefit-list article:nth-child(5) { grid-row: 3; }
+  .commerce-benefit-list article:nth-child(3), .commerce-benefit-list article:nth-child(6) { grid-row: 4; }
+  .commerce-benefit-list article > div { min-width: 0; }
+  .commerce-benefit-list h3 { margin: 0; color: #526875; font-family: "Nunito Sans", sans-serif; font-size: 21px; font-weight: 400; line-height: 1.35; }
+  .commerce-benefit-list p { display: none; }
+  .commerce-benefit-icon { width: 56px; height: 56px; flex: 0 0 56px; border-radius: 10px; color: #fff; background: #4382ff; }
+
+  .product-brand { min-height: 48px; padding: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .product-brand-fallback { display: none; }
+  .figma-desktop-product-assets { width: 100%; height: 46px; display: flex; align-items: center; gap: 8px; overflow: hidden; color: #12151b; }
+  .figma-desktop-product-assets > img { width: auto; max-width: min(100%, 180px); height: auto; max-height: 42px; object-fit: contain; object-position: left center; }
+  .figma-desktop-product-assets.asset-disney > img:first-child { max-width: 108px; }
+  .figma-desktop-product-assets.asset-disney > img:last-child { max-width: 82px; }
+  .figma-desktop-product-assets.asset-netflix > img { max-width: 112px; }
+  .figma-desktop-product-assets.asset-nord > img { max-width: 150px; }
+  .figma-desktop-product-assets.asset-youtube > img { width: 108px; height: 45px; }
+  .spotify-asset-crop { position: relative; width: 158px; height: 46px; display: block; overflow: hidden; }
+  .spotify-asset-crop img { position: absolute; top: -57px; left: 0; width: 158px; max-width: none; height: 158px; }
+  .product-brand.compact .figma-desktop-product-assets { height: 42px; }
+
+  .auth-form > .mobile-menu-button { display: none !important; }
+  .figma-desktop-auth-logo { display: grid; place-items: center; margin: -12px auto 0; }
+  .figma-desktop-auth-logo img { width: 112px; height: 111px; object-fit: contain; }
+
+  .protected-mobile-guide { display: none; }
+  body:has(.figma-desktop-subscription-guide) { background: #f4f4f4; }
+  .figma-desktop-subscription-guide { display: block; padding: 72px 32px 96px; color: #263640; background: #f4f4f4; font-family: "Nunito Sans", sans-serif; }
+  .figma-desktop-subscription-guide > header { max-width: 760px; margin: 0 auto 72px; text-align: center; }
+  .figma-desktop-subscription-guide > header p { margin: 0 0 10px; color: #4c1ef9; font-size: 18px; font-weight: 700; }
+  .figma-desktop-subscription-guide > header h1 { margin: 0; color: #494949; font-size: 52px; line-height: 1.15; }
+  .figma-desktop-subscription-guide > header span { display: block; margin-top: 16px; color: #607580; font-size: 20px; line-height: 1.5; }
+  .figma-guide-steps { width: min(100%, 1120px); display: grid; gap: 72px; margin: 0 auto; }
+  .figma-guide-steps article { min-height: 420px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 470px); gap: 72px; align-items: center; }
+  .figma-guide-steps article.is-reversed { grid-template-columns: minmax(320px, 470px) minmax(0, 1fr); }
+  .figma-guide-steps article.is-reversed .figma-guide-step-copy { grid-column: 2; }
+  .figma-guide-steps article.is-reversed > img { grid-column: 1; grid-row: 1; }
+  .figma-guide-step-copy { display: flex; gap: 24px; align-items: flex-start; }
+  .figma-guide-step-copy > i { width: 58px; height: 58px; flex: 0 0 58px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #4c1ef9; font-size: 24px; font-style: normal; font-weight: 700; }
+  .figma-guide-step-copy h2 { margin: 2px 0 12px; color: #344955; font-size: 32px; line-height: 1.2; }
+  .figma-guide-step-copy p { margin: 0; color: #607580; font-size: 19px; line-height: 1.65; }
+  .figma-guide-steps article > img { width: auto; max-width: 100%; height: 390px; justify-self: center; object-fit: contain; }
+  .figma-guide-payments { width: min(100%, 1220px); margin: 96px auto 0; text-align: center; }
+  .figma-guide-payments h2 { margin: 0; color: #494949; font-size: 38px; }
+  .figma-guide-payments p { margin: 12px 0 30px; color: #607580; font-size: 18px; }
+  .figma-guide-payments img { width: 100%; height: auto; object-fit: contain; }
 }
 
 @media (min-width: 1024px) and (max-width: 1280px) {

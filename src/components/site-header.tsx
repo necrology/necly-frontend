@@ -34,7 +34,7 @@ export function SiteHeader() {
     <header className={cn("site-header", open && "mobile-menu-open")}>
       <nav className="figma-desktop-site-nav" aria-label="Navigasi utama desktop" aria-hidden={!desktop}>
         <Link className="figma-desktop-brand" href="/" aria-label="Beranda Necly Services">
-          <span><Image src="/figma/homepage-logo.png" alt="" width={64} height={64} priority /></span>
+          <span><Image src="/design-assets/necly-logo.png" alt="" width={64} height={64} loading="eager" unoptimized /></span>
         </Link>
         <div className="figma-desktop-nav-links">
           <Link href="/products">Layanan</Link>

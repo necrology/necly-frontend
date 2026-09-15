@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowRight, LockKeyhole } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
@@ -49,6 +50,7 @@ function LoginContent() {
   return (
     <div className="auth-form">
       <div className="mobile-menu-button" style={{ display: "block" }}><BrandLogo href="/" /></div>
+      <div className="figma-desktop-auth-logo"><Image src="/design-assets/necly-logo.png" alt="Necly Services" width={112} height={111} loading="eager" unoptimized /></div>
       <div>
         <span className="eyebrow">Selamat datang kembali</span>
         <h1 className="h2" style={{ marginTop: 10 }}>Masuk ke Necly Services.</h1>

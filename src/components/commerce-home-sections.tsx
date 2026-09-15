@@ -8,19 +8,19 @@ import { ProductSearchBar } from "@/components/product-search-bar";
 const serviceCount = products.length + services.length;
 
 const stats = [
-  ["75.000+", "Pengguna", "purple", "/illustrations/mobile-sharing-hero.svg"],
-  ["1.200.850+", "Transaksi", "red", "/illustrations/product-workspace.svg"],
-  ["29", "Layanan", "yellow", "/illustrations/mobile-benefits.svg"],
-  ["9/10", "Kepuasan", "teal", "/illustrations/product-streaming.svg"],
+  ["75.000+", "Pengguna", "purple", "/illustrations/mobile-sharing-hero.svg", "/design-assets/stat-users.png"],
+  ["1.200.850+", "Transaksi", "red", "/illustrations/product-workspace.svg", "/design-assets/stat-transactions.png"],
+  ["29", "Layanan", "yellow", "/illustrations/mobile-benefits.svg", "/design-assets/stat-services.png"],
+  ["9/10", "Kepuasan", "teal", "/illustrations/product-streaming.svg", "/design-assets/stat-satisfaction.png"],
 ] as const;
 
 const benefits = [
-  ["Harga lebih hemat", "Nikmati layanan pilihan dengan biaya yang lebih terjangkau.", Tag],
-  ["Privasi tetap terjaga", "Informasi pesanan dan akses Anda ditangani dengan hati-hati.", LockKeyhole],
-  ["Bantuan yang responsif", "Tim kami siap membantu saat Anda membutuhkan informasi.", Headphones],
-  ["Layanan tepercaya", "Kami memilih layanan dan proses yang jelas untuk pelanggan.", ShieldCheck],
-  ["Pembayaran fleksibel", "Pilih metode pembayaran yang paling nyaman untuk Anda.", CreditCard],
-  ["Pengingat pembayaran", "Dapatkan pengingat sebelum masa layanan Anda berakhir.", BellRing],
+  ["Harga lebih hemat", "Diskon Hingga 70%", "Nikmati layanan pilihan dengan biaya yang lebih terjangkau.", Tag],
+  ["Privasi tetap terjaga", "Privasi Kamu Tetap Aman", "Informasi pesanan dan akses Anda ditangani dengan hati-hati.", LockKeyhole],
+  ["Bantuan yang responsif", "Layanan Pelanggan Cepat Tanggap", "Tim kami siap membantu saat Anda membutuhkan informasi.", Headphones],
+  ["Layanan tepercaya", "Akses Legal dan Terpercaya", "Kami memilih layanan dan proses yang jelas untuk pelanggan.", ShieldCheck],
+  ["Pembayaran fleksibel", "Pilihan Metode Pembayaran Lengkap", "Pilih metode pembayaran yang paling nyaman untuk Anda.", CreditCard],
+  ["Pengingat pembayaran", "Notifikasi Pengingat Pembayaran", "Dapatkan pengingat sebelum masa layanan Anda berakhir.", BellRing],
 ] as const;
 
 export function CommerceHomeSections() {
@@ -29,16 +29,16 @@ export function CommerceHomeSections() {
       <section className="commerce-stats-section">
         <div className="commerce-container">
           <header className="commerce-section-header center"><h2><span className="commerce-mobile-copy">Premium yang pas untuk kebutuhanmu</span><span className="figma-desktop-copy">Saatnya Upgrade Bareng!</span></h2><p><span className="commerce-mobile-copy">Pilih layanan favorit, tentukan durasinya, lalu nikmati harga yang lebih ringan bersama.</span><span className="figma-desktop-copy">Yuk Gabung sekarang!, patungan lebih hemat, dan nikmati<br />akses premium dengan aman dan legal.</span></p></header>
-          <div className="commerce-stats-grid">{stats.map(([value, label, tone, image]) => <article className={`commerce-stat-card ${tone}`} key={label}><Image src={image} alt="" width={240} height={136} /><div><strong>{value}</strong><span>{label}</span></div></article>)}</div>
+          <div className="commerce-stats-grid">{stats.map(([value, label, tone, mobileImage, desktopImage]) => <article className={`commerce-stat-card ${tone}`} key={label}><Image className="commerce-mobile-stat-art" src={mobileImage} alt="" width={240} height={136} /><Image className="figma-desktop-stat-art" src={desktopImage} alt="" width={664} height={490} loading="eager" unoptimized /><div><strong>{value}</strong><span>{label}</span></div></article>)}</div>
         </div>
       </section>
       <section className="commerce-benefits-section">
         <div className="commerce-container commerce-benefits-layout">
           <div className="commerce-benefits-visual">
-            <h2>Semua Benefit Buat Kamu</h2>
-            <div className="commerce-benefits-illustration"><Image src="/illustrations/payment-management-reference.png" width={368} height={348} alt="Ilustrasi perangkat digital" /></div>
+            <h2><span className="commerce-mobile-copy">Semua Benefit Buat Kamu</span><span className="figma-desktop-copy">Manfaat yang Kamu Dapat</span></h2>
+            <div className="commerce-benefits-illustration"><Image className="commerce-mobile-benefits-art" src="/illustrations/payment-management-reference.png" width={368} height={348} alt="Ilustrasi perangkat digital" /><Image className="figma-desktop-benefits-art" src="/design-assets/home-benefits.png" width={1404} height={1358} alt="Ilustrasi manfaat berlangganan bersama" unoptimized /></div>
           </div>
-          <div className="commerce-benefit-list">{benefits.map(([title, detail, Icon]) => <article key={title}><span className="commerce-benefit-icon"><Icon size={28} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</div>
+          <div className="commerce-benefit-list">{benefits.map(([title, desktopTitle, detail, Icon]) => <article key={title}><span className="commerce-benefit-icon"><Icon size={28} /></span><div><h3><span className="commerce-mobile-copy">{title}</span><span className="figma-desktop-copy">{desktopTitle}</span></h3><p>{detail}</p></div></article>)}</div>
         </div>
       </section>
       <section className="commerce-preview-section">

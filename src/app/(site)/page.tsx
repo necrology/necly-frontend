@@ -13,7 +13,7 @@ export default function HomePage() {
             <p>Temukan berbagai pilihan akun sharing dengan harga yang lebih bersahabat.</p>
             <Link className="figma-desktop-login" href="/login">Log In</Link>
           </div>
-          <Image className="figma-desktop-hero-art" src="/figma/homepage-hero.png" alt="Orang-orang berbagi layanan premium" width={630} height={424} priority />
+          <Image className="figma-desktop-hero-art" src="/design-assets/homepage-hero.png" alt="Orang-orang berbagi layanan premium" width={630} height={424} preload unoptimized />
         </div>
         <div className="commerce-container commerce-home-hero-inner">
           <div className="commerce-home-hero-copy">
