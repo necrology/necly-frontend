@@ -23,7 +23,7 @@ export function SiteHeader() {
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
-    const desktopQuery = window.matchMedia("(min-width: 1025px)");
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
     const syncDesktop = () => setDesktop(desktopQuery.matches);
     syncDesktop();
     desktopQuery.addEventListener("change", syncDesktop);

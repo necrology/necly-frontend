@@ -28,7 +28,7 @@ export function CommerceHomeSections() {
     <>
       <section className="commerce-stats-section">
         <div className="commerce-container">
-          <header className="commerce-section-header center"><h2>Premium yang pas untuk kebutuhanmu</h2><p>Pilih layanan favorit, tentukan durasinya, lalu nikmati harga yang lebih ringan bersama.</p></header>
+          <header className="commerce-section-header center"><h2><span className="commerce-mobile-copy">Premium yang pas untuk kebutuhanmu</span><span className="figma-desktop-copy">Saatnya Upgrade Bareng!</span></h2><p><span className="commerce-mobile-copy">Pilih layanan favorit, tentukan durasinya, lalu nikmati harga yang lebih ringan bersama.</span><span className="figma-desktop-copy">Yuk Gabung sekarang!, patungan lebih hemat, dan nikmati<br />akses premium dengan aman dan legal.</span></p></header>
           <div className="commerce-stats-grid">{stats.map(([value, label, tone, image]) => <article className={`commerce-stat-card ${tone}`} key={label}><Image src={image} alt="" width={240} height={136} /><div><strong>{value}</strong><span>{label}</span></div></article>)}</div>
         </div>
       </section>
