@@ -164,7 +164,7 @@ img, svg { max-width: 100%; }
 }
 
 /* Desktop-only composition: eliminate collisions and restore intentional grids. */
-@media (min-width: 1025px) {
+@media (min-width: 1024px) {
   .commerce-container { width: min(calc(100% - 64px), 1240px); }
   .site-header .site-nav { min-height: 56px; gap: 16px; }
   .site-header .nav-links { min-width: 0; margin-left: 20px; }
