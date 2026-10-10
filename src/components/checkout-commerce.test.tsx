@@ -70,7 +70,8 @@ describe("CheckoutCommerceClient", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
 
     await waitFor(() => expect(checkoutMock).toHaveBeenCalled());
-    expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: "one-month", quantity: 1 }]);
+    // QA baris 38: jumlah perangkat yang diklik ikut terkirim bersama item.
+    expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: "one-month", quantity: 1, device_count: 1 }]);
     expect(pushMock).toHaveBeenCalledWith("/payment/ord-123");
   });
 

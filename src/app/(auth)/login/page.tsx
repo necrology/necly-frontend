@@ -66,7 +66,7 @@ function LoginContent() {
         <PasswordField id="login-password" name="password" label="Kata sandi" autoComplete="current-password" placeholder="10–72 byte" error={errors.password} />
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14 }}>
           <label className="check-row"><input type="checkbox" /><span>Ingat saya</span></label>
-          <button className="button button-ghost button-sm" type="button">Lupa kata sandi?</button>
+          <Link className="button button-ghost button-sm" href="/forgot-password">Lupa kata sandi?</Link>
         </div>
         {errors.submit && <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>{errors.submit}</div>}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Sedang masuk…" : <>Masuk <ArrowRight size={14} /></>}</button>

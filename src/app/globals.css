@@ -1440,3 +1440,23 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-accordion-copy li { color: var(--commerce-muted); font-size: 12px; line-height: 1.75; }
 .commerce-accordion-copy strong { color: var(--commerce-ink); font-weight: 700; }
 .commerce-accordion-copy p { margin: 0; color: var(--commerce-muted); font-size: 12px; line-height: 1.75; }
+
+/* ---------- Laporan kendala: validasi, ceklis, dan cooldown (QA baris 55-57) ---------- */
+/* Baris 55: pesan validasi per-field tampil rapat di bawah inputnya. */
+.issue-page .issue-form .field-error { display: block; margin-top: 6px; font-size: 12px; font-weight: 600; }
+.issue-page .issue-form .input[aria-invalid="true"], .issue-page .issue-form .select[aria-invalid="true"], .issue-page .issue-form .textarea[aria-invalid="true"] { border-color: #e5484d; }
+.issue-submit-error { display: flex; align-items: flex-start; gap: 8px; margin: 16px 0 0; border-radius: 12px; padding: 11px 13px; color: #b3261e; background: #fdeceb; font-size: 12px; font-weight: 600; line-height: 1.6; }
+.issue-submit-error svg { flex: 0 0 auto; margin-top: 2px; }
+.issue-hint { display: flex; align-items: flex-start; gap: 8px; margin: 16px 0 0; border-radius: 12px; padding: 11px 13px; color: #6b5a1f; background: #fdf3dd; font-size: 12px; line-height: 1.7; }
+.issue-back { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; color: var(--commerce-muted); font-size: 12px; font-weight: 600; }
+/* Baris 56: ceklis beranimasi di samping "Laporan Diterima". */
+.issue-success { justify-items: start; }
+.issue-check { width: 66px; height: 66px; }
+.issue-check-ring { stroke: #16803c; stroke-width: 3; stroke-dasharray: 145; stroke-dashoffset: 145; animation: issue-check-draw 620ms ease-out forwards; }
+.issue-check-mark { stroke: #16803c; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 36; stroke-dashoffset: 36; animation: issue-check-draw 420ms ease-out 520ms forwards; }
+@keyframes issue-check-draw { to { stroke-dashoffset: 0; } }
+/* Baris 57: info cooldown 3 jam di layar "Laporan Diterima". */
+.issue-success .issue-cooldown { margin: 0; border-radius: 12px; padding: 11px 13px; color: #6b5a1f; background: #fdf3dd; font-size: 12px; line-height: 1.7; }
+@media (prefers-reduced-motion: reduce) {
+  .issue-check-ring, .issue-check-mark { animation: none; stroke-dashoffset: 0; }
+}

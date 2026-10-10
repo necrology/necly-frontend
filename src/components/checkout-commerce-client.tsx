@@ -85,9 +85,14 @@ export function CheckoutCommerceClient() {
         return;
       }
 
+      // Baris 38: jumlah perangkat yang dipilih ikut tersimpan per item pesanan.
       const orderItems = items.length
-        ? items.map((item) => ({ product_price_id: item.product_price_id ?? item.id, quantity: item.quantity }))
-        : [{ product_price_id: product.priceOptions[duration]?.id ?? product.id, quantity: 1 }];
+        ? items.map((item) => ({
+            product_price_id: item.product_price_id ?? item.id,
+            quantity: item.quantity,
+            device_count: item.selectedDevice ?? selectedDevice ?? undefined,
+          }))
+        : [{ product_price_id: product.priceOptions[duration]?.id ?? product.id, quantity: 1, device_count: selectedDevice ?? undefined }];
 
       const response = await checkoutApi.checkout(
         { voucher_code: voucher.trim().toUpperCase() || undefined, items: orderItems },

@@ -296,8 +296,84 @@ export const authApi = {
       body: JSON.stringify({ token }),
     }),
 
+  // The backend always answers 200 with the same body, whether or not the
+  // address exists, so the caller must not treat the response as proof that an
+  // account was found.
+  forgotPassword: (email: string) =>
+    apiRequest<{ message: string }>("/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (data: { token: string; password: string }) =>
+    apiRequest<{ message: string; user: ApiUser }>("/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   getMe: () => apiRequest<ApiUser>("/me"),
   googleLoginUrl: `${API_BASE}/auth/google`,
+};
+
+export type ApiIssueReport = {
+  id: string;
+  name: string;
+  email: string;
+  order_number: string;
+  category: string;
+  message: string;
+  status: string;
+  created_at: string;
+};
+
+/** Field-level messages the backend returns with a 422 on an issue report. */
+export type ReportFieldErrors = {
+  name?: string;
+  email?: string;
+  order_number?: string;
+  category?: string;
+  message?: string;
+};
+
+export class ReportApiError extends ApiError {
+  readonly fields: ReportFieldErrors;
+  readonly retryAfterSeconds: number | null;
+
+  constructor(message: string, status: number, payload: unknown, fields: ReportFieldErrors, retryAfterSeconds: number | null) {
+    super(message, status, payload);
+    this.name = "ReportApiError";
+    this.fields = fields;
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
+
+export const reportsApi = {
+  create: async (data: {
+    name: string;
+    email: string;
+    order_number: string;
+    category: string;
+    message: string;
+  }) => {
+    try {
+      return await apiRequest<{ message: string; report: ApiIssueReport }>("/public/reports", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        const payload = error.payload as { fields?: ReportFieldErrors; retry_after?: number } | undefined;
+        throw new ReportApiError(
+          error.message,
+          error.status,
+          error.payload,
+          payload?.fields ?? {},
+          typeof payload?.retry_after === "number" ? payload.retry_after : null,
+        );
+      }
+      throw error;
+    }
+  },
 };
 
 export const catalogApi = {
@@ -353,7 +429,10 @@ export const cartApi = {
 
 export const checkoutApi = {
   checkout: (
-    data: { voucher_code?: string; items: Array<{ product_price_id: string; quantity: number }> },
+    data: {
+      voucher_code?: string;
+      items: Array<{ product_price_id: string; quantity: number; device_count?: number }>;
+    },
     idempotencyKey: string,
   ) =>
     apiRequest<CheckoutResponse>("/checkout", {
