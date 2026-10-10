@@ -25,6 +25,14 @@ export function InstagramIcon(props: SocialIconProps) {
   );
 }
 
+export function WhatsappIcon(props: SocialIconProps) {
+  return (
+    <svg {...base(props)} fill="currentColor">
+      <path d="M12 2.2a9.8 9.8 0 0 0-8.4 14.8L2.2 21.8l5-1.3A9.8 9.8 0 1 0 12 2.2Zm0 1.8a8 8 0 1 1-4.1 14.9l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 0 1 12 4Zm-3.4 3.9c-.2 0-.5.1-.7.3-.3.3-.9.9-.9 2s.9 2.3 1 2.5c.1.2 1.7 2.7 4.2 3.7 2 .8 2.5.7 2.9.7.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.1-1.2 0-.1-.2-.2-.5-.3l-1.5-.7c-.2-.1-.4-.1-.5.1l-.7.9c-.1.2-.3.2-.5.1-.2-.1-1-.4-1.8-1.1-.7-.6-1.1-1.3-1.2-1.5-.1-.2 0-.4.1-.5l.4-.5c.1-.2.1-.3.2-.5 0-.2 0-.3-.1-.4l-.6-1.5c-.2-.4-.3-.5-.5-.5h-.2Z" />
+    </svg>
+  );
+}
+
 export function YoutubeIcon(props: SocialIconProps) {
   return (
     <svg {...base(props)} fill="currentColor">

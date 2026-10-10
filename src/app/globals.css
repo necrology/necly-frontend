@@ -1395,3 +1395,37 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .issue-page .issue-form .label { font-size: 14px; }
 .issue-page .issue-form .input, .issue-page .issue-form .select, .issue-page .issue-form .textarea { font-size: 14px; }
 .issue-page .issue-form .select { min-height: 58px; padding-block: 16px; }
+
+/* ---------- Footer lengkap (QA poin 16) ---------- */
+/* Logo disejajarkan dengan teks "Necly Service", bukan disingkat "NS". */
+.commerce-footer-content { align-items: start; }
+.commerce-footer-brand { display: block; }
+.commerce-footer-brand-head { display: flex; align-items: center; gap: 12px; }
+.commerce-footer-brand-head strong { color: #ffd44f; font-size: 17px; font-weight: 800; letter-spacing: -.03em; }
+.commerce-footer-brand p { max-width: 48ch; margin: 12px 0 0; color: #cdd3fb; font-size: 11px; line-height: 1.75; }
+.commerce-footer-columns { display: grid; gap: 18px; }
+.commerce-footer-block h2 { margin: 0 0 9px; color: #ffd44f; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.commerce-footer-block p { margin: 0; color: #cdd3fb; font-size: 11px; line-height: 1.7; }
+.commerce-footer-socials { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.commerce-footer-socials a { display: inline-flex; align-items: center; gap: 8px; color: #d8cbf7; font-size: 11px; font-weight: 600; }
+.commerce-footer-socials a:hover { color: #fff; }
+.commerce-footer-socials svg { flex: 0 0 auto; color: #ffd44f; }
+.commerce-footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 22px; border-top: 1px solid rgb(255 255 255 / .16); padding: 18px 0 26px; }
+.commerce-footer-bottom nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.commerce-footer-bottom > span { color: #cdd3fb; font-size: 11px; }
+@media (max-width: 767px) {
+  .commerce-footer-columns { gap: 16px; }
+  .commerce-footer-bottom { padding: 16px 0 22px; }
+}
+
+/* ---------- Halaman Testimoni (QA poin 16) ---------- */
+.testimonials-page { padding-top: 55px; padding-bottom: 96px; }
+.testimonials-empty { display: grid; justify-items: center; gap: 14px; max-width: 620px; margin-inline: auto; border: 1px solid var(--commerce-line); border-radius: 22px; padding: 38px 26px; background: #fff; text-align: center; }
+.testimonials-empty-icon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 18px; color: #4c1ef9; background: #ecebff; }
+.testimonials-empty h2 { margin: 4px 0 0; color: var(--commerce-ink); font-size: 17px; }
+.testimonials-empty p { margin: 0; color: var(--commerce-muted); font-size: 12px; line-height: 1.75; }
+.testimonials-empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 6px; }
+@media (max-width: 767px) {
+  .testimonials-page { padding-top: 38px; padding-bottom: 60px; }
+  .testimonials-empty { padding: 28px 20px; border-radius: 18px; }
+}

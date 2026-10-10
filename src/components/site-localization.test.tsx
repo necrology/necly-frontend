@@ -22,11 +22,19 @@ describe("site localization", () => {
     expect(screen.getByRole("navigation", { name: "Navigasi footer" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "FAQ" })).toHaveAttribute("href", "/faq");
     expect(screen.getByRole("link", { name: "Laporan Kendala" })).toHaveAttribute("href", "/laporan-kendala");
-    expect(screen.getByRole("link", { name: "Instagram" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Facebook" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "TikTok" })).not.toBeInTheDocument();
+    // Halaman baru yang diminta dokumen QA (poin 16).
+    expect(screen.getByRole("link", { name: "Testimoni" })).toHaveAttribute("href", "/testimoni");
+    expect(screen.getByRole("link", { name: "Tentang Kami" })).toHaveAttribute("href", "/about");
+    expect(screen.getByRole("heading", { name: "Sosmed" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Kategori Produk" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Hubungi Kami" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Jam Operasional" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "@neclyserviceofficial" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Necly Service" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "+62 895-2454-7106" })).not.toHaveLength(0);
+    expect(screen.getByText(/Kami hadir sebagai layanan digital/)).toBeInTheDocument();
     expect(screen.getByText("© 2026 Necly Services. All rights reserved.")).toBeInTheDocument();
-    expect(screen.getByText(/Solusi premium untuk hiburan tanpa batas/)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "TikTok" })).not.toBeInTheDocument();
     expect(screen.queryByText("Career services")).not.toBeInTheDocument();
   });
 });

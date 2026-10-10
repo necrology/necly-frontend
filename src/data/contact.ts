@@ -8,3 +8,13 @@ export const contact = {
 } as const;
 
 export const whatsappLink = (message: string) => `https://wa.me/${contact.whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+// Sosmed & jam operasional untuk footer (QA poin 16). Alamat Instagram mengikuti
+// username yang tertulis di dokumen QA; URL Facebook dan jam operasional masih
+// placeholder dan perlu dikonfirmasi sebelum dianggap final.
+export const socials = {
+  instagram: { label: "@neclyserviceofficial", href: "https://instagram.com/neclyserviceofficial" },
+  facebook: { label: "Necly Service", href: "https://www.facebook.com/neclyserviceofficial" },
+} as const;
+
+export const openingHours = "Senin – Sabtu, 09.00 – 21.00 WIB";

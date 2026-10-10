@@ -45,4 +45,22 @@ describe("QA fixes on static pages, footer entry, and report shortcut", () => {
     expect(css).toContain(".issue-page .issue-form .label { font-size: 14px; }");
     expect(css).toContain(".issue-page .issue-form .select { min-height: 58px; padding-block: 16px; }");
   });
+
+  it("membangun ulang footer: nama lengkap, sosmed, kategori, kontak, jam operasional (poin 16)", () => {
+    const footer = read("src", "components", "site-footer.tsx");
+    expect(footer).not.toContain("<strong>NS</strong>");
+    expect(footer).toContain("<strong>Necly Service</strong>");
+    expect(footer).toContain("Kami hadir sebagai layanan digital yang menyediakan berbagai pilihan akun sharing");
+    for (const heading of ["Sosmed", "Kategori Produk", "Hubungi Kami", "Jam Operasional"]) expect(footer).toContain(`<h2>${heading}</h2>`);
+    expect(footer).toContain('["Testimoni", "/testimoni"]');
+    expect(footer).toContain('["Tentang Kami", "/about"]');
+    expect(css).toContain(".commerce-footer-socials a { display: inline-flex; align-items: center; gap: 8px;");
+  });
+
+  it("menambahkan halaman Testimoni sebagai kerangka tanpa testimoni karangan (poin 16)", () => {
+    const testimoni = read("src", "app", "(site)", "testimoni", "page.tsx");
+    expect(testimoni).toContain("Belum ada testimoni yang ditampilkan");
+    expect(css).toContain(".testimonials-empty { display: grid; justify-items: center;");
+    expect(css).toContain(".testimonials-empty-icon {");
+  });
 });
