@@ -14,6 +14,8 @@ export type CartProduct = {
   selectedDuration?: string;
   selectedPrice?: number;
   selectedStock?: number;
+  /** Jumlah perangkat yang dipilih pembeli di halaman detail produk (QA baris 38). */
+  selectedDevice?: number;
 };
 
 export type CartItem = CartProduct & { quantity: number };

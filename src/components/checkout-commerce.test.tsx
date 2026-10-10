@@ -36,7 +36,7 @@ describe("CheckoutCommerceClient", () => {
   it("menampilkan bagian Ubah Durasi di samping Detail Pesanan", () => {
     render(<CheckoutCommerceClient />);
 
-    expect(screen.getByRole("heading", { name: "Pilih Durasi Berlangganan" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Pilih Durasi Berlangganan/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Detail Pesanan" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Ubah Durasi" })).toBeInTheDocument();
   });
@@ -66,6 +66,7 @@ describe("CheckoutCommerceClient", () => {
     checkoutMock.mockResolvedValue({ order: { id: "ord-123" }, payment: { id: "pay-1" }, checkout_url: "/payment/ord-123" });
 
     render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "1 Perangkat" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
 
     await waitFor(() => expect(checkoutMock).toHaveBeenCalled());
@@ -77,8 +78,21 @@ describe("CheckoutCommerceClient", () => {
     checkoutMock.mockRejectedValue(new Error("Stok paket habis."));
 
     render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "1 Perangkat" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Stok paket habis.");
+  });
+
+  // QA baris 38 & 39: jumlah perangkat wajib diklik, dan bila belum dipilih
+  // muncul peringatan merah alih-alih langsung memproses pembayaran.
+  it("mewajibkan pemilihan jumlah perangkat sebelum membayar", () => {
+    render(<CheckoutCommerceClient />);
+
+    expect(screen.getByRole("heading", { name: /Pilih Jumlah Perangkat/ })).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Pilih jumlah perangkat dahulu sebelum membayar.");
+    expect(checkoutMock).not.toHaveBeenCalled();
   });
 });

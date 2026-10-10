@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { contact } from "@/data/contact";
-import { products } from "@/data/products";
+import { defaultDeviceOptions, products } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { ProductBrand } from "@/components/product-brand";
 import { useCartStore } from "@/stores/cart-store";
@@ -37,10 +37,16 @@ export function CheckoutCommerceClient() {
   const [discount, setDiscount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  // Baris 38 & 39: jumlah perangkat juga wajib dipilih. Bila pembeli sudah
+  // memilihnya di halaman detail, pilihannya ikut dari keranjang.
+  const [device, setDevice] = useState<number | null>(null);
+  const [showWarnings, setShowWarnings] = useState(false);
   const product = useMemo(() => {
     const cartItem = items[0];
     return products.find((item) => item.id === cartItem?.id || item.slug === cartItem?.slug) ?? products[0];
   }, [items]);
+  const deviceOptions: number[] = product.deviceOptions?.length ? product.deviceOptions : [...defaultDeviceOptions];
+  const selectedDevice = device ?? items[0]?.selectedDevice ?? null;
   const price = product.priceOptions[duration]?.price ?? product.price;
   // The reference design subtracts the unique code from the package price (81.500 - 33 = 81.467).
   const total = Math.max(0, Math.max(0, price - discount) - UNIQUE_CODE);
@@ -62,6 +68,10 @@ export function CheckoutCommerceClient() {
 
   const pay = async () => {
     setError("");
+    if (selectedDevice === null) {
+      setShowWarnings(true);
+      return;
+    }
     setSubmitting(true);
     try {
       if (DEMO_MODE) {
@@ -111,8 +121,13 @@ export function CheckoutCommerceClient() {
     <div className="commerce-checkout-layout">
       <div className="commerce-checkout-content">
         <section className="commerce-checkout-section commerce-duration-section">
-          <h2>Pilih Durasi Berlangganan</h2>
+          <h2>Pilih Durasi Berlangganan <span className="commerce-required" aria-hidden="true">*</span></h2>
           {durationGrid}
+        </section>
+        <section className="commerce-checkout-section">
+          <h2>Pilih Jumlah Perangkat <span className="commerce-required" aria-hidden="true">*</span></h2>
+          <div className="commerce-duration-choice-grid">{deviceOptions.map((devices) => <button key={devices} className={selectedDevice === devices ? "selected" : ""} type="button" aria-pressed={selectedDevice === devices} onClick={() => setDevice(devices)}><span className="commerce-radio" />{devices} Perangkat</button>)}</div>
+          {showWarnings && selectedDevice === null && <p className="commerce-field-warning" role="alert"><AlertCircle size={15} />Pilih jumlah perangkat dahulu sebelum membayar.</p>}
         </section>
         <section className="commerce-checkout-section">
           <h2>Detail Pesanan</h2>
@@ -156,6 +171,7 @@ export function CheckoutCommerceClient() {
         <div><span>Harga Paket</span><strong>{formatRupiahLabel(price)}</strong></div>
         {discount > 0 && <div><span>Voucher</span><strong>-{formatRupiahLabel(discount)}</strong></div>}
         <div><span>Kode Unik</span><strong>{formatRupiahLabel(UNIQUE_CODE)}</strong></div>
+        <div><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
         <div><span>Metode</span><strong>{payment}</strong></div>
         <hr />
         <div className="commerce-checkout-total"><span>Total Bayar</span><b>{formatRupiahLabel(total)}</b></div>

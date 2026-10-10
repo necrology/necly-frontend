@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import type { CommerceProduct } from "@/data/products";
+import { defaultDeviceOptions, type CommerceProduct } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { ProductBrand } from "@/components/product-brand";
 import { useCartStore } from "@/stores/cart-store";
@@ -20,6 +20,10 @@ const accordions = [
 // Baris 37: isi card "Manfaat Layanan" memakai copy persis dari dokumen QA.
 const serviceBenefitsCopy = "Dengan berlangganan di Necly Service, kamu bisa menikmati harga lebih hemat, privasi yang terjaga, layanan yang responsif, akses yang terpercaya, berbagai pilihan pembayaran, serta pengingat pembayaran agar tidak terlewat";
 
+// Baris 36: isi card "Informasi" memakai copy dari dokumen QA. Jumlah perangkat
+// mengikuti pilihan pembeli supaya informasinya benar-benar sesuai pesanan.
+const deviceList = "Smartphone, Laptop/PC, Smart TV";
+
 const purchaseReasons = [
   ["Akses Legal dan Terpercaya", "Semua layanan kami sudah melalui proses yang aman dan terpercaya.", ShieldCheck],
   ["Harga Lebih Hemat", "Nikmati layanan premium dengan sistem patungan yang aman.", UsersRound],
@@ -29,21 +33,33 @@ const purchaseReasons = [
 
 export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   const router = useRouter();
-  const [selectedDuration, setSelectedDuration] = useState(0);
+  // Baris 38 & 39: durasi dan jumlah perangkat tidak dipilih otomatis supaya
+  // user wajib mengklik; kalau belum dipilih, tombol Pesan memunculkan warning.
+  const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
+  const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
+  const [showWarnings, setShowWarnings] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string>("Skema Harga");
   const [added, setAdded] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
   const durationSectionRef = useRef<HTMLHeadingElement>(null);
   const durationRowRef = useRef<HTMLDivElement>(null);
+  const deviceRowRef = useRef<HTMLDivElement>(null);
 
   // Pemilih durasi letaknya inline di halaman, bukan accordion. Tombol "Ubah"
   // karena itu mengantar user ke sana, bukan membuka accordion lain.
+  // `scrollIntoView` dipanggil opsional karena belum ada di semua environment.
+  const scrollTo = (ref: React.RefObject<HTMLElement | null>) => ref.current?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+
   const editDuration = () => {
-    durationSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    scrollTo(durationSectionRef);
     durationRowRef.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
   };
 
-  const option = product.priceOptions[selectedDuration] ?? product.priceOptions[0];
+  const deviceOptions: number[] = product.deviceOptions?.length ? product.deviceOptions : [...defaultDeviceOptions];
+  const option = selectedDuration === null ? product.priceOptions[0] : (product.priceOptions[selectedDuration] ?? product.priceOptions[0]);
+  const estimated = selectedDuration !== null;
+  const durationMissing = showWarnings && selectedDuration === null;
+  const deviceMissing = showWarnings && selectedDevice === null;
   const perMember = formatRupiahLabel(Math.round(product.providerPrice / product.groupMembers));
   const priceRows: Array<[string, string]> = [
     ["Nama Paket", product.packageName],
@@ -56,7 +72,13 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   ];
 
   const addToCart = () => {
-    addItem({ id: product.id, slug: product.slug, name: product.name, category: product.category, price: option.price, stock: product.stock, accessType: product.accessType, product_price_id: option.id, selectedDuration: option.label, selectedPrice: option.price, selectedStock: product.stock });
+    if (selectedDuration === null || selectedDevice === null) {
+      setShowWarnings(true);
+      scrollTo(selectedDevice === null ? deviceRowRef : durationRowRef);
+      return;
+    }
+    const duration = product.priceOptions[selectedDuration] ?? product.priceOptions[0];
+    addItem({ id: product.id, slug: product.slug, name: product.name, category: product.category, price: duration.price, stock: product.stock, accessType: product.accessType, product_price_id: duration.id, selectedDuration: duration.label, selectedPrice: duration.price, selectedStock: product.stock, selectedDevice });
     setAdded(true);
     router.push("/checkout");
   };
@@ -73,12 +95,16 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
             <ProductBrand product={product} />
             <h1>{product.name}</h1>
             <p>{product.description}</p>
-            <p className="commerce-detail-price">{formatRupiahLabel(option.price)} <small>/ bulan</small></p>
+            <p className="commerce-detail-price">{estimated ? formatRupiahLabel(option.price) : "—"} <small>/ bulan</small></p>
             <p className={`commerce-stock-ready ${product.stock > 0 ? "" : "is-empty"}`}>{product.stock > 0 ? <CheckCircle2 size={18} /> : <CircleAlert size={18} />}{product.stock > 0 ? "Stok tersedia, langsung bisa diproses!" : "Stok habis, saat ini masuk daftar tunggu"}</p>
-            <h2>Pilih Paket</h2>
+            <h2>Pilih Paket <span className="commerce-required" aria-hidden="true">*</span></h2>
             <button type="button" className="commerce-package-option selected" aria-pressed="true"><span className="commerce-radio" /><span><strong>{product.packageName}</strong><small>{product.brand}</small></span><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></button>
-            <h2 ref={durationSectionRef}>Pilih Durasi Berlangganan</h2>
+            <h2 ref={durationSectionRef}>Pilih Durasi Berlangganan <span className="commerce-required" aria-hidden="true">*</span></h2>
             <div className="commerce-duration-row" ref={durationRowRef}>{product.priceOptions.map((duration, index) => <button type="button" className={index === selectedDuration ? "selected" : ""} aria-pressed={index === selectedDuration} onClick={() => setSelectedDuration(index)} key={duration.id}>{duration.label}</button>)}</div>
+            {durationMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih durasi berlangganan dahulu sebelum memesan.</p>}
+            <h2>Pilih Jumlah Perangkat <span className="commerce-required" aria-hidden="true">*</span></h2>
+            <div className="commerce-duration-row" ref={deviceRowRef}>{deviceOptions.map((devices) => <button type="button" className={devices === selectedDevice ? "selected" : ""} aria-pressed={devices === selectedDevice} onClick={() => setSelectedDevice(devices)} key={devices}>{devices} Perangkat</button>)}</div>
+            {deviceMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih jumlah perangkat dahulu sebelum memesan.</p>}
           </div>
         </div>
         <div className="commerce-detail-accordions">
@@ -93,8 +119,17 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
                 <div className="commerce-accordion-content">
                   {title === "Skema Harga" ? (
                     <div className="commerce-price-scheme">{priceRows.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
+                  ) : title === "Informasi" ? (
+                    <div className="commerce-accordion-copy">
+                      <ol>
+                        <li>Layanan dapat diakses melalui <strong>{selectedDevice ?? deviceOptions[0]} perangkat/user</strong> sesuai dengan ketentuan produk.</li>
+                        <li>Perangkat yang dapat digunakan meliputi <strong>{deviceList}</strong>, dan perangkat lainnya yang mendukung layanan.</li>
+                        <li>Akses layanan akan <strong>otomatis berakhir 1 bulan setelah tanggal CO (checkout)</strong>. Jadi, jangan lupa cek masa aktif layanan secara berkala agar kamu bisa mengantisipasi perpanjangan dari jauh hari.</li>
+                      </ol>
+                      <p>Jika mengalami kendala, kamu dapat menghubungi <strong>kontak yang tertera</strong> atau menggunakan fitur <strong>&ldquo;Laporan Kendala&rdquo;</strong> melalui tombol di kiri bawah halaman.</p>
+                    </div>
                   ) : (
-                    <p>{title === "Informasi" ? product.summary : title === "Manfaat Layanan" ? serviceBenefitsCopy : "Pilih paket yang Anda inginkan, selesaikan pembayaran, lalu tim kami akan memproses akses layanan Anda."}</p>
+                    <p>{title === "Manfaat Layanan" ? serviceBenefitsCopy : "Pilih paket yang Anda inginkan, selesaikan pembayaran, lalu tim kami akan memproses akses layanan Anda."}</p>
                   )}
                 </div>
               )}
@@ -104,14 +139,15 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
       </div>
       <aside className="commerce-order-summary">
         <h2>Ringkasan Pesanan</h2>
-        <div className="commerce-summary-product"><div><ProductBrand product={product} compact /></div><div><strong>{product.name} - {product.packageName}</strong><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></div></div>
+        <div className="commerce-summary-product"><div><ProductBrand product={product} compact /></div><div><strong>{product.name} - {product.packageName}</strong><b>{estimated ? <>{formatRupiahLabel(option.price)} <small>/ bulan</small></> : "—"}</b></div></div>
         <div className="commerce-summary-line"><span>Paket Dipilih</span><strong>{product.packageName}</strong><small>{product.brand}</small></div>
-        <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration}>Ubah</button></span><strong>{option.label}</strong></div>
-        <div className="commerce-summary-total"><span>Total Biaya</span><b>{formatRupiahLabel(option.price)}</b></div>
+        <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration}>Ubah</button></span><strong>{estimated ? option.label : "Belum dipilih"}</strong></div>
+        <div className="commerce-summary-line"><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
+        <div className="commerce-summary-total"><span>Total Biaya</span><b>{estimated ? formatRupiahLabel(option.price) : "—"}</b></div>
         <button className="commerce-primary-button" type="button" onClick={addToCart}>{added ? "Lanjut ke checkout…" : <>Pesan <span>→</span></>}</button>
       </aside>
       <aside className="commerce-buy-reasons"><h2>Kenapa Beli di Sini?</h2>{purchaseReasons.map(([title, detail, Icon]) => <article key={title}><span><Icon size={25} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</aside>
-      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{formatRupiahLabel(option.price)}</b></span><button type="button" onClick={addToCart}>{added ? "Memproses…" : "Pesan"}</button></div>
+      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{estimated ? formatRupiahLabel(option.price) : "Pilih paket dahulu"}</b></span><button type="button" onClick={addToCart}>{added ? "Memproses…" : "Pesan"}</button></div>
       <Link className="commerce-detail-backlink" href="/products">Kembali ke Produk</Link>
     </div>
   );

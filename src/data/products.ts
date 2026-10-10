@@ -8,7 +8,14 @@ export type CommerceProduct = SubscriptionProduct & {
   providerPrice: number;
   groupMembers: number;
   discount: number;
+  // QA baris 38: pilihan "Jumlah Perangkat" per produk. Belum ada datanya di
+  // backend, jadi bila kosong UI memakai satu pilihan bawaan (lihat
+  // deviceOptionsOf di product-detail-client.tsx) dan tetap wajib diklik.
+  deviceOptions?: number[];
 };
+
+/** Pilihan perangkat yang tampil bila produk belum mencantumkan daftarnya. */
+export const defaultDeviceOptions = [1] as const;
 
 const legalTerms = "Akses layanan diproses melalui paket patungan yang aman dan sesuai ketentuan penyedia. Kami tidak meminta atau membagikan kata sandi akun pribadi Anda.";
 
