@@ -147,6 +147,7 @@ img, svg { max-width: 100%; }
    Card internals are compacted so the pair still fits a 360px viewport. */
 @media (max-width: 767px) {
   .commerce-container { width: min(calc(100% - 40px), 100%); }
+  .site-header, .site-header.mobile-menu-open, .commerce-mobile-nav { border-radius: 0; }
   .site-header .commerce-menu-trigger, .site-header .commerce-mobile-profile { width: 48px; height: 48px; }
   .site-header .commerce-menu-trigger svg, .site-header .commerce-mobile-profile svg { width: 30px; height: 30px; }
   .site-header .commerce-header-logo img { width: 40px; height: 40px; }
