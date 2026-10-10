@@ -1,11 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BellRing, CreditCard, Headphones, LockKeyhole, ShieldCheck, Tag } from "lucide-react";
+import { ArrowRight, BellRing, ChevronDown, CreditCard, Headphones, LockKeyhole, ShieldCheck, Tag } from "lucide-react";
 import { products } from "@/data/products";
+import { faqQuestions, subscriptionSteps } from "@/data/guide";
 import { services } from "@/data/seed";
 import { ProductSearchBar } from "@/components/product-search-bar";
 
 const serviceCount = products.length + services.length;
+
+const quickTrust = [
+  [`${serviceCount}+`, "Pilihan layanan premium"],
+  ["Aman", "Proses pemesanan terpercaya"],
+  ["24/7", "Customer support responsif"],
+] as const;
 
 const stats = [
   ["75.000+", "Pengguna", "purple", "/illustrations/mobile-sharing-hero.svg", "/design-assets/stat-users.png"],
@@ -28,7 +35,7 @@ export function CommerceHomeSections() {
     <>
       <section className="commerce-stats-section">
         <div className="commerce-container">
-          <header className="commerce-section-header center"><h2><span className="commerce-mobile-copy">Premium yang pas untuk kebutuhanmu</span><span className="figma-desktop-copy">Saatnya Upgrade Bareng!</span></h2><p><span className="commerce-mobile-copy">Pilih layanan favorit, tentukan durasinya, lalu nikmati harga yang lebih ringan bersama.</span><span className="figma-desktop-copy">Yuk Gabung sekarang!, patungan lebih hemat, dan nikmati<br />akses premium dengan aman dan legal.</span></p></header>
+          <header className="commerce-section-header center"><h2><span className="commerce-mobile-copy">Saatnya Upgrade Bareng!</span><span className="figma-desktop-copy">Saatnya Upgrade Bareng!</span></h2><p><span className="commerce-mobile-copy">Yuk Gabung sekarang!, patungan lebih hemat, dan nikmati akses premium dengan aman dan legal.</span><span className="figma-desktop-copy">Yuk Gabung sekarang!, patungan lebih hemat, dan nikmati<br />akses premium dengan aman dan legal.</span></p></header>
           <div className="commerce-stats-grid">{stats.map(([value, label, tone, mobileImage, desktopImage]) => <article className={`commerce-stat-card ${tone}`} key={label}><Image className="commerce-mobile-stat-art" src={mobileImage} alt="" width={240} height={136} /><Image className="figma-desktop-stat-art" src={desktopImage} alt="" width={664} height={490} loading="eager" unoptimized /><div><strong>{value}</strong><span>{label}</span></div></article>)}</div>
         </div>
       </section>
@@ -48,8 +55,22 @@ export function CommerceHomeSections() {
           <Link className="commerce-all-products-link" href="/products">Lihat Semua Produk <ArrowRight size={18} /></Link>
         </div>
       </section>
+      {/* Poin 18: Cara Berlangganan & FAQ juga tampil di beranda, setelah bagian produk. */}
+      <section className="commerce-guide-section">
+        <div className="commerce-container">
+          <header className="commerce-section-header center"><h2>Cara Berlangganan</h2><p>Ikuti langkah sederhana berikut untuk menikmati layanan premium pilihanmu.</p></header>
+          <div className="commerce-guide-steps">{subscriptionSteps.map(({ title, text, Icon }, index) => <article key={title}><span className="commerce-guide-number">{index + 1}</span><span className="commerce-guide-icon"><Icon size={22} /></span><div><h3>{title}</h3><p>{text}</p></div></article>)}</div>
+          <Link className="commerce-all-products-link" href="/cara-berlangganan">Baca Panduan Lengkap <ArrowRight size={18} /></Link>
+        </div>
+      </section>
+      <section className="commerce-faq-section">
+        <div className="commerce-container">
+          <header className="commerce-section-header center"><h2>Pertanyaan yang Sering Ditanyakan</h2><p>Informasi ringkas tentang layanan, pesanan, pembayaran, dan akses Anda.</p></header>
+          <div className="commerce-faq-list">{faqQuestions.map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={18} aria-hidden="true" /></summary><p>{answer}</p></details>)}</div>
+        </div>
+      </section>
       <section className="commerce-quick-trust">
-        <div className="commerce-container commerce-quick-trust-grid"><article><strong>{serviceCount}+</strong><span>Pilihan layanan premium</span></article><article><strong>Aman</strong><span>Proses pemesanan terpercaya</span></article><article><strong>24/7</strong><span>Customer support responsif</span></article></div>
+        <div className="commerce-container commerce-quick-trust-grid">{quickTrust.map(([value, label]) => <article key={label}><div className="commerce-quick-trust-copy"><strong>{value}</strong><span>{label}</span></div><span className="commerce-quick-trust-spark" aria-hidden="true"><i /><i /><i /></span></article>)}</div>
       </section>
     </>
   );

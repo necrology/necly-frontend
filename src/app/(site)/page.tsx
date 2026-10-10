@@ -20,7 +20,6 @@ export default function HomePage() {
             <h1>Langganan premium,<br /><span>lebih ringan bersama.</span></h1>
             <p>Temukan pilihan layanan digital untuk hiburan, kerja, dan kebutuhan sehari-hari dengan proses yang jelas.</p>
             <Link className="commerce-hero-cta" href="/products">Lihat Layanan <ArrowRight size={22} /></Link>
-            <div className="commerce-slider-dots"><i className="active" /><i /><i /></div>
           </div>
           <div className="commerce-home-hero-art"><Image src="/illustrations/mobile-sharing-hero.svg" alt="Ilustrasi patungan layanan premium" width={720} height={520} priority /><span>Lebih Hemat<br />Lebih Seru<br />Bersama!</span></div>
         </div>

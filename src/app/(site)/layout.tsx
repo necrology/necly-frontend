@@ -1,3 +1,4 @@
+import { BackToTop } from "@/components/back-to-top";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -7,6 +8,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <SiteHeader />
       <main id="main-content">{children}</main>
       <SiteFooter />
+      <BackToTop />
     </>
   );
 }

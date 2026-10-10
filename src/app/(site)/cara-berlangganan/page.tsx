@@ -1,16 +1,10 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, CreditCard, MailCheck, PackageCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { subscriptionSteps as steps } from "@/data/guide";
 
 export const metadata: Metadata = { title: "Cara Berlangganan", description: "Panduan memilih layanan, menyelesaikan pesanan, dan menerima akses Necly." };
-
-const steps = [
-  { title: "Pilih layanan", text: "Buka katalog, pilih layanan dan durasi yang sesuai kebutuhan Anda.", Icon: PackageCheck },
-  { title: "Isi data pesanan", text: "Masukkan email aktif agar tim dapat mengirim informasi atau undangan akses.", Icon: MailCheck },
-  { title: "Selesaikan pembayaran", text: "Pilih metode pembayaran yang tersedia dan selesaikan sebelum batas waktu.", Icon: CreditCard },
-  { title: "Akses diproses", text: "Pantau status pesanan. Akses diberikan sesuai skema produk dan kebijakan penyedia.", Icon: CheckCircle2 },
-];
 
 const desktopSteps = [
   { title: "Pilih layanan", text: "Pilih produk premium dan paket yang paling sesuai dengan kebutuhanmu.", image: "/design-assets/guide-step-1.png", width: 752, height: 839 },

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ChevronDown, Gift, Info, ShieldCheck, UsersRound, Zap } from "lucide-react";
+import { CheckCircle2, ChevronDown, CircleAlert, Flame, Gift, Info, ShieldCheck, Star, UsersRound, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -66,12 +66,12 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
             <Image src="/illustrations/product-streaming.svg" alt={`Ilustrasi ${product.name}`} fill priority sizes="(max-width: 767px) 100vw, 38vw" />
           </div>
           <div className="commerce-product-information">
-            <div className="commerce-product-labels"><span>Paling Populer</span><span>Rekomendasi</span></div>
+            <div className="commerce-product-labels"><span><Flame size={12} strokeWidth={2.5} aria-hidden="true" />Paling Populer</span><span><Star size={12} strokeWidth={2.5} aria-hidden="true" />Rekomendasi</span></div>
             <ProductBrand product={product} />
             <h1>{product.name}</h1>
             <p>{product.description}</p>
             <p className="commerce-detail-price">{formatRupiahLabel(option.price)} <small>/ bulan</small></p>
-            <p className="commerce-stock-ready"><CheckCircle2 size={18} />{product.stock > 0 ? "Stok tersedia, langsung bisa diproses!" : "Saat ini masuk daftar tunggu"}</p>
+            <p className={`commerce-stock-ready ${product.stock > 0 ? "" : "is-empty"}`}>{product.stock > 0 ? <CheckCircle2 size={18} /> : <CircleAlert size={18} />}{product.stock > 0 ? "Stok tersedia, langsung bisa diproses!" : "Stok habis, saat ini masuk daftar tunggu"}</p>
             <h2>Pilih Paket</h2>
             <button type="button" className="commerce-package-option selected" aria-pressed="true"><span className="commerce-radio" /><span><strong>{product.packageName}</strong><small>{product.brand}</small></span><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></button>
             <h2 ref={durationSectionRef}>Pilih Durasi Berlangganan</h2>

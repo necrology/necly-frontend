@@ -31,12 +31,12 @@ img, svg { max-width: 100%; }
 /* Header stays blue while its lower edge has a soft curve. */
 .site-header { overflow: visible; border-radius: 0 0 26px 26px; background: #4c1ef9; }
 .site-header .site-nav { min-height: 56px; position: relative; justify-content: space-between; }
-.site-header .commerce-menu-trigger, .site-header .commerce-mobile-profile { width: 34px; height: 34px; border-radius: 10px; }
-.site-header .commerce-menu-trigger svg { width: 20px; height: 20px; }
+.site-header .commerce-menu-trigger, .site-header .commerce-mobile-profile { width: 44px; height: 44px; border-radius: 12px; }
+.site-header .commerce-menu-trigger svg { width: 27px; height: 27px; }
 .site-header .commerce-mobile-profile { border-radius: 50%; }
-.site-header .commerce-mobile-profile svg { width: 21px; height: 21px; }
+.site-header .commerce-mobile-profile svg { width: 28px; height: 28px; }
 .site-header .commerce-header-logo { position: absolute; left: 50%; transform: translateX(-50%); margin: 0; }
-.site-header .commerce-header-logo img { width: 24px; height: 24px; padding: 2px; border-width: 1px; }
+.site-header .commerce-header-logo img { width: 34px; height: 34px; padding: 2px; border-width: 1px; }
 .site-header .nav-links { gap: 1px; margin-left: 10px; }
 .site-header .nav-link { min-height: 34px; padding: 0 8px; font-size: 11px; }
 .site-header .nav-link.active::after { right: 8px; bottom: 3px; left: 8px; }
@@ -61,7 +61,6 @@ img, svg { max-width: 100%; }
 .commerce-home-hero-inner { gap: 32px; }
 .commerce-home-hero-copy > p { margin-top: 13px; font-size: 13px; line-height: 1.6; }
 .commerce-hero-cta { min-height: 44px; margin-top: 20px; padding-inline: 21px; font-size: 13px; }
-.commerce-slider-dots { margin-top: 20px; }
 .commerce-stats-section, .commerce-benefits-section { padding: 54px 0; }
 .commerce-stats-grid { gap: 14px; }
 .commerce-stat-card { min-height: 138px; border-radius: 20px; padding: 16px; }
@@ -105,29 +104,33 @@ img, svg { max-width: 100%; }
 .faq-page, .issue-page { padding-top: 38px; padding-bottom: 60px; }
 .commerce-footer-content { gap: 24px; padding: 26px 0; }
 
-/* Narrow screens use one roomy, readable product card per row. */
+/* Narrow screens show two product cards per row, matching the mobile design.
+   Card internals are compacted so the pair still fits a 360px viewport. */
 @media (max-width: 767px) {
-  .commerce-container { width: min(calc(100% - 28px), 100%); }
-  .commerce-product-grid, .commerce-product-grid.preview-grid { grid-template-columns: 1fr; gap: 16px; }
+  .commerce-container { width: min(calc(100% - 40px), 100%); }
+  /* Section pembuka dinaikkan supaya user tidak perlu scroll jauh. */
+  .commerce-stats-section, .commerce-benefits-section { padding: 26px 0 46px; }
+  .commerce-section-header.center { margin-bottom: 22px; }
+  .commerce-product-grid, .commerce-product-grid.preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .commerce-product-card, .commerce-product-card * { min-width: 0; }
-  .commerce-product-card { width: 100%; padding: 16px; border-radius: 20px; overflow: hidden; }
-  .commerce-card-brand-row { flex-wrap: wrap; gap: 10px; }
+  .commerce-product-card { width: 100%; padding: 11px; border-radius: 16px; overflow: hidden; }
+  .commerce-card-brand-row { flex-wrap: wrap; gap: 7px; }
   .commerce-card-brand-row > * { min-width: 0; max-width: 100%; }
-  .commerce-card-brand-row .product-brand { flex: 1 1 170px; }
+  .commerce-card-brand-row .product-brand { flex: 1 1 100%; }
   .commerce-card-brand-row .commerce-badge { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; }
-  .commerce-card-copy { padding-top: 14px; }
+  .commerce-card-copy { padding-top: 11px; }
   .commerce-card-copy h3, .commerce-package, .commerce-benefits li { overflow-wrap: anywhere; }
   .commerce-price { flex-wrap: wrap; row-gap: 2px; }
   .commerce-stock-pill { white-space: normal; text-align: center; }
   .commerce-stock-bar { width: 100%; }
   .commerce-card-actions { min-width: 0; }
   .commerce-order-link, .commerce-scheme-link { min-width: 0; white-space: normal; text-align: center; }
-  .commerce-card-copy h3 { font-size: 15px; }
-  .commerce-package, .commerce-benefits { font-size: 11px; }
-  .commerce-price strong { font-size: 20px; }
-  .commerce-card-actions { flex-direction: row; align-items: center; }
-  .commerce-scheme-link { justify-content: flex-start; }
-  .commerce-order-link { width: auto; min-width: 102px; }
+  .commerce-card-copy h3 { font-size: 13px; }
+  .commerce-package, .commerce-benefits { font-size: 10px; }
+  .commerce-price strong { font-size: 17px; }
+  .commerce-card-actions { flex-direction: column; align-items: stretch; gap: 7px; }
+  .commerce-scheme-link { justify-content: center; }
+  .commerce-order-link { width: 100%; min-width: 0; }
   .commerce-catalog-hero { overflow: clip; }
   .commerce-catalog-hero-inner { min-width: 0; }
   .commerce-catalog-hero-art { width: min(100%, 230px); margin-inline: auto; }
@@ -140,7 +143,7 @@ img, svg { max-width: 100%; }
   .commerce-offer-copy > div { min-width: 0; }
   .commerce-offer-countdown { flex-wrap: wrap; }
   .commerce-time-values { max-width: 100%; }
-  .commerce-time-value { min-width: 42px; }
+  .commerce-time-value b { min-width: 42px; padding-inline: 5px; }
   .commerce-benefits-illustration { min-height: 210px; padding: 18px; }
   .commerce-benefits-illustration img { width: min(100%, 160px); }
 
@@ -203,8 +206,8 @@ img, svg { max-width: 100%; }
   .commerce-scheme-link { justify-content: center; }
   .commerce-order-link { width: 100%; }
   .commerce-offer-banner { padding: 14px; }
-  .commerce-time-value { min-width: 39px; padding-inline: 3px; }
-  .commerce-time-value i { right: -7px; }
+  .commerce-time-value b { min-width: 39px; padding-inline: 4px; }
+  .commerce-time-digits i { width: 12px; }
 }
 
 /* Figma homepage desktop composition. The existing storefront remains the

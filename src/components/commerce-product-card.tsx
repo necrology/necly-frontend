@@ -1,4 +1,4 @@
-import { CheckCircle2, Eye } from "lucide-react";
+import { CheckCircle2, Clock3, Eye, Flame, Sparkles, Trophy, Zap } from "lucide-react";
 import Link from "next/link";
 import type { CommerceProduct } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
@@ -10,12 +10,17 @@ type CommerceProductCardProps = {
   actionLabel?: string;
 };
 
+// Setiap badge punya ilustrasi sendiri supaya lebih menarik (permintaan QA baris 32).
+const badgeIcons = { Populer: Flame, "Best Seller": Trophy, Trending: Zap, Baru: Sparkles, Preorder: Clock3 } as const;
+
 export function CommerceProductCard({ product, compact = false, actionLabel = "Pesan" }: CommerceProductCardProps) {
+  const BadgeIcon = product.badge ? badgeIcons[product.badge] : null;
+
   return (
     <article className={`commerce-product-card ${compact ? "is-compact" : ""}`}>
       <div className="commerce-card-brand-row">
         <ProductBrand product={product} compact={compact} />
-        {product.badge && <span className={`commerce-badge ${product.badge.toLowerCase().replace(" ", "-")}`}>{product.badge}</span>}
+        {product.badge && BadgeIcon && <span className={`commerce-badge ${product.badge.toLowerCase().replace(" ", "-")}`}><BadgeIcon size={11} strokeWidth={2.5} aria-hidden="true" />{product.badge}</span>}
       </div>
       <div className="commerce-card-copy">
         <h3>{product.name}</h3>
@@ -31,7 +36,8 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
         )}
       </div>
       <div className="commerce-card-actions">
-        {!compact && <Link href={`/products/${product.slug}`} className="commerce-scheme-link"><Eye size={15} />Lihat Skema Harga</Link>}
+        {/* Baris 31: card di beranda juga harus punya icon mata + "skema harga". */}
+        <Link href={`/products/${product.slug}`} className="commerce-scheme-link"><Eye size={15} />Lihat Skema Harga</Link>
         <Link href={`/products/${product.slug}`} className="commerce-order-link">{actionLabel}</Link>
       </div>
     </article>

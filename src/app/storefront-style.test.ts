@@ -12,8 +12,8 @@ describe("storefront mobile safeguards", () => {
     expect(css).toContain("overflow-x: clip");
   });
 
-  it("keeps a violet header with a lower curve and makes product cards fit narrow screens", () => {
-    expect(css).toContain(".site-header { overflow: clip; border-radius: 0 0 26px 26px; background:");
-    expect(css).toContain(".commerce-product-grid, .commerce-product-grid.preview-grid { grid-template-columns: 1fr;");
+  it("keeps a blue header with a lower curve and fits two product cards per row on narrow screens", () => {
+    expect(css).toContain(".site-header { overflow: visible; border-radius: 0 0 26px 26px; background:");
+    expect(css).toContain(".commerce-product-grid, .commerce-product-grid.preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }");
   });
 });
