@@ -57,10 +57,19 @@ describe("QA fixes on static pages, footer entry, and report shortcut", () => {
     expect(css).toContain(".commerce-footer-socials a { display: inline-flex; align-items: center; gap: 8px;");
   });
 
-  it("menambahkan halaman Testimoni sebagai kerangka tanpa testimoni karangan (poin 16)", () => {
+  it("menyajikan testimoni dari endpoint, bukan ulasan karangan (poin 16)", () => {
     const testimoni = read("src", "app", "(site)", "testimoni", "page.tsx");
-    expect(testimoni).toContain("Belum ada testimoni yang ditampilkan");
+    const list = read("src", "components", "testimonials-client.tsx");
+    // The page itself stays a server component: it renders the client list,
+    // which is the only place that talks to the API.
+    expect(testimoni).toContain("<TestimonialsClient />");
+    expect(list).toContain("testimonialsApi");
+    expect(read("src", "lib", "api.ts")).toContain('`/public/testimonials${query ? `?${query}` : ""}`');
+    // No seeded or hardcoded reviews: the empty state is the only fallback.
+    expect(list).not.toContain("@/data/seed");
+    expect(list).toContain("Belum ada testimoni yang ditampilkan");
     expect(css).toContain(".testimonials-empty { display: grid; justify-items: center;");
     expect(css).toContain(".testimonials-empty-icon {");
+    expect(css).toContain(".testimonial-card {");
   });
 });

@@ -51,8 +51,10 @@ export function mapApiOrderToDashboardOrder(apiOrder: ApiOrder): DashboardOrder 
 
   return {
     id: apiOrder.number,
-    customer: apiOrder.items[0]?.product_name ?? "—",
-    customerEmail: "—",
+    // The admin list preloads the customer alongside the order; storefront
+    // responses omit it, so both columns fall back rather than guessing.
+    customer: apiOrder.customer?.name ?? "—",
+    customerEmail: apiOrder.customer?.email ?? "—",
     product: apiOrder.items[0]?.product_name ?? "—",
     service: apiOrder.items[0]?.product_name ?? "—",
     duration: apiOrder.items[0]?.duration_name ?? "—",

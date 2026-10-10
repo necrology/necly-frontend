@@ -108,8 +108,21 @@ export type ApiOrder = {
     checkout_url?: string;
     paid_at?: string | null;
   }>;
+  // Present on the admin order list and dashboard, which preload it. The
+  // storefront's own order endpoints do not, so it stays optional.
+  customer?: { id: string; name: string; email: string } | null;
   created_at: string;
   updated_at: string;
+};
+
+export type ApiTestimonial = {
+  id: string;
+  title: string;
+  body: string;
+  rating: number;
+  reviewer_name: string;
+  product_name?: string;
+  created_at: string;
 };
 
 export type CheckoutResponse = {
@@ -406,6 +419,20 @@ export const catalogApi = {
 
   getProductPrices: (id: string) =>
     apiRequest<{ prices: ApiProductPrice[] }>(`/public/products/${encodeURIComponent(id)}/prices`),
+};
+
+export const testimonialsApi = {
+  // Only testimonials an admin has approved come back from this endpoint; the
+  // backend drops the reviewer's email before serialising.
+  list: (params?: { page?: number; per_page?: number }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set("page", String(params.page));
+    if (params?.per_page) searchParams.set("per_page", String(params.per_page));
+    const query = searchParams.toString();
+    return apiRequest<{ testimonials: ApiTestimonial[]; page: number; per_page: number; total: number }>(
+      `/public/testimonials${query ? `?${query}` : ""}`,
+    );
+  },
 };
 
 export const cartApi = {

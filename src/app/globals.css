@@ -1460,3 +1460,17 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 @media (prefers-reduced-motion: reduce) {
   .issue-check-ring, .issue-check-mark { animation: none; stroke-dashoffset: 0; }
 }
+
+/* ---------- Testimoni: daftar ulasan disetujui (QA poin 16) ---------- */
+.testimonials-status { display: grid; justify-items: center; gap: 12px; padding: 42px 0; }
+.testimonials-warning { margin: 0 0 18px; border-radius: 12px; padding: 11px 13px; color: #6b5a1f; background: #fdf3dd; font-size: 12px; line-height: 1.7; }
+.testimonials-grid { display: grid; gap: 16px; margin: 0; padding: 0; list-style: none; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.testimonial-card { display: grid; gap: 10px; align-content: start; border: 1px solid var(--commerce-line); border-radius: 20px; padding: 22px 20px; background: #fff; }
+.testimonial-stars { display: inline-flex; gap: 3px; color: #d8cbb0; }
+.testimonial-stars .is-on { color: #c99400; }
+.testimonial-card h2 { margin: 0; color: var(--commerce-ink); font-size: 15px; line-height: 1.45; }
+.testimonial-card p { margin: 0; color: var(--commerce-muted); font-size: 12px; line-height: 1.8; }
+.testimonial-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 2px; }
+.testimonial-name { color: var(--commerce-ink); font-size: 12px; font-weight: 700; }
+.testimonial-product { border-radius: 999px; padding: 3px 9px; color: #4c1ef9; background: #ecebff; font-size: 10px; font-weight: 700; }
+.testimonial-meta time { color: var(--commerce-muted); font-size: 10px; }
