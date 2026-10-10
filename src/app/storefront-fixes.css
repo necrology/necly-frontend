@@ -70,7 +70,7 @@ img, svg { max-width: 100%; }
 .commerce-mobile-nav { overflow: hidden; border-radius: 0 0 26px 26px; background: #4c1ef9; }
 
 /* Keep the brand surfaces in the same palette across routes. */
-.commerce-home-hero { background: linear-gradient(135deg, #4c1ef9 0%, #6a44fb 100%); }
+.commerce-home-hero { background: #4c1ef9; }
 .commerce-catalog-hero, .commerce-checkout-hero { background: linear-gradient(135deg, #f7f4ff 0%, #ece5ff 100%); }
 .commerce-home-hero-copy h1, .commerce-catalog-hero h1, .commerce-checkout-hero h1,
 .commerce-section-header h2, .commerce-product-heading h2, .commerce-benefits-visual h2 { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; }
@@ -328,7 +328,7 @@ img, svg { max-width: 100%; }
   .figma-desktop-copy { display: inline; }
   .commerce-stats-grid { width: 805px; grid-template-columns: 166px 166px 157px 158px; gap: 52.67px; margin-inline: auto; }
   .commerce-stat-card { position: relative; min-height: 238px; border-radius: 0; padding: 0; overflow: visible; background: transparent !important; }
-  .commerce-stat-card::before { content: ""; position: absolute; top: 73px; left: 5px; width: 157px; height: 165px; border-radius: 0; background: #6a2cf0; }
+  .commerce-stat-card::before { content: ""; position: absolute; top: 73px; left: 5px; width: 157px; height: 165px; border-radius: 0; background: #4c1ef9; }
   .commerce-stat-card.red::before { left: 2px; background: #f2657a; }
   .commerce-stat-card.yellow::before { left: 0; background: #fcbd50; }
   .commerce-stat-card.teal::before { left: 0; background: #1fae8f; }

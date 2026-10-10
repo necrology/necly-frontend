@@ -5,7 +5,9 @@ import { describe, expect, it } from "vitest";
 const css = readFileSync(join(process.cwd(), "src/app/storefront-fixes.css"), "utf8");
 const globalCss = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
 const homeSections = readFileSync(join(process.cwd(), "src/components/commerce-home-sections.tsx"), "utf8");
+const mobileHomeSlides = readFileSync(join(process.cwd(), "src/components/mobile-home-slides.tsx"), "utf8");
 const productsPage = readFileSync(join(process.cwd(), "src/app/(site)/products/page.tsx"), "utf8");
+const loginPage = readFileSync(join(process.cwd(), "src/app/(auth)/login/page.tsx"), "utf8");
 
 describe("responsive storefront composition", () => {
   it("uses one primary mobile surface without the old body strip", () => {
@@ -18,11 +20,18 @@ describe("responsive storefront composition", () => {
     expect(css).toContain(".commerce-catalog-hero-art img, .figma-desktop-hero-art, .commerce-stat-art");
   });
 
-  it("uses responsive service artwork instead of the workspace placeholder", () => {
-    expect(productsPage).toContain('src: "/illustrations/mobile-sharing-hero.svg"');
-    expect(productsPage).toContain('src: "/design-assets/homepage-hero.png"');
+  it("uses the desktop service artwork at every viewport", () => {
+    expect(productsPage).toContain('src="/design-assets/homepage-hero.png"');
+    expect(productsPage).not.toContain("/illustrations/mobile-sharing-hero.svg");
+    expect(mobileHomeSlides).toContain('image: "/design-assets/homepage-hero.png"');
+    expect(mobileHomeSlides).not.toContain("/illustrations/mobile-sharing-hero.svg");
     expect(productsPage).not.toContain("/illustrations/product-workspace.svg");
-    expect(productsPage).toContain('<source media="(min-width: 768px)"');
+  });
+
+  it("keeps the login page within the dynamic viewport", () => {
+    expect(loginPage).toContain('className="auth-form auth-form-login"');
+    expect(globalCss).toContain("body:has(.auth-form-login)");
+    expect(globalCss).toContain("height: 100dvh;");
   });
 
   it("keeps both floating actions distinct from the primary background", () => {

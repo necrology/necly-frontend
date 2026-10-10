@@ -6,7 +6,7 @@ import { useState } from "react";
 
 const slides = [
   {
-    image: "/illustrations/mobile-sharing-hero.svg",
+    image: "/design-assets/homepage-hero.png",
     title: <>Mau Premium?<br />Patungan Aja!</>,
     description: "Temukan berbagai pilihan layanan premium dengan harga yang lebih bersahabat.",
     action: "Lihat Layanan",
