@@ -32,6 +32,11 @@ describe("site localization", () => {
     expect(screen.getByRole("link", { name: "@neclyserviceofficial" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Necly Service" })).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "+62 899-9228-241" })).not.toHaveLength(0);
+    // Alamat email baru dari pemilik (menggantikan neclyservice@gmail.com).
+    expect(screen.getByRole("link", { name: "necly.services@gmail.com" })).toHaveAttribute(
+      "href",
+      "mailto:necly.services@gmail.com",
+    );
     expect(screen.getByText(/Kami hadir sebagai layanan digital/)).toBeInTheDocument();
     expect(screen.getByText("© 2026 Necly Services. All rights reserved.")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "TikTok" })).not.toBeInTheDocument();
