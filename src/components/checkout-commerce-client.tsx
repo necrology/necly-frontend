@@ -1,8 +1,10 @@
 "use client";
 
-import { AlertCircle, BadgeCheck, ChevronRight, CircleDollarSign, Headphones, Info, LoaderCircle, LockKeyhole, MessageCircle, ShieldCheck, UsersRound, Zap } from "lucide-react";
+import { AlertCircle, BadgeCheck, ChevronRight, CircleDollarSign, Headphones, Info, LifeBuoy, LoaderCircle, LockKeyhole, Mail, ShieldCheck, UsersRound, Zap } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { contact } from "@/data/contact";
 import { products } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { ProductBrand } from "@/components/product-brand";
@@ -31,6 +33,7 @@ export function CheckoutCommerceClient() {
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [voucher, setVoucher] = useState("");
   const [voucherMessage, setVoucherMessage] = useState("");
+  const [voucherFailed, setVoucherFailed] = useState(false);
   const [discount, setDiscount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -89,15 +92,19 @@ export function CheckoutCommerceClient() {
 
   const payDisabled = manualMethodLocked || submitting;
 
+  // Baris 45: pesan voucher hanya "Kode Voucher Tidak dikenali" dalam warna merah.
+  // Kode promo tidak lagi diumbar lewat teks hint.
   const applyVoucher = () => {
     const code = voucher.trim().toUpperCase();
     if (code === "HEMAT10") {
       setDiscount(Math.round(price * 0.1));
+      setVoucherFailed(false);
       setVoucherMessage("Voucher HEMAT10 dipakai: hemat 10%.");
       return;
     }
     setDiscount(0);
-    setVoucherMessage(code ? "Kode voucher tidak dikenali. Coba HEMAT10." : "Masukkan kode voucher terlebih dahulu.");
+    setVoucherFailed(true);
+    setVoucherMessage(code ? "Kode Voucher Tidak dikenali." : "Masukkan kode voucher terlebih dahulu.");
   };
 
   return (
@@ -133,12 +140,15 @@ export function CheckoutCommerceClient() {
           ) : (
             <button type="button" onClick={() => setVoucherOpen(true)}><CircleDollarSign size={26} />Punya kode voucher Akunmu?<ChevronRight size={26} /></button>
           )}
-          {voucherMessage && <p className="commerce-checkout-fallback"><BadgeCheck size={16} />{voucherMessage}</p>}
+          {voucherMessage && (voucherFailed
+            ? <p className="commerce-voucher-message is-error" role="alert"><AlertCircle size={16} />{voucherMessage}</p>
+            : <p className="commerce-voucher-message"><BadgeCheck size={16} />{voucherMessage}</p>)}
         </section>
         <section className="commerce-checkout-section">
           <h2>Pilih Metode Pembayaran</h2>
           <div className="commerce-payment-grid">{payments.map(([label, tone]) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""}`} type="button" aria-pressed={payment === label} onClick={() => setPayment(label)}><span>{label}</span></button>)}</div>
-          <div className="commerce-payment-note"><Info size={25} /><p>Metode pembayaran bank dan retail (Alfamart) hanya tersedia untuk pilihan durasi berlangganan minimal 6 bulan.</p></div>
+          {/* Baris 46: catatan ini hanya relevan saat metode bank/retail yang dipilih. */}
+          {MANUAL_PAYMENTS.includes(payment) && <div className="commerce-payment-note"><Info size={25} /><p>Metode pembayaran bank dan retail (Alfamart) hanya tersedia untuk pilihan durasi berlangganan minimal 6 bulan.</p></div>}
         </section>
       </div>
       <aside className="commerce-checkout-summary">
@@ -150,9 +160,12 @@ export function CheckoutCommerceClient() {
         <hr />
         <div className="commerce-checkout-total"><span>Total Bayar</span><b>{formatRupiahLabel(total)}</b></div>
         <button className="commerce-primary-button" type="button" disabled={payDisabled} onClick={pay}>{submitting ? <LoaderCircle className="commerce-spin" size={20} /> : <LockKeyhole size={20} />}{submitting ? "Memproses…" : "Bayar"}</button>
-        {manualMethodLocked && <p className="commerce-checkout-fallback"><AlertCircle size={16} />Pilih durasi minimal 6 bulan untuk metode {payment}.</p>}
+        {/* Baris 49: teks peringatan dibuat merah dan diberi jarak dari tombol Bayar. */}
+        {manualMethodLocked && <p className="commerce-checkout-warning" role="alert"><AlertCircle size={16} />Pilih durasi minimal 6 bulan untuk metode {payment}.</p>}
         {error && <p className="commerce-checkout-error" role="alert"><AlertCircle size={16} />{error}</p>}
-        <a className="commerce-admin-button" href="https://wa.me/6282115297376" target="_blank" rel="noreferrer"><MessageCircle size={23} />Hubungi Admin</a>
+        {/* Baris 50: nomor WhatsApp lama tidak terdaftar, jadi arahkan ke halaman laporan kendala + email. */}
+        <Link className="commerce-admin-button" href="/laporan-kendala"><LifeBuoy size={22} />Lapor Kendala</Link>
+        <a className="commerce-checkout-mailto" href={`mailto:${contact.email}`}><Mail size={15} />{contact.email}</a>
       </aside>
       <aside className="commerce-transaction-trust"><h2>Transaksi Aman & Terpercaya</h2>{safeguards.map(([title, detail, Icon]) => <article key={title}><span><Icon size={25} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</aside>
       <div className="commerce-mobile-payment-bar"><span><small>Total Bayar</small><b>{formatRupiahLabel(total)}</b></span><button type="button" disabled={payDisabled} onClick={pay}>{submitting ? "Memproses…" : "Bayar"}</button></div>

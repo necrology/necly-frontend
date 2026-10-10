@@ -929,10 +929,12 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 
 /* ---------- Product detail ---------- */
 .commerce-detail-page { padding: 22px 0 84px; background: var(--commerce-paper); }
-.commerce-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-bottom: 18px; color: var(--commerce-muted); font-size: 11px; }
-.commerce-breadcrumbs a { display: inline-flex; align-items: center; gap: 5px; }
+.commerce-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-bottom: 18px; color: var(--commerce-muted); font-size: 13px; font-weight: 600; }
+.commerce-breadcrumbs a { display: inline-flex; align-items: center; gap: 6px; }
 .commerce-breadcrumbs a:hover { color: #4c1ef9; }
 .commerce-breadcrumbs a svg { color: #4c1ef9; }
+.commerce-breadcrumbs > svg { flex: 0 0 auto; color: #9aa0b4; }
+.commerce-breadcrumbs > span { color: #4c1ef9; font-weight: 700; }
 .commerce-product-detail-shell { display: grid; grid-template-columns: minmax(0, 1fr) 344px; gap: 24px; align-items: start; }
 .commerce-product-detail-main { min-width: 0; display: grid; gap: 22px; }
 .commerce-product-showcase { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: 28px; border: 1px solid var(--commerce-line); border-radius: 24px; padding: 24px; background: #fff; }
@@ -1331,4 +1333,23 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-guide-steps p { font-size: 10px; }
   .commerce-faq-list details { padding: 2px 14px; }
   .commerce-faq-list summary { font-size: 12px; }
+}
+
+/* ---------- Halaman checkout (QA baris 43–46, 49, 50) ---------- */
+/* Baris 44: ukuran ilustrasi disamakan dengan halaman detail order. */
+.commerce-checkout-hero-inner { grid-template-columns: minmax(0, 1fr) 360px; }
+.commerce-checkout-hero img { max-width: 360px; }
+/* Baris 45: pesan voucher tampil merah dan diberi jarak dari field. */
+.commerce-voucher-message { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: #147a58; font-size: 11px; font-weight: 600; }
+.commerce-voucher-message svg { flex: 0 0 auto; }
+.commerce-voucher-message.is-error { color: #c0261d; }
+/* Baris 49: peringatan durasi bank/alfa dibuat merah dan berjarak dari tombol Bayar. */
+.commerce-checkout-warning { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; border-radius: 12px; padding: 10px 12px; color: #c0261d; background: #fdeceb; font-size: 11px; font-weight: 600; }
+.commerce-checkout-warning svg { flex: 0 0 auto; }
+.commerce-checkout-mailto { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 10px; color: var(--commerce-muted); font-size: 11px; font-weight: 600; }
+.commerce-checkout-mailto:hover { color: #4c1ef9; }
+@media (max-width: 767px) {
+  .commerce-checkout-hero-inner { grid-template-columns: 1fr; }
+  .commerce-checkout-hero img { max-width: none; width: 100%; justify-self: stretch; }
+  .commerce-breadcrumbs { font-size: 13px; }
 }

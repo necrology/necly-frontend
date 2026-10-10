@@ -17,6 +17,9 @@ const accordions = [
   { title: "Skema Harga", icon: null },
 ] as const;
 
+// Baris 37: isi card "Manfaat Layanan" memakai copy persis dari dokumen QA.
+const serviceBenefitsCopy = "Dengan berlangganan di Necly Service, kamu bisa menikmati harga lebih hemat, privasi yang terjaga, layanan yang responsif, akses yang terpercaya, berbagai pilihan pembayaran, serta pengingat pembayaran agar tidak terlewat";
+
 const purchaseReasons = [
   ["Akses Legal dan Terpercaya", "Semua layanan kami sudah melalui proses yang aman dan terpercaya.", ShieldCheck],
   ["Harga Lebih Hemat", "Nikmati layanan premium dengan sistem patungan yang aman.", UsersRound],
@@ -91,7 +94,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
                   {title === "Skema Harga" ? (
                     <div className="commerce-price-scheme">{priceRows.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div>
                   ) : (
-                    <p>{title === "Informasi" ? product.summary : title === "Manfaat Layanan" ? product.benefits.join(" · ") : "Pilih paket yang Anda inginkan, selesaikan pembayaran, lalu tim kami akan memproses akses layanan Anda."}</p>
+                    <p>{title === "Informasi" ? product.summary : title === "Manfaat Layanan" ? serviceBenefitsCopy : "Pilih paket yang Anda inginkan, selesaikan pembayaran, lalu tim kami akan memproses akses layanan Anda."}</p>
                   )}
                 </div>
               )}
