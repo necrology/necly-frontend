@@ -939,7 +939,9 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-product-detail-main { min-width: 0; display: grid; gap: 22px; }
 .commerce-product-showcase { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: 28px; border: 1px solid var(--commerce-line); border-radius: 24px; padding: 24px; background: #fff; }
 .commerce-product-image { position: relative; aspect-ratio: 4 / 3; min-height: 300px; overflow: hidden; border-radius: 20px; background: linear-gradient(150deg, #f2e9ff, #e2d4ff); }
-.commerce-product-image img { object-fit: contain; object-position: center; padding: 26px; }
+.commerce-product-image > img { object-fit: contain; object-position: center; padding: 26px; }
+.commerce-product-image-brand { position: absolute; right: 22px; bottom: 20px; left: 22px; z-index: 2; min-height: 52px; justify-content: center; border: 1px solid rgb(255 255 255 / .85); padding: 9px 14px; background: rgb(255 255 255 / .94); box-shadow: 0 14px 30px rgb(41 16 104 / .18); backdrop-filter: blur(8px); }
+.commerce-product-image-brand .figma-desktop-product-assets { justify-content: center; }
 .commerce-product-information { display: grid; align-content: start; gap: 10px; }
 .commerce-product-labels { display: flex; flex-wrap: wrap; gap: 8px; }
 .commerce-product-labels span { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 5px 12px; color: #4c1ef9; background: #e8ebff; font-size: 10px; font-weight: 700; }
@@ -1234,7 +1236,7 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-product-detail-shell { grid-template-columns: 1fr; gap: 14px; }
   .commerce-product-showcase { gap: 16px; border-radius: 20px; padding: 14px; }
   .commerce-product-image { min-height: 190px; border-radius: 16px; }
-  .commerce-product-image img { padding: 16px; }
+  .commerce-product-image > img { padding: 16px; }
   .commerce-detail-price { font-size: 24px; }
   .commerce-duration-row { grid-template-columns: 1fr 1fr; }
   .commerce-detail-accordion { border-radius: 18px; }
@@ -1260,9 +1262,10 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-checkout-section { border-radius: 18px; padding: 16px; }
   .commerce-duration-choice-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
   .commerce-duration-choice-grid button { min-height: 48px; padding: 0 12px; font-size: 11px; }
-  .commerce-checkout-product { grid-template-columns: auto minmax(0, 1fr); gap: 13px; }
-  .commerce-checkout-product-art { padding: 12px; border-radius: 15px; }
-  .commerce-checkout-product > b { grid-column: 2; font-size: 14px; }
+  .commerce-checkout-product { grid-template-columns: 1fr; gap: 13px; }
+  .commerce-checkout-product-art { min-height: 64px; padding: 12px; border-radius: 15px; }
+  .commerce-checkout-product-art .product-brand { width: min(100%, 180px); }
+  .commerce-checkout-product > b { grid-column: 1; font-size: 14px; }
   .commerce-payment-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
   .commerce-payment-option { min-height: 62px; font-size: 11px; }
   .commerce-checkout-summary { position: static; border-radius: 18px; padding: 16px; }

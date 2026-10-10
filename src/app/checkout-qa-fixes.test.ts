@@ -22,7 +22,7 @@ describe("QA mobile fixes on checkout and product detail", () => {
   });
 
   it('voucher hanya menampilkan "Kode Voucher Tidak dikenali" berwarna merah (baris 45)', () => {
-    expect(client).toContain('"Kode Voucher Tidak dikenali."');
+    expect(client).toContain('"Kode Voucher Tidak dikenali"');
     expect(client).not.toContain("Coba HEMAT10");
     expect(css).toContain(".commerce-voucher-message.is-error { color: #c0261d; }");
   });

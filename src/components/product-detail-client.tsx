@@ -37,10 +37,12 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   // user wajib mengklik; kalau belum dipilih, tombol Pesan memunculkan warning.
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState(false);
   const [showWarnings, setShowWarnings] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string>("Skema Harga");
   const [added, setAdded] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
+  const packageSectionRef = useRef<HTMLHeadingElement>(null);
   const durationSectionRef = useRef<HTMLHeadingElement>(null);
   const durationRowRef = useRef<HTMLDivElement>(null);
   const deviceRowRef = useRef<HTMLDivElement>(null);
@@ -57,7 +59,8 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
 
   const deviceOptions: number[] = product.deviceOptions?.length ? product.deviceOptions : [...defaultDeviceOptions];
   const option = selectedDuration === null ? product.priceOptions[0] : (product.priceOptions[selectedDuration] ?? product.priceOptions[0]);
-  const estimated = selectedDuration !== null;
+  const estimated = selectedPackage && selectedDuration !== null;
+  const packageMissing = showWarnings && !selectedPackage;
   const durationMissing = showWarnings && selectedDuration === null;
   const deviceMissing = showWarnings && selectedDevice === null;
   const perMember = formatRupiahLabel(Math.round(product.providerPrice / product.groupMembers));
@@ -72,9 +75,9 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   ];
 
   const addToCart = () => {
-    if (selectedDuration === null || selectedDevice === null) {
+    if (!selectedPackage || selectedDuration === null || selectedDevice === null) {
       setShowWarnings(true);
-      scrollTo(selectedDevice === null ? deviceRowRef : durationRowRef);
+      scrollTo(!selectedPackage ? packageSectionRef : selectedDuration === null ? durationRowRef : deviceRowRef);
       return;
     }
     const duration = product.priceOptions[selectedDuration] ?? product.priceOptions[0];
@@ -89,16 +92,18 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
         <div className="commerce-product-showcase">
           <div className="commerce-product-image">
             <Image src="/illustrations/product-streaming.svg" alt={`Ilustrasi ${product.name}`} fill priority sizes="(max-width: 767px) 100vw, 38vw" />
+            <ProductBrand product={product} className="commerce-product-image-brand" />
           </div>
           <div className="commerce-product-information">
             <div className="commerce-product-labels"><span><Flame size={12} strokeWidth={2.5} aria-hidden="true" />Paling Populer</span><span><Star size={12} strokeWidth={2.5} aria-hidden="true" />Rekomendasi</span></div>
             <ProductBrand product={product} />
             <h1>{product.name}</h1>
             <p>{product.description}</p>
-            <p className="commerce-detail-price">{estimated ? formatRupiahLabel(option.price) : "—"} <small>/ bulan</small></p>
+            <p className="commerce-detail-price">{formatRupiahLabel(option.price)} <small>/ bulan</small></p>
             <p className={`commerce-stock-ready ${product.stock > 0 ? "" : "is-empty"}`}>{product.stock > 0 ? <CheckCircle2 size={18} /> : <CircleAlert size={18} />}{product.stock > 0 ? "Stok tersedia, langsung bisa diproses!" : "Stok habis, saat ini masuk daftar tunggu"}</p>
-            <h2>Pilih Paket <span className="commerce-required" aria-hidden="true">*</span></h2>
-            <button type="button" className="commerce-package-option selected" aria-pressed="true"><span className="commerce-radio" /><span><strong>{product.packageName}</strong><small>{product.brand}</small></span><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></button>
+            <h2 ref={packageSectionRef}>Pilih Paket <span className="commerce-required" aria-hidden="true">*</span></h2>
+            <button type="button" className={`commerce-package-option ${selectedPackage ? "selected" : ""}`} aria-pressed={selectedPackage} onClick={() => setSelectedPackage(true)}><span className="commerce-radio" /><span><strong>{product.packageName}</strong><small>{product.brand}</small></span><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></button>
+            {packageMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih paket dahulu sebelum memesan.</p>}
             <h2 ref={durationSectionRef}>Pilih Durasi Berlangganan <span className="commerce-required" aria-hidden="true">*</span></h2>
             <div className="commerce-duration-row" ref={durationRowRef}>{product.priceOptions.map((duration, index) => <button type="button" className={index === selectedDuration ? "selected" : ""} aria-pressed={index === selectedDuration} onClick={() => setSelectedDuration(index)} key={duration.id}>{duration.label}</button>)}</div>
             {durationMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih durasi berlangganan dahulu sebelum memesan.</p>}
@@ -141,13 +146,13 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
         <h2>Ringkasan Pesanan</h2>
         <div className="commerce-summary-product"><div><ProductBrand product={product} compact /></div><div><strong>{product.name} - {product.packageName}</strong><b>{estimated ? <>{formatRupiahLabel(option.price)} <small>/ bulan</small></> : "—"}</b></div></div>
         <div className="commerce-summary-line"><span>Paket Dipilih</span><strong>{product.packageName}</strong><small>{product.brand}</small></div>
-        <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration}>Ubah</button></span><strong>{estimated ? option.label : "Belum dipilih"}</strong></div>
+        <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration}>Ubah</button></span><strong>{selectedDuration !== null ? option.label : "Belum dipilih"}</strong></div>
         <div className="commerce-summary-line"><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
         <div className="commerce-summary-total"><span>Total Biaya</span><b>{estimated ? formatRupiahLabel(option.price) : "—"}</b></div>
         <button className="commerce-primary-button" type="button" onClick={addToCart}>{added ? "Lanjut ke checkout…" : <>Pesan <span>→</span></>}</button>
       </aside>
       <aside className="commerce-buy-reasons"><h2>Kenapa Beli di Sini?</h2>{purchaseReasons.map(([title, detail, Icon]) => <article key={title}><span><Icon size={25} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</aside>
-      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{estimated ? formatRupiahLabel(option.price) : "Pilih paket dahulu"}</b></span><button type="button" onClick={addToCart}>{added ? "Memproses…" : "Pesan"}</button></div>
+      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{estimated ? formatRupiahLabel(option.price) : "Lengkapi pilihan"}</b></span><button type="button" onClick={addToCart}>{added ? "Memproses…" : "Pesan"}</button></div>
       <Link className="commerce-detail-backlink" href="/products">Kembali ke Produk</Link>
     </div>
   );

@@ -1,24 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BellRing, ChevronDown, CreditCard, Headphones, LockKeyhole, ShieldCheck, Tag } from "lucide-react";
-import { products } from "@/data/products";
 import { faqQuestions, subscriptionSteps } from "@/data/guide";
-import { services } from "@/data/seed";
 import { ProductSearchBar } from "@/components/product-search-bar";
 
-const serviceCount = products.length + services.length;
-
 const quickTrust = [
-  [`${serviceCount}+`, "Pilihan layanan premium"],
+  ["17+", "Pilihan layanan premium"],
   ["Aman", "Proses pemesanan terpercaya"],
   ["24/7", "Customer support responsif"],
 ] as const;
 
 const stats = [
-  ["75.000+", "Pengguna", "purple", "/illustrations/mobile-sharing-hero.svg", "/design-assets/stat-users.png"],
-  ["1.200.850+", "Transaksi", "red", "/illustrations/product-workspace.svg", "/design-assets/stat-transactions.png"],
-  ["29", "Layanan", "yellow", "/illustrations/mobile-benefits.svg", "/design-assets/stat-services.png"],
-  ["9/10", "Kepuasan", "teal", "/illustrations/product-streaming.svg", "/design-assets/stat-satisfaction.png"],
+  ["75.000+", "Pengguna", "purple", "/design-assets/stat-users.png"],
+  ["1.200.850+", "Transaksi", "red", "/design-assets/stat-transactions.png"],
+  ["29", "Layanan", "yellow", "/design-assets/stat-services.png"],
+  ["9/10", "Kepuasan", "teal", "/design-assets/stat-satisfaction.png"],
 ] as const;
 
 const benefits = [
@@ -36,14 +32,14 @@ export function CommerceHomeSections() {
       <section className="commerce-stats-section">
         <div className="commerce-container">
           <header className="commerce-section-header center"><h2><span className="commerce-mobile-copy">Saatnya Upgrade Bareng!</span><span className="figma-desktop-copy">Saatnya Upgrade Bareng!</span></h2><p><span className="commerce-mobile-copy">Yuk Gabung sekarang!, patungan lebih hemat, dan nikmati akses premium dengan aman dan legal.</span><span className="figma-desktop-copy">Yuk Gabung sekarang!, patungan lebih hemat, dan nikmati<br />akses premium dengan aman dan legal.</span></p></header>
-          <div className="commerce-stats-grid">{stats.map(([value, label, tone, mobileImage, desktopImage]) => <article className={`commerce-stat-card ${tone}`} key={label}><Image className="commerce-mobile-stat-art" src={mobileImage} alt="" width={240} height={136} /><Image className="figma-desktop-stat-art" src={desktopImage} alt="" width={664} height={490} loading="eager" unoptimized /><div><strong>{value}</strong><span>{label}</span></div></article>)}</div>
+          <div className="commerce-stats-grid">{stats.map(([value, label, tone, image]) => <article className={`commerce-stat-card ${tone}`} key={label}><Image className="commerce-stat-art" src={image} alt="" width={664} height={490} loading="eager" unoptimized /><div><strong>{value}</strong><span>{label}</span></div></article>)}</div>
         </div>
       </section>
       <section className="commerce-benefits-section">
         <div className="commerce-container commerce-benefits-layout">
           <div className="commerce-benefits-visual">
             <h2><span className="commerce-mobile-copy">Semua Benefit Buat Kamu</span><span className="figma-desktop-copy">Manfaat yang Kamu Dapat</span></h2>
-            <div className="commerce-benefits-illustration"><Image className="commerce-mobile-benefits-art" src="/illustrations/payment-management-reference.png" width={368} height={348} alt="Ilustrasi perangkat digital" /><Image className="figma-desktop-benefits-art" src="/design-assets/home-benefits.png" width={1404} height={1358} alt="Ilustrasi manfaat berlangganan bersama" unoptimized /></div>
+            <div className="commerce-benefits-illustration"><Image className="commerce-benefits-art" src="/design-assets/home-benefits.png" width={1404} height={1358} alt="Ilustrasi manfaat berlangganan bersama" unoptimized /></div>
           </div>
           <div className="commerce-benefit-list">{benefits.map(([title, desktopTitle, detail, Icon]) => <article key={title}><span className="commerce-benefit-icon"><Icon size={28} /></span><div><h3><span className="commerce-mobile-copy">{title}</span><span className="figma-desktop-copy">{desktopTitle}</span></h3><p>{detail}</p></div></article>)}</div>
         </div>

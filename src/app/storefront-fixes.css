@@ -28,6 +28,30 @@ img, svg { max-width: 100%; }
 .product-brand-netflix, .product-brand-netflix .netflix-word { color: #e52d2d; }
 .product-brand-spotify, .product-brand-spotify .spotify-mark { color: #169b55; }
 
+/* Gunakan aset logo produk yang sama di mobile dan desktop. Fallback berbasis
+   teks sebelumnya membuat identitas brand berbeda pada layar kecil. */
+.product-brand-fallback { display: none; }
+.figma-desktop-product-assets {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  color: #12151b;
+}
+.figma-desktop-product-assets > img { width: auto; max-width: min(100%, 132px); height: auto; max-height: 31px; object-fit: contain; object-position: left center; }
+.figma-desktop-product-assets.asset-disney > img:first-child { max-width: 86px; }
+.figma-desktop-product-assets.asset-disney > img:last-child { max-width: 64px; }
+.figma-desktop-product-assets.asset-netflix > img { max-width: 82px; }
+.figma-desktop-product-assets.asset-nord > img { max-width: 118px; }
+.figma-desktop-product-assets.asset-youtube > img { width: auto; max-width: 76px; height: 31px; }
+.youtube-premium-label { color: #2b2b38; font-size: 11px; font-weight: 700; letter-spacing: -.02em; }
+.spotify-asset-crop { position: relative; width: 112px; height: 32px; display: block; overflow: hidden; }
+.spotify-asset-crop img { position: absolute; top: -40px; left: 0; width: 112px; max-width: none; height: 112px; }
+.product-brand.compact .figma-desktop-product-assets { height: 30px; }
+
 /* Header stays blue while its lower edge has a soft curve. */
 .site-header { overflow: visible; border-radius: 0 0 26px 26px; background: #4c1ef9; }
 .site-header .site-nav { min-height: 56px; position: relative; justify-content: space-between; }
@@ -54,7 +78,22 @@ img, svg { max-width: 100%; }
 /* Do not enlarge low-resolution raster illustration. */
 .commerce-benefits-illustration { min-height: 280px; display: grid; place-items: center; }
 .commerce-benefits-illustration img { width: min(100%, 184px); height: auto; image-rendering: auto; }
+.commerce-benefits-illustration .commerce-benefits-art { width: min(100%, 360px); }
 .commerce-home-hero-art img, .commerce-catalog-hero-art img, .commerce-stat-card img { object-fit: contain; }
+
+@keyframes commerce-art-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.commerce-home-hero-art img, .figma-desktop-hero-art { animation: commerce-art-float 5.5s ease-in-out infinite; }
+.commerce-stat-art { animation: commerce-art-float 4.8s ease-in-out infinite; }
+.commerce-stat-card:nth-child(2) .commerce-stat-art { animation-delay: -.8s; }
+.commerce-stat-card:nth-child(3) .commerce-stat-art { animation-delay: -1.6s; }
+.commerce-stat-card:nth-child(4) .commerce-stat-art { animation-delay: -2.4s; }
+.commerce-benefits-art { animation: commerce-art-float 6.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .commerce-home-hero-art img, .figma-desktop-hero-art, .commerce-stat-art, .commerce-benefits-art { animation: none; }
+}
 
 /* Compact public-page rhythm: preserve readability while removing oversized gaps. */
 .commerce-home-hero { padding: 42px 0 36px; }
@@ -108,6 +147,9 @@ img, svg { max-width: 100%; }
    Card internals are compacted so the pair still fits a 360px viewport. */
 @media (max-width: 767px) {
   .commerce-container { width: min(calc(100% - 40px), 100%); }
+  .site-header .commerce-menu-trigger, .site-header .commerce-mobile-profile { width: 48px; height: 48px; }
+  .site-header .commerce-menu-trigger svg, .site-header .commerce-mobile-profile svg { width: 30px; height: 30px; }
+  .site-header .commerce-header-logo img { width: 40px; height: 40px; }
   /* Section pembuka dinaikkan supaya user tidak perlu scroll jauh. */
   .commerce-stats-section, .commerce-benefits-section { padding: 26px 0 46px; }
   .commerce-section-header.center { margin-bottom: 22px; }
@@ -145,7 +187,7 @@ img, svg { max-width: 100%; }
   .commerce-time-values { max-width: 100%; }
   .commerce-time-value b { min-width: 42px; padding-inline: 5px; }
   .commerce-benefits-illustration { min-height: 210px; padding: 18px; }
-  .commerce-benefits-illustration img { width: min(100%, 160px); }
+  .commerce-benefits-illustration .commerce-benefits-art { width: min(100%, 320px); }
 
   /* Subscription guide: compact document flow; the help card must never float over steps. */
   .support-hero { padding: 34px 0 30px; }
@@ -201,7 +243,7 @@ img, svg { max-width: 100%; }
 }
 
 @media (max-width: 390px) {
-  .commerce-container { width: min(calc(100% - 24px), 100%); }
+  .commerce-container { width: min(calc(100% - 40px), 100%); }
   .commerce-card-actions { flex-direction: column; align-items: stretch; }
   .commerce-scheme-link { justify-content: center; }
   .commerce-order-link { width: 100%; }
@@ -217,11 +259,8 @@ img, svg { max-width: 100%; }
 .figma-desktop-copy,
 .figma-desktop-stat-art,
 .figma-desktop-benefits-art,
-.figma-desktop-product-assets,
 .figma-desktop-auth-logo,
 .figma-desktop-subscription-guide { display: none; }
-
-.product-brand-fallback { display: contents; }
 
 @media (min-width: 1024px) {
   body:has(.figma-desktop-home-hero) { background: #f4f4f4; }
@@ -280,8 +319,6 @@ img, svg { max-width: 100%; }
   .commerce-stats-section .commerce-section-header p { margin-top: 16px; color: #494949; font-family: "Nunito Sans", sans-serif; font-size: 19px; font-weight: 600; line-height: 25px; }
   .commerce-mobile-copy { display: none; }
   .figma-desktop-copy { display: inline; }
-  .commerce-mobile-stat-art { display: none; }
-  .figma-desktop-stat-art { display: block; }
   .commerce-stats-grid { width: 805px; grid-template-columns: 166px 166px 157px 158px; gap: 52.67px; margin-inline: auto; }
   .commerce-stat-card { position: relative; min-height: 238px; border-radius: 0; padding: 0; overflow: visible; background: transparent !important; }
   .commerce-stat-card::before { content: ""; position: absolute; top: 73px; left: 5px; width: 157px; height: 165px; border-radius: 0; background: #6a2cf0; }
@@ -304,8 +341,7 @@ img, svg { max-width: 100%; }
   .commerce-benefits-visual h2 { grid-column: 1 / -1; margin: 0 0 36px; color: #494949; font-family: "Nunito Sans", sans-serif; font-size: 46px; font-weight: 700; line-height: 1.2; text-align: center; letter-spacing: 0; }
   .commerce-benefits-visual h2::after { display: none; }
   .commerce-benefits-illustration { grid-column: 2; grid-row: 2 / span 3; min-height: 0; border-radius: 0; padding: 0; background: transparent; }
-  .commerce-mobile-benefits-art { display: none; }
-  .commerce-benefits-illustration .figma-desktop-benefits-art { width: 100%; height: auto; display: block; border-radius: 0; }
+  .commerce-benefits-illustration .commerce-benefits-art { width: 100%; height: auto; display: block; border-radius: 0; }
   .commerce-benefit-list { display: contents; }
   .commerce-benefit-list article { align-items: center; gap: 18px; }
   .commerce-benefit-list article:nth-child(-n + 3) { grid-column: 1; flex-direction: row-reverse; text-align: right; }

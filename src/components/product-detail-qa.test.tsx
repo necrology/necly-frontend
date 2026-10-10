@@ -27,6 +27,7 @@ describe("QA baris 36, 38, dan 39 pada halaman detail produk", () => {
 
     fireEvent.click(screen.getAllByRole("button", { name: /Pesan/ })[0]);
 
+    expect(screen.getByText("Pilih paket dahulu sebelum memesan.")).toBeInTheDocument();
     expect(screen.getByText("Pilih durasi berlangganan dahulu sebelum memesan.")).toBeInTheDocument();
     expect(screen.getByText("Pilih jumlah perangkat dahulu sebelum memesan.")).toBeInTheDocument();
     expect(pushMock).not.toHaveBeenCalled();
@@ -35,6 +36,7 @@ describe("QA baris 36, 38, dan 39 pada halaman detail produk", () => {
   it("mengizinkan pemesanan setelah durasi dan perangkat diklik", () => {
     render(<ProductDetailClient product={product} />);
 
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(product.packageName) }));
     fireEvent.click(screen.getByRole("button", { name: "1 Bulan" }));
     fireEvent.click(screen.getByRole("button", { name: "1 Perangkat" }));
     fireEvent.click(screen.getAllByRole("button", { name: /Pesan/ })[0]);

@@ -119,7 +119,7 @@ export function CheckoutCommerceClient() {
     }
     setDiscount(0);
     setVoucherFailed(true);
-    setVoucherMessage(code ? "Kode Voucher Tidak dikenali." : "Masukkan kode voucher terlebih dahulu.");
+    setVoucherMessage(code ? "Kode Voucher Tidak dikenali" : "Masukkan kode voucher terlebih dahulu.");
   };
 
   return (

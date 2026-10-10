@@ -21,7 +21,7 @@ export default function HomePage() {
             <p>Temukan pilihan layanan digital untuk hiburan, kerja, dan kebutuhan sehari-hari dengan proses yang jelas.</p>
             <Link className="commerce-hero-cta" href="/products">Lihat Layanan <ArrowRight size={22} /></Link>
           </div>
-          <div className="commerce-home-hero-art"><Image src="/illustrations/mobile-sharing-hero.svg" alt="Ilustrasi patungan layanan premium" width={720} height={520} priority /><span>Lebih Hemat<br />Lebih Seru<br />Bersama!</span></div>
+          <div className="commerce-home-hero-art"><Image src="/design-assets/homepage-hero.png" alt="Orang-orang berbagi layanan premium" width={630} height={424} priority unoptimized /><span>Lebih Hemat<br />Lebih Seru<br />Bersama!</span></div>
         </div>
       </section>
       <CommerceHomeSections />
