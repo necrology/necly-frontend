@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
@@ -8,13 +8,30 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
 describe("site localization", () => {
   it("uses Indonesian navigation and accessible labels", () => {
     render(<SiteHeader />);
-    expect(screen.getByRole("link", { name: "Beranda" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Layanan" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Cara Berlangganan" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Laporan Kendala" })).toBeInTheDocument();
+    const primaryNavigation = screen.getByRole("navigation", { name: "Navigasi utama" });
+    expect(within(primaryNavigation).getByRole("link", { name: "Beranda" })).toBeInTheDocument();
+    expect(within(primaryNavigation).getByRole("link", { name: "Layanan" })).toBeInTheDocument();
+    expect(within(primaryNavigation).getByRole("link", { name: "Cara Berlangganan" })).toBeInTheDocument();
+    expect(within(primaryNavigation).getByRole("link", { name: "Laporan Kendala" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Buka navigasi" })).toBeInTheDocument();
     // The drawer stays out of the accessibility tree until it is opened.
-    expect(screen.getByRole("link", { name: "Log In" })).toBeInTheDocument();
+    expect(within(primaryNavigation).getByRole("link", { name: "Log In" })).toBeInTheDocument();
+  });
+
+  it("makes the closed mobile navigation inert and restores focus before closing it", () => {
+    render(<SiteHeader />);
+    const trigger = screen.getByRole("button", { name: "Buka navigasi" });
+    const mobileNavigation = document.querySelector<HTMLElement>("#mobile-navigation");
+    expect(mobileNavigation).toHaveAttribute("inert");
+
+    fireEvent.click(trigger);
+    expect(mobileNavigation).not.toHaveAttribute("inert");
+    const layananLink = within(mobileNavigation!).getByRole("link", { name: "Layanan" });
+    layananLink.addEventListener("click", (event) => event.preventDefault());
+    fireEvent.click(layananLink);
+
+    expect(trigger).toHaveFocus();
+    expect(mobileNavigation).toHaveAttribute("inert");
   });
 
   it("keeps the footer Indonesian and links to real storefront routes", () => {
