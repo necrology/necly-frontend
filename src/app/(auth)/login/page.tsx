@@ -52,9 +52,9 @@ function LoginContent() {
       <div className="mobile-menu-button" style={{ display: "block" }}><BrandLogo href="/" /></div>
       <div className="figma-desktop-auth-logo"><Image src="/design-assets/necly-logo.png" alt="Necly Services" width={112} height={111} loading="eager" unoptimized /></div>
       <div>
-        <span className="eyebrow">Selamat datang kembali</span>
+        <span className="eyebrow">Senang Bertemu Kembali</span>
         <h1 className="h2" style={{ marginTop: 10 }}>Masuk ke Necly Services.</h1>
-        <p className="muted" style={{ marginBottom: 0 }}>{DEMO_MODE ? "Mode demo aktif. Data login tidak akan dikirim." : "Kelola pesanan dan akses langganan Anda."}</p>
+        <p className="muted" style={{ marginTop: 14, marginBottom: 0 }}>{DEMO_MODE ? "Mode demo aktif. Data login tidak akan dikirim." : "Kelola pesanan dan akses langganan Anda."}</p>
       </div>
       {submitted && <div className="demo-banner" role="status"><LockKeyhole size={15} /><span>Validasi demo berhasil. Tidak ada sesi atau akun yang dibuat.</span></div>}
       <form onSubmit={submit} style={{ display: "grid", gap: 18 }} noValidate>

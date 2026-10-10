@@ -4,7 +4,7 @@ import { CheckCircle2, ChevronDown, Gift, Info, ShieldCheck, UsersRound, Zap } f
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { CommerceProduct } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { ProductBrand } from "@/components/product-brand";
@@ -30,6 +30,15 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   const [openAccordion, setOpenAccordion] = useState<string>("Skema Harga");
   const [added, setAdded] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
+  const durationSectionRef = useRef<HTMLHeadingElement>(null);
+  const durationRowRef = useRef<HTMLDivElement>(null);
+
+  // Pemilih durasi letaknya inline di halaman, bukan accordion. Tombol "Ubah"
+  // karena itu mengantar user ke sana, bukan membuka accordion lain.
+  const editDuration = () => {
+    durationSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    durationRowRef.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+  };
 
   const option = product.priceOptions[selectedDuration] ?? product.priceOptions[0];
   const perMember = formatRupiahLabel(Math.round(product.providerPrice / product.groupMembers));
@@ -65,8 +74,8 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
             <p className="commerce-stock-ready"><CheckCircle2 size={18} />{product.stock > 0 ? "Stok tersedia, langsung bisa diproses!" : "Saat ini masuk daftar tunggu"}</p>
             <h2>Pilih Paket</h2>
             <button type="button" className="commerce-package-option selected" aria-pressed="true"><span className="commerce-radio" /><span><strong>{product.packageName}</strong><small>{product.brand}</small></span><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></button>
-            <h2>Pilih Durasi Berlangganan</h2>
-            <div className="commerce-duration-row">{product.priceOptions.map((duration, index) => <button type="button" className={index === selectedDuration ? "selected" : ""} aria-pressed={index === selectedDuration} onClick={() => setSelectedDuration(index)} key={duration.id}>{duration.label}</button>)}</div>
+            <h2 ref={durationSectionRef}>Pilih Durasi Berlangganan</h2>
+            <div className="commerce-duration-row" ref={durationRowRef}>{product.priceOptions.map((duration, index) => <button type="button" className={index === selectedDuration ? "selected" : ""} aria-pressed={index === selectedDuration} onClick={() => setSelectedDuration(index)} key={duration.id}>{duration.label}</button>)}</div>
           </div>
         </div>
         <div className="commerce-detail-accordions">
@@ -94,7 +103,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
         <h2>Ringkasan Pesanan</h2>
         <div className="commerce-summary-product"><div><ProductBrand product={product} compact /></div><div><strong>{product.name} - {product.packageName}</strong><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></div></div>
         <div className="commerce-summary-line"><span>Paket Dipilih</span><strong>{product.packageName}</strong><small>{product.brand}</small></div>
-        <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={() => setOpenAccordion("Skema Harga")}>Ubah</button></span><strong>{option.label}</strong></div>
+        <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration}>Ubah</button></span><strong>{option.label}</strong></div>
         <div className="commerce-summary-total"><span>Total Biaya</span><b>{formatRupiahLabel(option.price)}</b></div>
         <button className="commerce-primary-button" type="button" onClick={addToCart}>{added ? "Lanjut ke checkout…" : <>Pesan <span>→</span></>}</button>
       </aside>

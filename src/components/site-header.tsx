@@ -30,6 +30,10 @@ export function SiteHeader() {
     return () => desktopQuery.removeEventListener("change", syncDesktop);
   }, []);
 
+  // Satu sumber kebenaran untuk "menu aktif" supaya nav inline dan drawer mobile
+  // tidak pernah menunjuk halaman yang berbeda.
+  const isActive = (href: string) => pathname === href || (href === "/products" && pathname.startsWith("/products"));
+
   return (
     <header className={cn("site-header", open && "mobile-menu-open")}>
       <nav className="figma-desktop-site-nav" aria-label="Navigasi utama desktop" aria-hidden={!desktop}>
@@ -50,7 +54,7 @@ export function SiteHeader() {
         <button className="commerce-menu-trigger mobile-menu-trigger" type="button" aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? "Tutup navigasi" : "Buka navigasi"} onClick={() => setOpen((value) => !value)}>{open ? <X size={26} /> : <Menu size={29} />}</button>
         <BrandLogo compact className="commerce-header-logo" />
         <div className="nav-links">
-          {links.map((link) => <Link className={cn("nav-link", (pathname === link.href || (link.href === "/products" && pathname.startsWith("/products"))) && "active")} href={link.href} key={link.href}>{link.label}</Link>)}
+          {links.map((link) => <Link className={cn("nav-link", isActive(link.href) && "active")} href={link.href} key={link.href}>{link.label}</Link>)}
         </div>
         <div className="nav-actions">
           <Link className="commerce-login-link" href="/login"><UserRound size={18} /><span>Log In</span></Link>
@@ -58,7 +62,7 @@ export function SiteHeader() {
         </div>
       </nav>
       <nav id="mobile-navigation" className="commerce-mobile-nav" aria-label="Navigasi seluler" aria-hidden={!open}>
-        {links.map((link) => <Link className={cn("commerce-mobile-nav-link", pathname === link.href && "active")} href={link.href} key={link.href} onClick={() => setOpen(false)}>{link.label}</Link>)}
+        {links.map((link) => <Link className={cn("commerce-mobile-nav-link", isActive(link.href) && "active")} href={link.href} key={link.href} onClick={() => setOpen(false)}>{link.label}</Link>)}
         <Link className="commerce-mobile-login" href="/login" onClick={() => setOpen(false)}>Log In</Link>
       </nav>
     </header>
