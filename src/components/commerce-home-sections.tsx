@@ -66,7 +66,7 @@ export function CommerceHomeSections() {
       <section className="commerce-faq-section">
         <div className="commerce-container">
           <header className="commerce-section-header center"><h2>Pertanyaan yang Sering Ditanyakan</h2><p>Informasi ringkas tentang layanan, pesanan, pembayaran, dan akses Anda.</p></header>
-          <div className="commerce-faq-list">{faqQuestions.map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={18} aria-hidden="true" /></summary><p>{answer}</p></details>)}</div>
+          <div className="commerce-faq-list">{faqQuestions.map(({ question, answer, action }) => <details key={question}><summary>{question}<ChevronDown size={18} aria-hidden="true" /></summary><p>{answer}</p>{action && <Link className="faq-action" href={action.href}>{action.label}</Link>}</details>)}</div>
         </div>
       </section>
       <section className="commerce-quick-trust">

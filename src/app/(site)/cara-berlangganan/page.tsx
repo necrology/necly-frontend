@@ -18,11 +18,11 @@ export default function SubscriptionGuidePage() {
   return (
     <>
       <div className="protected-mobile-guide">
-        <section className="support-hero"><div className="container"><span className="eyebrow">Panduan Necly</span><h1 className="h1">Cara Berlangganan</h1><p>Ikuti empat langkah sederhana dari memilih layanan sampai akses pesanan Anda diproses.</p></div></section>
+        <section className="support-hero"><div className="container"><span className="eyebrow">Panduan Necly Services</span><h1 className="h1">Cara Berlangganan</h1><p>Ikuti empat langkah sederhana dari memilih layanan sampai akses pesanan Anda diproses.</p></div></section>
         <section className="container guide-page"><div className="guide-steps">{steps.map(({ title, text, Icon }, index) => <article className="guide-step" key={title}><span className="guide-number">{index + 1}</span><span className="guide-icon"><Icon size={23} /></span><div><h2>{title}</h2><p>{text}</p></div></article>)}</div><aside className="guide-aside"><h2>Butuh bantuan memilih?</h2><p>Periksa detail harga, durasi, stok, dan ketentuan di setiap halaman layanan sebelum memesan.</p><Link className="button button-primary" href="/products">Lihat Layanan <ArrowRight size={15} /></Link></aside></section>
       </div>
       <div className="figma-desktop-subscription-guide">
-        <header><p>Panduan Necly</p><h1>Cara Berlangganan</h1><span>Ikuti langkah sederhana berikut untuk menikmati layanan premium pilihanmu.</span></header>
+        <header><p>Panduan Necly Services</p><h1>Cara Berlangganan</h1><span>Ikuti langkah sederhana berikut untuk menikmati layanan premium pilihanmu.</span></header>
         <section className="figma-guide-steps">{desktopSteps.map((step, index) => <article className={index % 2 ? "is-reversed" : ""} key={step.title}><div className="figma-guide-step-copy"><i>{index + 1}</i><div><h2>{step.title}</h2><p>{step.text}</p></div></div><Image src={step.image} alt="" width={step.width} height={step.height} unoptimized /></article>)}</section>
         <section className="figma-guide-payments"><h2>Metode Pembayaran</h2><p>Pilih kanal pembayaran yang paling nyaman untukmu.</p><Image src="/design-assets/payment-methods.png" alt="PermataBank, BSI, BCA, BNI, Mandiri, OVO, DANA, ShopeePay, Alfamart, BRI, dan LinkAja" width={2440} height={484} unoptimized /></section>
       </div>
