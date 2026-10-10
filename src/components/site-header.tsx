@@ -46,11 +46,7 @@ export function SiteHeader() {
           <span><Image src="/design-assets/necly-logo.png" alt="" width={64} height={64} loading="eager" unoptimized /></span>
         </Link>
         <div className="figma-desktop-nav-links">
-          <Link href="/products">Layanan</Link>
-          <Link href="/cara-berlangganan">Cara Berlangganan</Link>
-          <Link href="/faq">FAQ</Link>
-          <span>Blog</span>
-          <Link href="/laporan-kendala">Laporan Kendala</Link>
+          {links.map((link) => <Link className={cn(isActive(link.href) && "active")} aria-current={isActive(link.href) ? "page" : undefined} href={link.href} key={link.href}>{link.label}</Link>)}
         </div>
         <Link className="figma-desktop-profile" href="/login" aria-label="Log in"><Image src="/figma/user-circle.svg" alt="" width={49} height={49} /></Link>
       </nav>
@@ -59,7 +55,7 @@ export function SiteHeader() {
         <button ref={mobileMenuTriggerRef} className="commerce-menu-trigger mobile-menu-trigger" type="button" aria-expanded={open} aria-controls="mobile-navigation" aria-label={open ? "Tutup navigasi" : "Buka navigasi"} onClick={() => setOpen((value) => !value)}>{open ? <X size={26} /> : <Menu size={29} />}</button>
         <BrandLogo compact className="commerce-header-logo" />
         <div className="nav-links">
-          {links.map((link) => <Link className={cn("nav-link", isActive(link.href) && "active")} href={link.href} key={link.href}>{link.label}</Link>)}
+          {links.map((link) => <Link className={cn("nav-link", isActive(link.href) && "active")} aria-current={isActive(link.href) ? "page" : undefined} href={link.href} key={link.href}>{link.label}</Link>)}
         </div>
         <div className="nav-actions">
           <Link className="commerce-login-link" href="/login"><UserRound size={18} /><span>Log In</span></Link>
@@ -67,7 +63,7 @@ export function SiteHeader() {
         </div>
       </nav>
       <nav id="mobile-navigation" className="commerce-mobile-nav" aria-label="Navigasi seluler" inert={!open ? true : undefined}>
-        {links.map((link) => <Link className={cn("commerce-mobile-nav-link", isActive(link.href) && "active")} href={link.href} key={link.href} onClick={closeMobileMenu}>{link.label}</Link>)}
+        {links.map((link) => <Link className={cn("commerce-mobile-nav-link", isActive(link.href) && "active")} aria-current={isActive(link.href) ? "page" : undefined} href={link.href} key={link.href} onClick={closeMobileMenu}>{link.label}</Link>)}
         <Link className="commerce-mobile-login" href="/login" onClick={closeMobileMenu}>Log In</Link>
       </nav>
     </header>

@@ -1,7 +1,7 @@
 /* Storefront quality pass: stable colors, assets, type, and responsive sizing. */
 html, body { width: 100%; max-width: 100%; overflow-x: clip; }
-/* The first header-height of the page sits behind the curved header. */
-body { background: linear-gradient(#4c1ef9 0 68px, #f4f4f4 68px) fixed; }
+/* The page owns one neutral canvas; the responsive header supplies its own surface. */
+body { background: #f4f4f4; }
 /* Footer and its page base use the same blue as the top navigation. */
 .commerce-footer { background: #4c1ef9; }
 main + .commerce-footer { box-shadow: 0 100vmax #4c1ef9; clip-path: inset(0 -100vmax); }
@@ -85,14 +85,14 @@ img, svg { max-width: 100%; }
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-7px); }
 }
-.commerce-home-hero-art img, .figma-desktop-hero-art { animation: commerce-art-float 5.5s ease-in-out infinite; }
+.commerce-home-hero-art img, .commerce-catalog-hero-art img, .figma-desktop-hero-art { animation: commerce-art-float 5.5s ease-in-out infinite; }
 .commerce-stat-art { animation: commerce-art-float 4.8s ease-in-out infinite; }
 .commerce-stat-card:nth-child(2) .commerce-stat-art { animation-delay: -.8s; }
 .commerce-stat-card:nth-child(3) .commerce-stat-art { animation-delay: -1.6s; }
 .commerce-stat-card:nth-child(4) .commerce-stat-art { animation-delay: -2.4s; }
 .commerce-benefits-art { animation: commerce-art-float 6.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .commerce-home-hero-art img, .figma-desktop-hero-art, .commerce-stat-art, .commerce-benefits-art { animation: none; }
+  .commerce-home-hero-art img, .commerce-catalog-hero-art img, .figma-desktop-hero-art, .commerce-stat-art, .commerce-benefits-art { animation: none; }
 }
 
 /* Compact public-page rhythm: preserve readability while removing oversized gaps. */
@@ -148,6 +148,7 @@ img, svg { max-width: 100%; }
 @media (max-width: 767px) {
   .commerce-container { width: min(calc(100% - 40px), 100%); }
   .site-header, .site-header.mobile-menu-open, .commerce-mobile-nav { border-radius: 0; }
+  .site-header, .commerce-mobile-nav, .commerce-home-hero { background: #4c1ef9; }
   .site-header .commerce-menu-trigger, .site-header .commerce-mobile-profile { width: 48px; height: 48px; }
   .site-header .commerce-menu-trigger svg, .site-header .commerce-mobile-profile svg { width: 30px; height: 30px; }
   .site-header .commerce-header-logo img { width: 40px; height: 40px; }
@@ -228,7 +229,7 @@ img, svg { max-width: 100%; }
   .commerce-catalog-controls { grid-template-columns: minmax(0, 1fr) 250px; }
   .commerce-catalog .commerce-offer-banner + .commerce-product-grid,
   .commerce-product-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .commerce-product-grid.preview-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .commerce-product-grid.preview-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .commerce-product-card { min-width: 0; }
   .commerce-card-brand-row { align-items: flex-start; flex-wrap: wrap; }
   .commerce-card-brand-row .product-brand { width: 100%; }
@@ -267,30 +268,32 @@ img, svg { max-width: 100%; }
   body:has(.figma-desktop-home-hero) { background: #f4f4f4; }
   body:has(.figma-desktop-home-hero) main + .commerce-footer { box-shadow: none; clip-path: none; }
 
-  .site-header { min-height: 76px; border-radius: 0; background: transparent; }
+  .site-header { min-height: 76px; border-radius: 0; background: #4c1ef9; box-shadow: 0 4px 16px rgb(35 12 110 / .16); }
   .site-header .site-nav { display: none; }
   .figma-desktop-site-nav {
-    width: min(calc(100% - 128px), 1312px);
+    width: min(calc(100% - 64px), 1240px);
     min-height: 76px;
     display: grid;
-    grid-template-columns: 104px 1fr 49px;
+    grid-template-columns: 64px minmax(0, 1fr) 49px;
+    gap: 28px;
     align-items: center;
     margin: 0 auto;
-    border-radius: 0 0 24px 24px;
-    padding: 0 24px;
+    border-radius: 0;
+    padding: 0;
     box-sizing: border-box;
-    background: #4c1ef9;
-    box-shadow: 0 4px 4px rgb(0 0 0 / .25);
+    background: transparent;
+    box-shadow: none;
     position: relative;
   }
-  .figma-desktop-brand { position: absolute; top: 4px; left: 25px; width: 67px; height: 64px; display: block; }
-  .figma-desktop-brand > span { position: relative; width: 67px; height: 64px; display: block; }
-  .figma-desktop-brand img { position: static; width: 64px; max-width: none; height: 64px; object-fit: contain; }
-  .figma-desktop-nav-links { position: absolute; top: 26px; left: 571px; display: flex; align-items: center; gap: 35px; }
-  .figma-desktop-nav-links a, .figma-desktop-nav-links span { color: #fff; font-family: "Nunito Sans", sans-serif; font-size: 20px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
-  .figma-desktop-nav-links a:hover { color: #fcbd50; }
-  .figma-desktop-profile { position: absolute; top: 13px; right: 22px; width: 49px; height: 49px; display: grid; place-items: center; }
-  .figma-desktop-profile img { width: 49px; height: 49px; max-width: none; }
+  .figma-desktop-brand { width: 56px; height: 56px; display: grid; place-items: center; }
+  .figma-desktop-brand > span { width: 56px; height: 56px; display: block; }
+  .figma-desktop-brand img { width: 56px; max-width: none; height: 56px; object-fit: contain; }
+  .figma-desktop-nav-links { position: static; display: flex; align-items: center; justify-content: center; gap: clamp(22px, 2.6vw, 42px); }
+  .figma-desktop-nav-links a { position: relative; display: inline-flex; align-items: center; min-height: 76px; color: #fff; font-family: "Sora", sans-serif; font-size: 14px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
+  .figma-desktop-nav-links a:hover, .figma-desktop-nav-links a.active { color: #fcbd50; }
+  .figma-desktop-nav-links a.active::after { content: ""; position: absolute; right: 0; bottom: 14px; left: 0; height: 3px; border-radius: 999px; background: #fcbd50; }
+  .figma-desktop-profile { position: static; width: 46px; height: 46px; display: grid; place-items: center; justify-self: end; }
+  .figma-desktop-profile img { width: 46px; height: 46px; max-width: none; }
 
   .commerce-home-hero { min-height: 724px; padding: 0; background: #f4f4f4; }
   .commerce-home-hero > .commerce-home-hero-inner { display: none; }
@@ -396,12 +399,11 @@ img, svg { max-width: 100%; }
 }
 
 @media (min-width: 1024px) and (max-width: 1280px) {
-  .figma-desktop-site-nav,
   .figma-desktop-home-hero { width: min(calc(100% - 64px), 1312px); }
-  .figma-desktop-site-nav { grid-template-columns: 90px 1fr 44px; padding-inline: 16px; }
-  .figma-desktop-brand { transform: scale(.82); transform-origin: left center; }
-  .figma-desktop-nav-links { right: 90px; left: auto; gap: clamp(16px, 2.2vw, 30px); }
-  .figma-desktop-nav-links a, .figma-desktop-nav-links span { font-size: clamp(15px, 1.55vw, 20px); }
+  .figma-desktop-site-nav { width: min(calc(100% - 48px), 1180px); grid-template-columns: 54px minmax(0, 1fr) 44px; gap: 18px; }
+  .figma-desktop-brand, .figma-desktop-brand > span, .figma-desktop-brand img { width: 50px; height: 50px; }
+  .figma-desktop-nav-links { gap: clamp(15px, 2vw, 26px); }
+  .figma-desktop-nav-links a { font-size: clamp(12px, 1.25vw, 14px); }
   .figma-desktop-profile, .figma-desktop-profile img { width: 42px; height: 42px; }
   .figma-desktop-home-hero { grid-template-columns: minmax(430px, 1fr) minmax(420px, 630px); gap: 20px; }
   .figma-desktop-hero-copy h1 { font-size: clamp(48px, 5vw, 64px); }
@@ -411,6 +413,5 @@ img, svg { max-width: 100%; }
 }
 
 @media (min-width: 1281px) and (max-width: 1439px) {
-  .figma-desktop-nav-links { right: 90px; left: auto; gap: clamp(24px, 2vw, 35px); }
-  .figma-desktop-nav-links a, .figma-desktop-nav-links span { font-size: clamp(18px, 1.4vw, 20px); }
+  .figma-desktop-nav-links { gap: clamp(22px, 2.3vw, 34px); }
 }

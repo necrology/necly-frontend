@@ -47,7 +47,7 @@ export function CommerceHomeSections() {
       <section className="commerce-preview-section">
         <div className="commerce-container">
           <header className="commerce-product-heading"><h2>Produk Digital</h2><p>Temukan layanan premium favorit dengan harga patungan yang lebih hemat.</p></header>
-          <ProductSearchBar mode="preview" limit={3} />
+          <ProductSearchBar mode="preview" limit={4} />
           <Link className="commerce-all-products-link" href="/products">Lihat Semua Produk <ArrowRight size={18} /></Link>
         </div>
       </section>

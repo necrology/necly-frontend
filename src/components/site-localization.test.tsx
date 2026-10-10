@@ -34,6 +34,13 @@ describe("site localization", () => {
     expect(mobileNavigation).toHaveAttribute("inert");
   });
 
+  it("keeps the desktop and mobile menu order identical", () => {
+    render(<SiteHeader />);
+    const labels = (selector: string) => Array.from(document.querySelectorAll<HTMLAnchorElement>(selector)).map((link) => link.textContent);
+    expect(labels(".figma-desktop-nav-links a")).toEqual(labels(".commerce-mobile-nav-link"));
+    expect(labels(".figma-desktop-nav-links a")).toEqual(["Beranda", "Layanan", "Cara Berlangganan", "FAQ", "Laporan Kendala"]);
+  });
+
   it("keeps the footer Indonesian and links to real storefront routes", () => {
     render(<SiteFooter />);
     expect(screen.getByRole("navigation", { name: "Navigasi footer" })).toBeInTheDocument();
