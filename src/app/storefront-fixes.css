@@ -1,10 +1,10 @@
 /* Storefront quality pass: stable colors, assets, type, and responsive sizing. */
 html, body { width: 100%; max-width: 100%; overflow-x: clip; }
 /* The first header-height of the page sits behind the curved header. */
-body { background: linear-gradient(#5420e8 0 68px, #fffafd 68px) fixed; }
-/* Footer and its page base use the same violet as the top navigation. */
-.commerce-footer { background: #5420e8; }
-main + .commerce-footer { box-shadow: 0 100vmax #5420e8; clip-path: inset(0 -100vmax); }
+body { background: linear-gradient(#4c1ef9 0 68px, #f4f4f4 68px) fixed; }
+/* Footer and its page base use the same blue as the top navigation. */
+.commerce-footer { background: #4c1ef9; }
+main + .commerce-footer { box-shadow: 0 100vmax #4c1ef9; clip-path: inset(0 -100vmax); }
 body, button, input, select, textarea { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; }
 img, svg { max-width: 100%; }
 
@@ -19,17 +19,17 @@ img, svg { max-width: 100%; }
   background: #fff;
   box-shadow: 0 7px 15px rgb(21 5 58 / .25), inset 0 1px 0 #fff;
 }
-.product-brand { border-radius: 999px; color: #2e2740; background: #fff; box-shadow: 0 7px 15px rgb(35 15 65 / .16), 0 2px 4px rgb(35 15 65 / .08), inset 0 1px 0 #fff, inset 0 0 0 1px #ebe6f2; }
-.product-brand-disney, .product-brand-viu, .product-brand-nord, .product-brand-netflix, .product-brand-spotify { color: #2e2740; background: #fff; }
+.product-brand { border-radius: 999px; color: #2b2b38; background: #fff; box-shadow: 0 7px 15px rgb(35 15 65 / .16), 0 2px 4px rgb(35 15 65 / .08), inset 0 1px 0 #fff, inset 0 0 0 1px #ebe6f2; }
+.product-brand-disney, .product-brand-viu, .product-brand-nord, .product-brand-netflix, .product-brand-spotify { color: #2b2b38; background: #fff; }
 .product-brand-disney .disney-word, .product-brand-disney .netflix-word { color: #20223b; }
-.product-brand-disney .brand-cross { color: #6a2cf0; }
+.product-brand-disney .brand-cross { color: #4c1ef9; }
 .product-brand-viu, .product-brand-viu .viu-mark { color: #e1a800; }
 .product-brand-nord, .product-brand-nord .nord-mark { color: #356ed1; }
 .product-brand-netflix, .product-brand-netflix .netflix-word { color: #e52d2d; }
 .product-brand-spotify, .product-brand-spotify .spotify-mark { color: #169b55; }
 
-/* Header stays violet while its lower edge has a soft curve. */
-.site-header { overflow: visible; border-radius: 0 0 26px 26px; background: #5420e8; }
+/* Header stays blue while its lower edge has a soft curve. */
+.site-header { overflow: visible; border-radius: 0 0 26px 26px; background: #4c1ef9; }
 .site-header .site-nav { min-height: 56px; position: relative; justify-content: space-between; }
 .site-header .commerce-menu-trigger, .site-header .commerce-mobile-profile { width: 34px; height: 34px; border-radius: 10px; }
 .site-header .commerce-menu-trigger svg { width: 20px; height: 20px; }
@@ -43,10 +43,10 @@ img, svg { max-width: 100%; }
 .site-header .commerce-login-link { min-height: 34px; padding: 0 14px; font-size: 11px; }
 .site-header .commerce-login-link svg { width: 15px; height: 15px; }
 .site-header.mobile-menu-open { border-radius: 0 0 26px 26px; }
-.commerce-mobile-nav { overflow: hidden; border-radius: 0 0 26px 26px; background: #5420e8; }
+.commerce-mobile-nav { overflow: hidden; border-radius: 0 0 26px 26px; background: #4c1ef9; }
 
-/* Keep violet surfaces in the same palette across routes. */
-.commerce-home-hero { background: linear-gradient(135deg, #5420e8 0%, #6230e8 100%); }
+/* Keep the brand surfaces in the same palette across routes. */
+.commerce-home-hero { background: linear-gradient(135deg, #4c1ef9 0%, #6a44fb 100%); }
 .commerce-catalog-hero, .commerce-checkout-hero { background: linear-gradient(135deg, #f7f4ff 0%, #ece5ff 100%); }
 .commerce-home-hero-copy h1, .commerce-catalog-hero h1, .commerce-checkout-hero h1,
 .commerce-section-header h2, .commerce-product-heading h2, .commerce-benefits-visual h2 { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; }
