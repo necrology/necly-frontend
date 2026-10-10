@@ -26,6 +26,7 @@ describe("responsive storefront composition", () => {
     expect(mobileHomeSlides).toContain('image: "/design-assets/homepage-hero.png"');
     expect(mobileHomeSlides).not.toContain("/illustrations/mobile-sharing-hero.svg");
     expect(productsPage).not.toContain("/illustrations/product-workspace.svg");
+    expect(productsPage).not.toContain("Pilihan praktis");
   });
 
   it("keeps the login page within the dynamic viewport", () => {

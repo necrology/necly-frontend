@@ -52,6 +52,8 @@ describe("QA fixes on static pages, footer entry, and report shortcut", () => {
     expect(footer).toContain("<strong>Necly Service</strong>");
     expect(footer).toContain("Kami hadir sebagai layanan digital yang menyediakan berbagai pilihan akun sharing");
     for (const heading of ["Sosmed", "Kategori Produk", "Hubungi Kami", "Jam Operasional"]) expect(footer).toContain(`<h2>${heading}</h2>`);
+    expect(footer).not.toContain("InstagramIcon");
+    expect(footer).not.toContain("FacebookIcon");
     expect(footer).toContain('["Testimoni", "/testimoni"]');
     expect(footer).toContain('["Tentang Kami", "/about"]');
     expect(css).toContain(".commerce-footer-socials a { display: inline-flex; align-items: center; gap: 8px;");

@@ -952,7 +952,6 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-catalog-hero p { margin: 14px 0 0; color: var(--commerce-muted); font-size: 14px; line-height: 1.7; }
 .commerce-catalog-hero-art { position: relative; }
 .commerce-catalog-hero-art img { width: 100%; height: auto; }
-.commerce-catalog-hero-art > span { position: absolute; right: 6%; bottom: 6%; width: 104px; height: 104px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; color: var(--commerce-violet-dark); background: var(--commerce-gold); font-size: 11px; font-weight: 800; line-height: 1.3; text-align: center; transform: rotate(6deg); }
 .commerce-catalog-page { padding: 34px 0 84px; background: var(--commerce-paper); }
 
 /* ---------- Product detail ---------- */
@@ -1256,7 +1255,6 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-catalog-hero-inner { grid-template-columns: 1fr; gap: 16px; }
   .commerce-catalog-hero p { font-size: 12px; }
   .commerce-catalog-hero-art { max-width: 260px; }
-  .commerce-catalog-hero-art > span { width: 82px; height: 82px; font-size: 9px; }
   .commerce-catalog-page { padding: 22px 0 64px; }
 
   .commerce-detail-page { padding: 14px 0 118px; }

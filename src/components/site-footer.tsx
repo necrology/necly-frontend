@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
-import { FacebookIcon, InstagramIcon, WhatsappIcon } from "@/components/social-icons";
-import { contact, openingHours, socials, whatsappLink } from "@/data/contact";
+import { WhatsappIcon } from "@/components/social-icons";
+import { contact, openingHours, whatsappLink } from "@/data/contact";
 
 const links = [["Beranda", "/"], ["Layanan", "/products"], ["Cara Berlangganan", "/cara-berlangganan"], ["FAQ", "/faq"], ["Testimoni", "/testimoni"], ["Tentang Kami", "/about"], ["Laporan Kendala", "/laporan-kendala"]] as const;
 
@@ -14,7 +14,7 @@ const whatsappMessage = "Halo Necly Service, saya ingin bertanya tentang layanan
 export function SiteFooter() {
   return (
     <footer className="commerce-footer">
-      {/* Tiga kolom di desktop: brand, sosmed + kategori, hubungi kami + jam operasional. */}
+      {/* Tiga kolom di desktop: brand, kanal kontak + kategori, hubungi kami + jam operasional. */}
       <div className="commerce-container commerce-footer-content">
         <div className="commerce-footer-brand">
           <div className="commerce-footer-brand-head">
@@ -27,8 +27,6 @@ export function SiteFooter() {
           <section className="commerce-footer-block">
             <h2>Sosmed</h2>
             <ul className="commerce-footer-socials">
-              <li><a href={socials.instagram.href} target="_blank" rel="noreferrer"><InstagramIcon size={17} />{socials.instagram.label}</a></li>
-              <li><a href={socials.facebook.href} target="_blank" rel="noreferrer"><FacebookIcon size={17} />{socials.facebook.label}</a></li>
               <li><a href={whatsappLink(whatsappMessage)} target="_blank" rel="noreferrer"><WhatsappIcon size={17} />{contact.whatsappLabel}</a></li>
             </ul>
           </section>

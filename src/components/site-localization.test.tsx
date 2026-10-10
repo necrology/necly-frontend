@@ -53,8 +53,8 @@ describe("site localization", () => {
     expect(screen.getByRole("heading", { name: "Kategori Produk" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Hubungi Kami" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Jam Operasional" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "@neclyserviceofficial" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Necly Service" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "@neclyserviceofficial" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Necly Service" })).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: "+62 899-9228-241" })).not.toHaveLength(0);
     // Alamat email baru dari pemilik (menggantikan neclyservice@gmail.com).
     expect(screen.getByRole("link", { name: "necly.services@gmail.com" })).toHaveAttribute(
