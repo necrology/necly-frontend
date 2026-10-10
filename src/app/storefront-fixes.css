@@ -79,6 +79,7 @@ img, svg { max-width: 100%; }
 .commerce-benefits-illustration { min-height: 280px; display: grid; place-items: center; }
 .commerce-benefits-illustration img { width: min(100%, 184px); height: auto; image-rendering: auto; }
 .commerce-benefits-illustration .commerce-benefits-art { width: min(100%, 360px); }
+.commerce-catalog-hero-art picture { display: block; }
 .commerce-home-hero-art img, .commerce-catalog-hero-art img, .commerce-stat-card img { object-fit: contain; }
 
 @keyframes commerce-art-float {
@@ -178,6 +179,7 @@ img, svg { max-width: 100%; }
   .commerce-catalog-hero { overflow: clip; }
   .commerce-catalog-hero-inner { min-width: 0; }
   .commerce-catalog-hero-art { width: min(100%, 230px); margin-inline: auto; }
+  .commerce-catalog-hero-art img { aspect-ratio: 720 / 520; }
   .commerce-catalog-hero-art > span { right: 0; }
   .commerce-home-hero { position: relative; z-index: 1; overflow: hidden; margin-bottom: 22px; border-radius: 0 0 50% 50% / 0 0 10% 10%; }
   .commerce-home-hero-art { width: min(100%, 340px); }
@@ -238,6 +240,7 @@ img, svg { max-width: 100%; }
   .commerce-scheme-link { min-height: 22px; }
   .commerce-catalog-hero-inner { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); }
   .commerce-catalog-hero-art { min-width: 0; }
+  .commerce-catalog-hero-art img { aspect-ratio: 630 / 424; }
   .commerce-product-detail-shell { grid-template-columns: minmax(0, 1fr) 320px; }
   .commerce-product-showcase { grid-template-columns: minmax(320px, .95fr) minmax(0, 1.05fr); }
   .commerce-checkout-layout { grid-template-columns: minmax(0, 1fr) 320px; }

@@ -1291,11 +1291,11 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   height: 46px;
   display: grid;
   place-items: center;
-  border: 0;
+  border: 2px solid #fcbd50;
   border-radius: 50%;
-  color: #fff;
-  background: #4c1ef9;
-  box-shadow: 0 12px 26px rgb(76 30 249 / .34);
+  color: #4c1ef9;
+  background: #fff;
+  box-shadow: 0 12px 26px rgb(31 20 65 / .3);
   opacity: 0;
   pointer-events: none;
   transform: translateY(12px);
@@ -1303,7 +1303,7 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   cursor: pointer;
 }
 .back-to-top.is-visible { opacity: 1; pointer-events: auto; transform: none; }
-.back-to-top:hover { background: #3d14d6; }
+.back-to-top:hover { color: #fff; background: #3d14d6; }
 .back-to-top:focus-visible { outline: 3px solid #fcbd50; outline-offset: 2px; }
 /* Di halaman detail produk ada bar pesanan yang menempel di bawah layar. */
 @media (max-width: 767px) {
@@ -1363,14 +1363,15 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 /* ---------- Pintasan & halaman Laporan Kendala (QA poin 12 & 15) ---------- */
 /* Tombol mengapung di kiri bawah supaya tidak bertabrakan dengan tombol "ke atas". */
 .report-issue { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 46; display: grid; justify-items: start; gap: 10px; }
-.report-issue-trigger { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 11px 16px; color: #fff; background: #4c1ef9; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 12px 26px rgb(76 30 249 / .32); }
+.report-issue-trigger { display: inline-flex; align-items: center; gap: 8px; border: 2px solid #fff; border-radius: 999px; padding: 9px 14px; color: #2a2140; background: #fcbd50; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 12px 26px rgb(51 37 14 / .28); }
+.report-issue-trigger:hover { background: #ffd477; }
 .report-issue-trigger svg { flex: 0 0 auto; }
 .report-issue-trigger:focus-visible { outline: 3px solid #fcbd50; outline-offset: 2px; }
 /* Denyut halus sebagai pengingat; berhenti saat panel terbuka atau user minta gerak minim. */
 @keyframes report-issue-pulse {
-  0% { box-shadow: 0 12px 26px rgb(76 30 249 / .32), 0 0 0 0 rgb(76 30 249 / .34); }
-  70% { box-shadow: 0 12px 26px rgb(76 30 249 / .32), 0 0 0 12px rgb(76 30 249 / 0); }
-  100% { box-shadow: 0 12px 26px rgb(76 30 249 / .32), 0 0 0 0 rgb(76 30 249 / 0); }
+  0% { box-shadow: 0 12px 26px rgb(51 37 14 / .28), 0 0 0 0 rgb(252 189 80 / .5); }
+  70% { box-shadow: 0 12px 26px rgb(51 37 14 / .28), 0 0 0 12px rgb(252 189 80 / 0); }
+  100% { box-shadow: 0 12px 26px rgb(51 37 14 / .28), 0 0 0 0 rgb(252 189 80 / 0); }
 }
 .report-issue:not(.is-open) .report-issue-trigger { animation: report-issue-pulse 2.6s ease-out infinite; }
 .report-issue-panel { width: min(calc(100vw - 32px), 282px); border: 1px solid var(--commerce-line); border-radius: 18px; padding: 14px; background: #fff; box-shadow: 0 18px 40px rgb(28 18 60 / .18); }
