@@ -101,29 +101,32 @@ export default function IssueReportPage() {
               <p>Catat nomor pesanan Anda. Tim akan meninjau laporan berdasarkan informasi yang dikirimkan.</p>
               {/* Baris 57: info cooldown 3 jam, tanpa tombol "kirim laporan lain". */}
               <p className="issue-cooldown">{cooldownCopy}</p>
-              <Link className="button button-primary" href="/"><Home size={14} /> Kembali ke beranda</Link>
+              {/* Baris 60: tombol putih, dan berubah seperti tombol "Kirim laporan"
+                  saat disorot — mengikuti pola tombol di halaman Testimoni. */}
+              <Link className="button issue-home-button" href="/"><Home size={14} /> Kembali ke beranda</Link>
             </div>
           ) : (
             <>
+              {/* Baris 59: setiap field wajib diberi tanda bintang merah. */}
               <div className="form-grid">
                 <label className="field">
-                  <span className="label">Nama</span>
+                  <span className="label">Nama <span className="commerce-required" aria-hidden="true">*</span></span>
                   <input className="input" required name="name" placeholder="Nama Anda" aria-invalid={Boolean(errors.name)} />
                   {errors.name && <span className="field-error" role="alert">{errors.name}</span>}
                 </label>
                 <label className="field">
-                  <span className="label">Email</span>
+                  <span className="label">Email <span className="commerce-required" aria-hidden="true">*</span></span>
                   <input className="input" required name="email" type="email" placeholder="email@contoh.id" aria-invalid={Boolean(errors.email)} />
                   {errors.email && <span className="field-error" role="alert">{errors.email}</span>}
                 </label>
                 <label className="field">
-                  <span className="label">Nomor pesanan</span>
+                  <span className="label">Nomor pesanan <span className="commerce-required" aria-hidden="true">*</span></span>
                   {/* Baris 55: nomor pesanan wajib dan harus cocok dengan email pemesan. */}
                   <input className="input" required name="order" placeholder="Contoh: NCL-2026-0001" aria-invalid={Boolean(errors.order_number)} />
                   {errors.order_number && <span className="field-error" role="alert">{errors.order_number}</span>}
                 </label>
                 <label className="field">
-                  <span className="label">Kategori kendala</span>
+                  <span className="label">Kategori kendala <span className="commerce-required" aria-hidden="true">*</span></span>
                   <select className="select" required name="category" defaultValue="" aria-invalid={Boolean(errors.category)}>
                     <option value="">Pilih kategori</option>
                     {categories.map((category) => <option value={category} key={category}>{category}</option>)}
@@ -132,7 +135,7 @@ export default function IssueReportPage() {
                 </label>
               </div>
               <label className="field" style={{ marginTop: 18 }}>
-                <span className="label">Jelaskan kendala</span>
+                <span className="label">Jelaskan kendala <span className="commerce-required" aria-hidden="true">*</span></span>
                 <textarea className="textarea" required name="message" placeholder="Tuliskan kronologi, pesan kesalahan, dan waktu kejadian. Jangan sertakan kata sandi atau OTP." aria-invalid={Boolean(errors.message)} />
                 {errors.message && <span className="field-error" role="alert">{errors.message}</span>}
               </label>

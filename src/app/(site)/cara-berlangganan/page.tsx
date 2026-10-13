@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { subscriptionSteps as steps } from "@/data/guide";
 
 export const metadata: Metadata = { title: "Cara Berlangganan", description: "Panduan memilih layanan, menyelesaikan pesanan, dan menerima akses Necly." };
@@ -18,8 +17,10 @@ export default function SubscriptionGuidePage() {
   return (
     <>
       <div className="protected-mobile-guide">
-        <section className="support-hero"><div className="container"><span className="eyebrow">Panduan Necly Services</span><h1 className="h1">Cara Berlangganan</h1><p>Ikuti empat langkah sederhana dari memilih layanan sampai akses pesanan Anda diproses.</p></div></section>
-        <section className="container guide-page"><div className="guide-steps">{steps.map(({ title, text, Icon }, index) => <article className="guide-step" key={title}><span className="guide-number">{index + 1}</span><span className="guide-icon"><Icon size={23} /></span><div><h2>{title}</h2><p>{text}</p></div></article>)}</div><aside className="guide-aside"><h2>Butuh bantuan memilih?</h2><p>Periksa detail harga, durasi, stok, dan ketentuan di setiap halaman layanan sebelum memesan.</p><Link className="button button-primary" href="/products">Lihat Layanan <ArrowRight size={15} /></Link></aside></section>
+        {/* Baris 61: deskripsi dipecah dua baris supaya baris pertama tidak terlalu panjang. */}
+        <section className="support-hero"><div className="container"><span className="eyebrow">Panduan Necly Services</span><h1 className="h1">Cara Berlangganan</h1><p>Ikuti empat langkah sederhana dari memilih layanan-<br />sampai akses pesanan Anda diproses.</p></div></section>
+        {/* Baris 62: "Butuh bantuan memilih?" dibuat bold (lihat CSS) dan ikon panah kanan dihapus. */}
+        <section className="container guide-page"><div className="guide-steps">{steps.map(({ title, text, Icon }, index) => <article className="guide-step" key={title}><span className="guide-number">{index + 1}</span><span className="guide-icon"><Icon size={23} /></span><div><h2>{title}</h2><p>{text}</p></div></article>)}</div><aside className="guide-aside"><h2>Butuh bantuan memilih?</h2><p>Periksa detail harga, durasi, stok, dan ketentuan di setiap halaman layanan sebelum memesan.</p><Link className="button button-primary" href="/products">Lihat Layanan</Link></aside></section>
       </div>
       <div className="figma-desktop-subscription-guide">
         <header><p>Panduan Necly Services</p><h1>Cara Berlangganan</h1><span>Ikuti langkah sederhana berikut untuk menikmati layanan premium pilihanmu.</span></header>

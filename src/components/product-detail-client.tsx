@@ -90,9 +90,10 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
     <div className="commerce-product-detail-shell">
       <div className="commerce-product-detail-main">
         <div className="commerce-product-showcase">
+          {/* Baris 33: logo brand hanya dicantumkan sekali. Overlay di atas artwork
+              dihapus karena logo yang sama sudah tampil di kolom informasi. */}
           <div className="commerce-product-image">
             <Image src="/illustrations/product-streaming.svg" alt={`Ilustrasi ${product.name}`} fill priority sizes="(max-width: 767px) 100vw, 38vw" />
-            <ProductBrand product={product} className="commerce-product-image-brand" />
           </div>
           <div className="commerce-product-information">
             <div className="commerce-product-labels"><span><Flame size={12} strokeWidth={2.5} aria-hidden="true" />Paling Populer</span><span><Star size={12} strokeWidth={2.5} aria-hidden="true" />Rekomendasi</span></div>
@@ -131,7 +132,9 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
                         <li>Perangkat yang dapat digunakan meliputi <strong>{deviceList}</strong>, dan perangkat lainnya yang mendukung layanan.</li>
                         <li>Akses layanan akan <strong>otomatis berakhir 1 bulan setelah tanggal CO (checkout)</strong>. Jadi, jangan lupa cek masa aktif layanan secara berkala agar kamu bisa mengantisipasi perpanjangan dari jauh hari.</li>
                       </ol>
-                      <p>Jika mengalami kendala, kamu dapat menghubungi <strong>kontak yang tertera</strong> atau menggunakan fitur <strong>&ldquo;Laporan Kendala&rdquo;</strong> melalui tombol di kiri bawah halaman.</p>
+                      {/* Baris 36: paragraf ini disejajarkan dengan butir daftar di atasnya,
+                          diberi tanda bintang di awal, dan memakai warna merah. */}
+                      <p className="commerce-accordion-note"><span aria-hidden="true">*</span>Jika mengalami kendala, kamu dapat menghubungi <strong>kontak yang tertera</strong> atau menggunakan fitur <strong>&ldquo;Laporan Kendala&rdquo;</strong> melalui menu titik tiga di sebelah kiri pada halaman beranda.</p>
                     </div>
                   ) : (
                     <p>{title === "Manfaat Layanan" ? serviceBenefitsCopy : "Pilih paket yang Anda inginkan, selesaikan pembayaran, lalu tim kami akan memproses akses layanan Anda."}</p>

@@ -28,7 +28,6 @@ function generateIdempotencyKey(): string {
 export function CheckoutCommerceClient() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
-  const [duration, setDuration] = useState(0);
   const [payment, setPayment] = useState("QRIS");
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [voucher, setVoucher] = useState("");
@@ -47,12 +46,23 @@ export function CheckoutCommerceClient() {
   }, [items]);
   const deviceOptions: number[] = product.deviceOptions?.length ? product.deviceOptions : [...defaultDeviceOptions];
   const selectedDevice = device ?? items[0]?.selectedDevice ?? null;
+  // Baris 47: durasi yang sudah dipilih di halaman detail harus ikut terbawa ke
+  // checkout. Sebelumnya state-nya selalu mulai dari 0 (1 Bulan) sehingga pilihan
+  // 6 bulan kembali ke default begitu masuk halaman ini.
+  const durationFromCart = useMemo(() => {
+    const label = items[0]?.selectedDuration;
+    if (!label) return 0;
+    const index = product.priceOptions.findIndex((option) => option.label === label);
+    return index >= 0 ? index : 0;
+  }, [items, product]);
+  const [durationOverride, setDurationOverride] = useState<number | null>(null);
+  const duration = durationOverride ?? durationFromCart;
   const price = product.priceOptions[duration]?.price ?? product.price;
   // The reference design subtracts the unique code from the package price (81.500 - 33 = 81.467).
   const total = Math.max(0, Math.max(0, price - discount) - UNIQUE_CODE);
   const manualMethodLocked = MANUAL_PAYMENTS.includes(payment) && duration < 2;
   const selectDuration = (index: number) => {
-    setDuration(index);
+    setDurationOverride(index);
     if (index < 2 && MANUAL_PAYMENTS.includes(payment)) setPayment("QRIS");
   };
   const durationGrid = (

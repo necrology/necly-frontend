@@ -291,7 +291,11 @@ body:has(.auth-form-login) { overflow: hidden; }
 .auth-form-login { max-height: 100%; gap: clamp(8px, 1.7vh, 17px); }
 .auth-form-login form { gap: clamp(8px, 1.5vh, 16px) !important; }
 .auth-form-login .auth-login-intro h1 { margin-top: clamp(4px, 1vh, 10px) !important; }
-.auth-form-login .auth-login-intro p { margin-top: clamp(5px, 1vh, 12px) !important; }
+/* Baris 64: jarak subtitle ke judul ditambah — sebelumnya maksimal hanya 12px. */
+.auth-form-login .auth-login-intro p { margin-top: clamp(14px, 2.2vh, 22px) !important; }
+.auth-form-login .auth-login-subtitle { margin-bottom: 0 !important; }
+.auth-forgot-link { color: #4c1ef9 !important; text-decoration: underline; text-underline-offset: 3px; }
+.auth-forgot-link:hover { background: #f1ecff !important; }
 .auth-form-login .figma-desktop-auth-logo { margin-top: 0; }
 .auth-form-login .figma-desktop-auth-logo img { width: clamp(68px, 12vh, 100px); height: clamp(68px, 12vh, 100px); }
 
@@ -299,9 +303,17 @@ body:has(.auth-form-login) { overflow: hidden; }
   .auth-shell:has(.auth-form-login) { height: 100dvh; }
 }
 
-.about-hero { padding: 100px 0 74px; }
-.about-statement { max-width: 970px; font-size: clamp(2.2rem, 5vw, 4.5rem); line-height: 1.08; letter-spacing: -.055em; }
-.about-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 90px; }
+/* Baris 68: hierarki tipografi halaman Tentang dirapikan — jarak hero ke section
+   berikutnya dirapatkan dan judul utama diperkecil agar tidak jauh dari sub-judul. */
+.about-hero { padding: 76px 0 46px; }
+.about-hero .eyebrow { display: inline-block; margin-bottom: 18px; }
+.about-statement { max-width: 860px; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.22; letter-spacing: -.04em; }
+/* Baris 68: ukuran eyebrow "Mengapa kami ada" dan "Prinsip kami" disamakan. */
+.about-grid .eyebrow { font-size: 12px; }
+/* Baris 68: paragraf pembuka disamakan ukurannya dengan paragraf penjelas di bawahnya. */
+.about-grid .lede, .about-grid .muted { font-size: 15px; line-height: 1.75; }
+/* Baris 68: kolom label dan kolom teks dirapatkan supaya tidak ada ruang kosong jomplang. */
+.about-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 56px; }
 .principle-list { display: grid; }
 .principle { display: grid; grid-template-columns: 42px 1fr; gap: 18px; border-top: 1px solid var(--line); padding: 28px 0; }
 .principle-number { color: var(--blue); font-size: 11px; font-weight: 700; }
@@ -747,8 +759,13 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 /* Guide, FAQ, and issue-report pages. */
 .support-hero { padding: 78px 0 65px; color: #fff; background: #4c1ef9; }
 .support-hero .eyebrow { color: #f7d15c; }.support-hero .h1 { margin-top: 11px; color: #fff; font-size: clamp(2.2rem, 4vw, 3.5rem); }.support-hero p { max-width: 600px; margin: 13px 0 0; color: #eee8ff; font-size: 14px; }
-.guide-page { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 56px; padding-top: 62px; padding-bottom: 96px; }.guide-steps { display: grid; }.guide-step { position: relative; display: grid; grid-template-columns: 42px 48px 1fr; gap: 16px; align-items: start; padding: 0 0 35px; }.guide-step:not(:last-child)::before { content: ""; position: absolute; top: 42px; left: 20px; width: 2px; height: calc(100% - 21px); background: #ded1f9; }.guide-number { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #4c1ef9; font-size: 12px; font-weight: 700; }.guide-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; color: #6030ce; background: #f1ebff; }.guide-step h2 { margin: 8px 0 4px; color: #27234a; font-size: 16px; }.guide-step p, .guide-aside p { margin: 0; color: #717087; font-size: 13px; line-height: 1.65; }.guide-aside { align-self: start; position: sticky; top: 94px; border-radius: 20px; padding: 25px; background: #f4efff; }.guide-aside h2 { margin: 0 0 10px; color: #302151; font-size: 18px; }.guide-aside .button { margin-top: 19px; }
-.faq-page, .issue-page { width: min(calc(100% - 40px), 820px); padding-top: 55px; padding-bottom: 96px; }.faq-list { display: grid; gap: 11px; }.faq-list details { border: 1px solid #e5dcef; border-radius: 14px; background: #fff; }.faq-list summary { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 20px; color: #30284e; cursor: pointer; font-size: 14px; font-weight: 700; list-style: none; }.faq-list summary::-webkit-details-marker { display: none; }.faq-list summary .faq-chevron { flex: 0 0 auto; color: #4c1ef9; transition: transform 180ms ease; }.faq-list details[open] summary .faq-chevron { transform: rotate(180deg); }.faq-list .faq-action { display: inline-flex; align-items: center; border-radius: 999px; margin: 0 20px 18px; padding: 9px 16px; color: #fff; background: #4c1ef9; font-size: 12px; font-weight: 700; }.faq-list details p { margin: 0; border-top: 1px solid #eee7f3; padding: 0 20px 18px; color: #727187; font-size: 13px; line-height: 1.7; }.issue-form { padding: 28px; }.issue-success { display: grid; gap: 12px; }.issue-success h2 { margin: 0; color: #352554; }.issue-success p { margin: 0; color: #737187; }
+.guide-page { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 56px; padding-top: 62px; padding-bottom: 96px; }.guide-steps { display: grid; }.guide-step { position: relative; display: grid; grid-template-columns: 42px 48px 1fr; gap: 16px; align-items: start; padding: 0 0 35px; }.guide-step:not(:last-child)::before { content: ""; position: absolute; top: 42px; left: 20px; width: 2px; height: calc(100% - 21px); background: #ded1f9; }.guide-number { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: #4c1ef9; font-size: 12px; font-weight: 700; }.guide-icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 13px; color: #6030ce; background: #f1ebff; }.guide-step h2 { margin: 8px 0 4px; color: #27234a; font-size: 16px; }.guide-step p, .guide-aside p { margin: 0; color: #717087; font-size: 13px; line-height: 1.65; }.guide-aside { align-self: start; position: sticky; top: 94px; border-radius: 20px; padding: 25px; background: #f4efff; }/* Baris 62: "Butuh bantuan memilih?" dibuat bold agar lebih menonjol. */
+.guide-aside h2 { margin: 0 0 10px; color: #302151; font-size: 18px; font-weight: 800; }.guide-aside .button { margin-top: 19px; }
+.faq-page, .issue-page { width: min(calc(100% - 40px), 820px); padding-top: 55px; padding-bottom: 96px; }.faq-list { display: grid; gap: 11px; }.faq-list details { border: 1px solid #e5dcef; border-radius: 14px; background: #fff; }.faq-list summary { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 20px; color: #30284e; cursor: pointer; font-size: 14px; font-weight: 700; list-style: none; }.faq-list summary::-webkit-details-marker { display: none; }.faq-list summary .faq-chevron { flex: 0 0 auto; color: #4c1ef9; transition: transform 180ms ease; }.faq-list details[open] summary .faq-chevron { transform: rotate(180deg); }.faq-list .faq-action { display: inline-flex; align-items: center; border-radius: 999px; margin: 0 20px 18px; padding: 9px 16px; color: #fff; background: #4c1ef9; font-size: 12px; font-weight: 700; }.faq-list details p { margin: 0; border-top: 1px solid #eee7f3; padding: 0 20px 18px; color: #727187; font-size: 13px; line-height: 1.7; }.issue-form { padding: 28px; }.issue-success { display: grid; gap: 12px; }.issue-success h2 { margin: 0; color: #352554; }
+/* Baris 60: tombol "Kembali ke beranda" tampil putih, lalu berubah seperti tombol
+   "Kirim laporan" saat disorot/dipilih — konsisten dengan halaman Testimoni. */
+.issue-success .issue-home-button { width: fit-content; color: #4c1ef9; background: #fff; border-color: #d9d9e8; box-shadow: 0 9px 20px -16px rgb(40 15 180 / .55); }
+.issue-success .issue-home-button:hover, .issue-success .issue-home-button:focus-visible { color: #fff; background: #4c1ef9; border-color: #4c1ef9; }.issue-success p { margin: 0; color: #737187; }
 @media (max-width: 1023px) { .reference-product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }.catalog-hero-content { padding-inline: 30px; }.catalog-benefit { padding-inline: 14px; } }
 @media (max-width: 800px) { .reference-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.catalog-hero-illustration { width: 245px; height: 135px; }.catalog-benefit-strip { grid-template-columns: 1fr 1fr; }.catalog-benefit:nth-child(2) { border-right: 0; }.catalog-benefit:nth-child(-n+2) { border-bottom: 1px solid #dedff0; } }
 @media (max-width: 580px) { .site-header { border-radius: 0 0 14px 14px; }.catalog-hero { min-height: 217px; }.catalog-hero-content { min-height: 217px; padding-block: 27px 75px; padding-inline: 12px; }.catalog-kicker { font-size: 8px; }.catalog-hero h1 { font-size: 2.28rem; }.catalog-hero p:not(.catalog-kicker) { font-size: 12px; }.catalog-hero-illustration { width: 125px; height: 105px; position: absolute; right: -26px; top: 87px; opacity: .85; }.catalog-hero-illustration::before { width: 78px; height: 54px; border-width: 4px; }.catalog-hero-illustration b { display: none; }.catalog-controls { display: grid; gap: 9px; margin-top: -55px; position: relative; }.catalog-search, .catalog-select { height: 45px; }.catalog-select { width: 100%; }.offer-banner { align-items: flex-start; flex-direction: column; gap: 9px; margin-top: 12px; padding: 14px; }.offer-copy > svg { width: 24px; }.offer-copy strong { font-size: 13px; }.offer-copy span { font-size: 9px; }.offer-timer { width: 100%; justify-content: space-between; }.offer-timer > span { font-size: 10px; }.offer-time { min-width: 48px; }.reference-catalog-main { padding-top: 12px; }.reference-product-grid { grid-template-columns: 1fr; gap: 12px; }.catalog-card { grid-template-columns: 39% 61%; grid-template-rows: 1fr; min-height: 197px; }.catalog-card .service-visual { height: auto !important; border-right: 1px solid #e9e9f2; border-bottom: 0; }.catalog-card-content { padding: 12px; }.catalog-card h3 { min-height: 0; font-size: 14px; }.catalog-benefits { min-height: 0; margin: 6px 0 9px; }.catalog-benefit-strip { margin-top: 0; margin-bottom: 32px; }.catalog-benefit { min-height: 83px; padding: 12px; }.catalog-benefit svg { width: 26px; }.catalog-benefit strong { font-size: 10px; }.catalog-benefit span { font-size: 8px; }.desktop-only { display: none; } }
@@ -809,8 +826,10 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-home-hero-copy h1 { margin: 0; color: var(--commerce-ink); font-size: clamp(2.1rem, 4.6vw, 3.35rem); font-weight: 700; line-height: 1.09; letter-spacing: -.05em; }
 .commerce-home-hero-copy h1 span { color: #4c1ef9; }
 .commerce-home-hero-copy > p { max-width: 430px; margin: 18px 0 0; color: var(--commerce-muted); font-size: 14px; line-height: 1.7; }
-.commerce-hero-cta { min-height: 54px; display: inline-flex; align-items: center; gap: 11px; margin-top: 28px; border-radius: 999px; padding: 0 28px; color: var(--commerce-violet-dark); background: var(--commerce-gold); box-shadow: 0 16px 30px -18px rgb(28 4 88 / .85); font-size: 16px; font-weight: 700; }
-.commerce-hero-cta:hover { background: #ffd35e; }
+/* Baris 9: QA meminta teks tombol ini putih. Kuning #fcbd50 tidak bisa memuat teks
+   putih (kontras ~1,6:1), jadi tombolnya memakai biru brand supaya tetap terbaca. */
+.commerce-hero-cta { min-height: 54px; display: inline-flex; align-items: center; gap: 11px; margin-top: 28px; border-radius: 999px; padding: 0 28px; color: #ffffff; background: var(--commerce-violet); box-shadow: 0 16px 30px -18px rgb(28 4 88 / .85); font-size: 16px; font-weight: 700; }
+.commerce-hero-cta:hover { background: var(--commerce-violet-dark); }
 .commerce-home-hero-art { position: relative; min-width: 0; }
 .commerce-home-hero-art img { width: 100%; height: auto; display: block; filter: drop-shadow(0 26px 40px rgb(55 20 140 / .18)); }
 .commerce-home-hero-art > span { position: absolute; top: 15%; left: 4%; width: 88px; height: 88px; display: grid; place-items: center; border: 3px solid #fff; border-radius: 50%; color: var(--commerce-violet-dark); background: var(--commerce-gold); font-size: 11px; font-weight: 800; line-height: 1.25; text-align: center; transform: rotate(-9deg); }
@@ -878,13 +897,16 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-offer-countdown { display: flex; align-items: center; gap: 16px; color: #dbe2ff; font-size: 11px; white-space: nowrap; }
 /* Ikon jam menempel pada teksnya, bukan mengambang di tengah gap countdown. */
 .commerce-countdown-label { display: inline-flex; align-items: center; gap: 5px; }
-.commerce-time-values { display: flex; align-items: flex-start; }
-.commerce-time-value { display: grid; justify-items: center; gap: 5px; }
+.commerce-time-values { display: flex; align-items: flex-start; gap: 14px; }
+/* Baris 16: label + kotak angka harus benar-benar center satu sama lain. */
+.commerce-time-value { display: grid; justify-items: center; justify-content: center; align-content: start; gap: 5px; text-align: center; }
 .commerce-time-value small { color: #dbe2ff; font-size: 9px; font-weight: 700; }
-.commerce-time-digits { display: flex; align-items: center; }
+.commerce-time-digits { position: relative; display: flex; align-items: center; }
 .commerce-time-value b { min-width: 46px; display: grid; place-items: center; border: 1px solid rgb(255 255 255 / .22); border-radius: 11px; padding: 6px 8px; color: #fff; background: rgb(40 12 130 / .26); font-size: 17px; line-height: 1; font-variant-numeric: tabular-nums; }
 /* Titik dua ikut baris angka supaya sejajar dengan digit, bukan dengan kotak. */
-.commerce-time-digits i { width: 14px; color: #fff; font-size: 15px; font-style: normal; text-align: center; }
+/* Baris 16: titik dua dikeluarkan dari alur supaya label Jam/Menit/Detik center
+   tepat di atas kotak angkanya, bukan di atas kotak + titik dua. */
+.commerce-time-digits i { position: absolute; left: calc(100% + 2px); top: 50%; width: 12px; color: #fff; font-size: 15px; font-style: normal; text-align: center; transform: translateY(-50%); }
 .commerce-catalog .commerce-offer-banner + .commerce-product-grid,
 .commerce-product-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; margin-top: 20px; }
 .commerce-product-grid.preview-grid { grid-template-columns: minmax(0, 1fr); margin-top: 0; }
@@ -956,7 +978,9 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 
 /* ---------- Product detail ---------- */
 .commerce-detail-page { padding: 22px 0 84px; background: var(--commerce-paper); }
-.commerce-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-bottom: 18px; color: var(--commerce-muted); font-size: 13px; font-weight: 600; }
+/* Baris 43: ikon dan teks breadcrumb diperbesar sesuai catatan QA. */
+.commerce-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; margin-bottom: 18px; color: var(--commerce-muted); font-size: 15px; font-weight: 600; }
+.commerce-breadcrumbs a svg { width: 21px; height: 21px; }
 .commerce-breadcrumbs a { display: inline-flex; align-items: center; gap: 6px; }
 .commerce-breadcrumbs a:hover { color: #4c1ef9; }
 .commerce-breadcrumbs a svg { color: #4c1ef9; }
@@ -974,7 +998,12 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-product-labels span { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 5px 12px; color: #4c1ef9; background: #e8ebff; font-size: 10px; font-weight: 700; }
 .commerce-product-labels svg { flex: 0 0 auto; color: #e0a336; }
 .commerce-product-information h1 { margin: 4px 0 0; color: var(--commerce-ink); font-size: clamp(1.35rem, 2.4vw, 1.8rem); font-weight: 700; line-height: 1.25; letter-spacing: -.04em; }
-.commerce-product-information > p { margin: 0; color: var(--commerce-muted); font-size: 12px; line-height: 1.7; }
+/* Baris 35: nominal dan badge stok punya warnanya sendiri. Tanpa pengecualian ini
+   aturan induk (spesifisitas 0-1-1) menimpa warna biru/kuning keduanya. */
+.commerce-product-information > p:not(.commerce-detail-price):not(.commerce-stock-ready) { margin: 0; color: var(--commerce-muted); font-size: 12px; line-height: 1.7; }
+.commerce-product-information > .commerce-detail-price { color: #4c1ef9; font-size: 30px; }
+.commerce-product-information > .commerce-stock-ready { width: fit-content; color: #7a5200; font-size: 11px; }
+.commerce-product-information > .commerce-stock-ready.is-empty { color: #a3231b; }
 .commerce-detail-price { display: flex; align-items: baseline; gap: 5px; color: #4c1ef9; font-size: 30px; font-weight: 700; letter-spacing: -.05em; }
 .commerce-detail-price small { color: var(--commerce-muted); font-size: 12px; font-weight: 600; letter-spacing: 0; }
 /* Baris 35: ceklis + info stok pakai aksen kuning; stok habis pakai aksen merah.
@@ -1020,7 +1049,8 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-summary-product b small { color: var(--commerce-muted); font-size: 10px; font-weight: 600; }
 .commerce-summary-line { display: grid; gap: 4px; border-top: 1px solid #eeeef4; padding-top: 12px; }
 .commerce-summary-line > span { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--commerce-muted); font-size: 11px; }
-.commerce-summary-line > span button { border: 0; padding: 0; color: #4c1ef9; background: transparent; font-size: 10px; font-weight: 700; cursor: pointer; }
+/* Baris 40: tombol "Ubah" dibuat lebih besar supaya mudah terlihat dan disentuh. */
+.commerce-summary-line > span button { min-height: 26px; display: inline-flex; align-items: center; border: 1px solid #d9d9e8; border-radius: 999px; padding: 3px 11px; color: #4c1ef9; background: #f4f2ff; font-size: 12px; font-weight: 700; cursor: pointer; }
 .commerce-summary-line > strong { color: var(--commerce-ink); font-size: 12px; font-weight: 700; }
 .commerce-summary-line > small { color: var(--commerce-muted); font-size: 10px; }
 .commerce-summary-total { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #eeeef4; padding-top: 14px; color: var(--commerce-ink); font-size: 12px; font-weight: 700; }
@@ -1126,7 +1156,8 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-footer-brand { display: flex; align-items: center; gap: 14px; }
 .commerce-footer-brand img { width: 38px; height: 38px; }
 .commerce-footer-brand strong { display: block; color: #ffd44f; font-size: 16px; font-weight: 800; letter-spacing: -.03em; }
-.commerce-footer-brand p { margin: 6px 0 0; color: #c3ccfb; font-size: 11px; line-height: 1.65; }
+/* Baris 23: paragraf pengenalan dibuat rata kanan-kiri sesuai permintaan QA. */
+.commerce-footer-brand p { margin: 6px 0 0; color: #c3ccfb; font-size: 11px; line-height: 1.65; text-align: justify; }
 .commerce-footer nav { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .commerce-footer nav a { color: #d8cbf7; font-size: 12px; font-weight: 600; }
 .commerce-footer nav a:hover { color: #fff; }
@@ -1198,7 +1229,9 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-home-hero-copy > p { margin-inline: auto; color: #dbe4ff; font-size: 13px; }
   .commerce-home-hero-art img { filter: drop-shadow(0 26px 40px rgb(18 3 84 / .3)); }
   /* Tombol CTA sengaja tidak lagi selebar container supaya shape-nya tidak panjang. */
-  .commerce-hero-cta { width: fit-content; margin: 22px auto 0; padding: 0 24px; justify-content: center; }
+  /* Baris 9: di hero biru tombol biru akan menyatu, jadi dipakai shape kaca (putih transparan). */
+  .commerce-hero-cta { width: fit-content; margin: 22px auto 0; padding: 0 24px; justify-content: center; background: rgb(255 255 255 / .16); border: 1px solid rgb(255 255 255 / .55); color: #fff; }
+  .commerce-hero-cta:hover { background: rgb(255 255 255 / .26); }
   .commerce-home-hero-art { max-width: 400px; margin-inline: auto; }
   .commerce-home-hero-art > span { width: 74px; height: 74px; font-size: 9px; }
 
@@ -1225,7 +1258,7 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-offer-copy strong { font-size: 13px; }
   .commerce-offer-copy span { font-size: 10px; }
   .commerce-offer-countdown { justify-content: space-between; gap: 8px; }
-  .commerce-time-values { gap: 0; }
+  .commerce-time-values { gap: 12px; }
   .commerce-time-value { min-width: 44px; }
   .commerce-product-grid, .commerce-product-grid.preview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .commerce-product-card { border-radius: 18px; padding: 13px; }
@@ -1254,7 +1287,8 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-catalog-hero { padding: 26px 0 30px; }
   .commerce-catalog-hero-inner { grid-template-columns: 1fr; gap: 16px; }
   .commerce-catalog-hero p { font-size: 12px; }
-  .commerce-catalog-hero-art { max-width: 260px; }
+  /* Baris 52: animasi setelah caption "Produk Digital" diperbesar. */
+  .commerce-catalog-hero-art { max-width: 340px; }
   .commerce-catalog-page { padding: 22px 0 64px; }
 
   .commerce-detail-page { padding: 14px 0 118px; }
@@ -1376,19 +1410,26 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-voucher-message svg { flex: 0 0 auto; }
 .commerce-voucher-message.is-error { color: #c0261d; }
 /* Baris 49: peringatan durasi bank/alfa dibuat merah dan berjarak dari tombol Bayar. */
-.commerce-checkout-warning { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; border-radius: 12px; padding: 10px 12px; color: #c0261d; background: #fdeceb; font-size: 11px; font-weight: 600; }
+/* Baris 50: warna disamakan persis dengan .commerce-field-warning di halaman detail
+   pesanan, dan diberi jarak dari tombol Bayar supaya tidak mepet. */
+.commerce-checkout-warning { display: flex; align-items: flex-start; gap: 8px; margin: 22px 0 0; border-radius: 12px; padding: 11px 13px; color: #c0261d; background: #fdeceb; font-size: 12px; font-weight: 600; line-height: 1.6; }
 .commerce-checkout-warning svg { flex: 0 0 auto; }
 .commerce-checkout-mailto { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 10px; color: var(--commerce-muted); font-size: 11px; font-weight: 600; }
 .commerce-checkout-mailto:hover { color: #4c1ef9; }
 @media (max-width: 767px) {
   .commerce-checkout-hero-inner { grid-template-columns: 1fr; }
   .commerce-checkout-hero img { max-width: none; width: 100%; justify-self: stretch; }
-  .commerce-breadcrumbs { font-size: 13px; }
+  /* Baris 43: tetap diperbesar di mobile, jangan diturunkan lagi ke 13px. */
+  .commerce-breadcrumbs { font-size: 15px; gap: 10px; }
+  .commerce-breadcrumbs a svg { width: 20px; height: 20px; }
 }
 
 /* ---------- Pintasan & halaman Laporan Kendala (QA poin 12 & 15) ---------- */
 /* Tombol mengapung di kiri bawah supaya tidak bertabrakan dengan tombol "ke atas". */
-.report-issue { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 46; display: grid; justify-items: start; gap: 10px; }
+.report-issue { position: fixed; left: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 46; display: grid; justify-items: start; gap: 10px; transition: opacity 200ms ease, visibility 200ms ease, transform 200ms ease; }
+/* Baris 23: saat footer hampir terlihat tombolnya disembunyikan supaya tidak
+   menutupi info Tentang Kami/Testimoni dan tetap bisa diklik. */
+.report-issue.is-hidden { opacity: 0; visibility: hidden; transform: translateY(14px); pointer-events: none; }
 .report-issue-trigger { display: inline-flex; align-items: center; gap: 8px; border: 2px solid #fff; border-radius: 999px; padding: 9px 14px; color: #2a2140; background: #fcbd50; font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 12px 26px rgb(51 37 14 / .28); }
 .report-issue-trigger:hover { background: #ffd477; }
 .report-issue-trigger svg { flex: 0 0 auto; }
@@ -1470,6 +1511,11 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-accordion-copy li { color: var(--commerce-muted); font-size: 12px; line-height: 1.75; }
 .commerce-accordion-copy strong { color: var(--commerce-ink); font-weight: 700; }
 .commerce-accordion-copy p { margin: 0; color: var(--commerce-muted); font-size: 12px; line-height: 1.75; }
+/* Baris 36: catatan kendala disejajarkan dengan butir daftar (indent 20px), merah,
+   dan diawali tanda bintang. Spesifisitas dinaikkan agar menang atas aturan di atas. */
+.commerce-accordion-copy p.commerce-accordion-note { padding-left: 20px; color: #c0261d; }
+.commerce-accordion-copy p.commerce-accordion-note > span { margin-right: 4px; font-weight: 700; }
+.commerce-accordion-copy p.commerce-accordion-note strong { color: #a3231b; }
 
 /* ---------- Laporan kendala: validasi, ceklis, dan cooldown (QA baris 55-57) ---------- */
 /* Baris 55: pesan validasi per-field tampil rapat di bawah inputnya. */

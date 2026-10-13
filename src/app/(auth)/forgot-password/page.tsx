@@ -4,7 +4,28 @@ import { ArrowLeft, MailCheck, Send } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
-import { authApi, DEMO_MODE } from "@/lib/api";
+import { API_BASE, ApiError, authApi, DEMO_MODE } from "@/lib/api";
+
+// Baris 67: kegagalan jaringan sesaat dicoba sekali lagi sebelum menyerah.
+async function sendResetLink(email: string) {
+  try {
+    return await authApi.forgotPassword(email);
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    return await authApi.forgotPassword(email);
+  }
+}
+
+// Baris 67: sebelumnya semua kegagalan (429, 5xx, maupun jaringan) tampil sebagai
+// "Periksa koneksi Anda" sehingga sebab sebenarnya tidak pernah terlihat.
+function failureMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    if (error.status === 429) return "Terlalu banyak permintaan atur ulang. Tunggu beberapa menit lalu coba lagi.";
+    if (error.status >= 500) return "Server sedang tidak dapat memproses permintaan. Coba lagi beberapa saat lagi.";
+    return error.message || `Permintaan ditolak (HTTP ${error.status}).`;
+  }
+  return "Permintaan gagal dikirim. Periksa koneksi Anda lalu coba lagi.";
+}
 
 export default function ForgotPasswordPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -25,12 +46,14 @@ export default function ForgotPasswordPage() {
     setEmail(nextEmail);
     setSubmitting(true);
     try {
-      if (!DEMO_MODE) await authApi.forgotPassword(nextEmail);
+      if (!DEMO_MODE) await sendResetLink(nextEmail);
       // The backend answers the same way for a registered and an unregistered
       // address, so this screen must not claim that an account was found.
       setSent(true);
-    } catch {
-      setErrors({ submit: "Permintaan gagal dikirim. Periksa koneksi Anda lalu coba lagi." });
+    } catch (error) {
+      // Jejak ke konsol supaya laporan QA berikutnya menyebut sebab yang pasti.
+      console.error(`[forgot-password] gagal menghubungi ${API_BASE}`, error);
+      setErrors({ submit: failureMessage(error) });
     } finally {
       setSubmitting(false);
     }

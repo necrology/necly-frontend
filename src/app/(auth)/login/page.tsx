@@ -52,9 +52,11 @@ function LoginContent() {
       <div className="mobile-menu-button" style={{ display: "block" }}><BrandLogo href="/" /></div>
       <div className="figma-desktop-auth-logo"><Image src="/design-assets/necly-logo.png" alt="Necly Services" width={112} height={111} loading="eager" unoptimized /></div>
       <div className="auth-login-intro">
-        <span className="eyebrow">Senang Bertemu Kembali</span>
+        {/* Baris 63: sapaan dibuat lebih ramah sesuai permintaan QA. */}
+        <span className="eyebrow">Hi, Senang Bertemu Kembali</span>
         <h1 className="h2" style={{ marginTop: 10 }}>Masuk ke Necly Services.</h1>
-        <p className="muted" style={{ marginTop: 14, marginBottom: 0 }}>{DEMO_MODE ? "Mode demo aktif. Data login tidak akan dikirim." : "Kelola pesanan dan akses langganan Anda."}</p>
+        {/* Baris 64: jarak subtitle ke judul ditambah supaya tidak mepet. */}
+        <p className="muted auth-login-subtitle">{DEMO_MODE ? "Mode demo aktif. Data login tidak akan dikirim." : "Kelola pesanan dan akses langganan Anda."}</p>
       </div>
       {submitted && <div className="demo-banner" role="status"><LockKeyhole size={15} /><span>Validasi demo berhasil. Tidak ada sesi atau akun yang dibuat.</span></div>}
       <form onSubmit={submit} style={{ display: "grid", gap: 18 }} noValidate>
@@ -66,7 +68,9 @@ function LoginContent() {
         <PasswordField id="login-password" name="password" label="Kata sandi" autoComplete="current-password" placeholder="10–72 byte" error={errors.password} />
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14 }}>
           <label className="check-row"><input type="checkbox" /><span>Ingat saya</span></label>
-          <Link className="button button-ghost button-sm" href="/forgot-password">Lupa kata sandi?</Link>
+          {/* Baris 65: tautan lupa kata sandi diberi warna aksen biru supaya jelas
+              bisa diklik dan mengantar ke halaman atur ulang kata sandi. */}
+          <Link className="button button-ghost button-sm auth-forgot-link" href="/forgot-password">Lupa kata sandi?</Link>
         </div>
         {errors.submit && <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>{errors.submit}</div>}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Sedang masuk…" : <>Masuk <ArrowRight size={14} /></>}</button>

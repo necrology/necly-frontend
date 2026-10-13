@@ -13,7 +13,8 @@ describe("QA mobile fixes on checkout and product detail", () => {
   it("perbesar icon, panah, dan teks breadcrumb checkout (baris 43)", () => {
     expect(page).toContain('className="commerce-breadcrumbs"');
     expect(page).toContain("<House size={17}");
-    expect(css).toContain(".commerce-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-bottom: 18px; color: var(--commerce-muted); font-size: 13px;");
+    // Revisi QA: ukurannya dinaikkan lagi dari 13px ke 15px.
+    expect(css).toContain(".commerce-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; margin-bottom: 18px; color: var(--commerce-muted); font-size: 15px;");
   });
 
   it("samakan ukuran ilustrasi checkout dengan halaman detail order (baris 44)", () => {
@@ -34,7 +35,8 @@ describe("QA mobile fixes on checkout and product detail", () => {
   it("peringatan durasi minimal 6 bulan dibuat merah dan berjarak dari tombol Bayar (baris 49)", () => {
     expect(client).toContain('className="commerce-checkout-warning"');
     expect(client).toContain("Pilih durasi minimal 6 bulan untuk metode {payment}.");
-    expect(css).toContain(".commerce-checkout-warning { display: flex; align-items: center; gap: 8px; margin: 14px 0 0;");
+    // Revisi QA (baris 50): jarak dari tombol Bayar ditambah jadi 22px.
+    expect(css).toContain(".commerce-checkout-warning { display: flex; align-items: flex-start; gap: 8px; margin: 22px 0 0;");
   });
 
   it('tombol "Hubungi Admin" diganti "Lapor Kendala" + alamat email (baris 50)', () => {

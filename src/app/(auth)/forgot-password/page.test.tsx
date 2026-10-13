@@ -1,9 +1,21 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { forgotMock } = vi.hoisted(() => ({ forgotMock: vi.fn() }));
+const { forgotMock, MockApiError } = vi.hoisted(() => {
+  class MockApiError extends Error {
+    readonly status: number;
+    constructor(message: string, status: number) {
+      super(message);
+      this.name = "ApiError";
+      this.status = status;
+    }
+  }
+  return { forgotMock: vi.fn(), MockApiError };
+});
 
 vi.mock("@/lib/api", () => ({
+  API_BASE: "http://localhost:8080/api/v1",
+  ApiError: MockApiError,
   DEMO_MODE: false,
   authApi: { forgotPassword: forgotMock },
 }));

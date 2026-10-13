@@ -178,7 +178,8 @@ img, svg { max-width: 100%; }
   .commerce-order-link { width: 100%; min-width: 0; }
   .commerce-catalog-hero { overflow: clip; }
   .commerce-catalog-hero-inner { min-width: 0; }
-  .commerce-catalog-hero-art { width: min(100%, 230px); margin-inline: auto; }
+  /* Baris 52: animasi setelah caption "Produk Digital" diperbesar. */
+  .commerce-catalog-hero-art { width: min(100%, 310px); margin-inline: auto; }
   .commerce-catalog-hero-art img { aspect-ratio: 720 / 520; }
   .commerce-home-hero { position: relative; z-index: 1; overflow: hidden; margin-bottom: 22px; border-radius: 0 0 50% 50% / 0 0 10% 10%; }
   .commerce-home-hero-art { width: min(100%, 340px); }

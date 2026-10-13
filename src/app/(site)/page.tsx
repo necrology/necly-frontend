@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { CommerceHomeSections } from "@/components/commerce-home-sections";
 
 export default function HomePage() {
@@ -19,9 +18,11 @@ export default function HomePage() {
           <div className="commerce-home-hero-copy">
             <h1>Langganan premium,<br /><span>lebih ringan bersama.</span></h1>
             <p>Temukan pilihan layanan digital untuk hiburan, kerja, dan kebutuhan sehari-hari dengan proses yang jelas.</p>
-            <Link className="commerce-hero-cta" href="/products">Lihat Layanan <ArrowRight size={22} /></Link>
+            {/* Baris 9: ikon panah kanan dihapus, teks tombol dibuat putih lewat CSS. */}
+            <Link className="commerce-hero-cta" href="/products">Lihat Layanan</Link>
           </div>
-          <div className="commerce-home-hero-art"><Image src="/design-assets/homepage-hero.png" alt="Orang-orang berbagi layanan premium" width={630} height={424} priority unoptimized /><span>Lebih Hemat<br />Lebih Seru<br />Bersama!</span></div>
+          {/* Baris 9: teks "Lebih Hemat Lebih Seru Bersama" dihapus karena menutupi animasi. */}
+          <div className="commerce-home-hero-art"><Image src="/design-assets/homepage-hero.png" alt="Orang-orang berbagi layanan premium" width={630} height={424} priority unoptimized /></div>
         </div>
       </section>
       <CommerceHomeSections />

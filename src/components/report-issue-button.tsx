@@ -2,16 +2,42 @@
 
 import { LifeBuoy, Mail, MessageCircle, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { contact, whatsappLink } from "@/data/contact";
+
+// Jarak dari dasar halaman yang membuat tombol disembunyikan (baris 23).
+const FOOTER_CLEARANCE = 340;
 
 // Poin 12: setiap halaman punya pintasan laporan kendala. Panelnya bisa ditutup
 // supaya tidak menutupi konten, dan setelah ditutup tombolnya tetap tersedia.
 export function ReportIssueButton() {
   const [open, setOpen] = useState(false);
+  const [nearFooter, setNearFooter] = useState(false);
+
+  // Baris 23: di bagian paling bawah tombol ini menutupi tautan footer, jadi
+  // disembunyikan selama footer hampir terlihat. Panel yang sedang terbuka tidak
+  // ikut disembunyikan supaya user tidak kehilangan konteks.
+  useEffect(() => {
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const doc = document.documentElement;
+      const remaining = doc.scrollHeight - (window.scrollY + window.innerHeight);
+      setNearFooter(remaining <= FOOTER_CLEARANCE);
+    };
+    const schedule = () => { if (!frame) frame = window.requestAnimationFrame(measure); };
+    measure();
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    return () => {
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
 
   return (
-    <div className={`report-issue ${open ? "is-open" : ""}`}>
+    <div className={`report-issue ${open ? "is-open" : ""} ${nearFooter && !open ? "is-hidden" : ""}`}>
       {open && (
         <div className="report-issue-panel" role="dialog" aria-label="Pilih kanal laporan kendala">
           <header>
