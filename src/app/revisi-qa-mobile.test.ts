@@ -68,8 +68,9 @@ describe("revisi QA putaran kedua", () => {
     expect(checkout).not.toContain("const [duration, setDuration] = useState(0);");
   });
 
-  it("baris 50: warning bank/retail diberi jarak dari tombol Bayar", () => {
-    expect(css).toContain(".commerce-checkout-warning { display: flex; align-items: flex-start; gap: 8px; margin: 22px 0 0;");
+  it("baris 50: warning bank/retail memakai tampilan warning detail pesanan", () => {
+    expect(checkout).toContain('className="commerce-field-warning commerce-checkout-warning"');
+    expect(css).toContain(".commerce-checkout-summary .commerce-checkout-warning { margin: 22px 0 0; }");
   });
 
   it("baris 52: animasi di halaman Layanan diperbesar", () => {

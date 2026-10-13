@@ -191,10 +191,10 @@ export function CheckoutCommerceClient() {
         <hr />
         <div className="commerce-checkout-total"><span>Total Bayar</span><b>{formatRupiahLabel(total)}</b></div>
         <button className="commerce-primary-button" type="button" disabled={payDisabled} onClick={pay}>{submitting ? <LoaderCircle className="commerce-spin" size={20} /> : <LockKeyhole size={20} />}{submitting ? "Memproses…" : "Bayar"}</button>
-        {/* Baris 49: teks peringatan dibuat merah dan diberi jarak dari tombol Bayar. */}
-        {manualMethodLocked && <p className="commerce-checkout-warning" role="alert"><AlertCircle size={16} />Pilih durasi minimal 6 bulan untuk metode {payment}.</p>}
+        {/* Baris 50: gunakan komponen visual warning yang sama dengan detail pesanan. */}
+        {manualMethodLocked && <p className="commerce-field-warning commerce-checkout-warning" role="alert"><AlertCircle size={16} />Pilih durasi minimal 6 bulan untuk metode {payment}.</p>}
         {error && <p className="commerce-checkout-error" role="alert"><AlertCircle size={16} />{error}</p>}
-        {/* Baris 50: nomor WhatsApp lama tidak terdaftar, jadi arahkan ke halaman laporan kendala + email. */}
+        {/* Baris 51: nomor WhatsApp lama tidak terdaftar, jadi arahkan ke halaman laporan kendala + email. */}
         <Link className="commerce-admin-button" href="/laporan-kendala"><LifeBuoy size={22} />Lapor Kendala</Link>
         <a className="commerce-checkout-mailto" href={`mailto:${contact.email}`}><Mail size={15} />{contact.email}</a>
       </aside>

@@ -1409,11 +1409,9 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-voucher-message { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: #147a58; font-size: 11px; font-weight: 600; }
 .commerce-voucher-message svg { flex: 0 0 auto; }
 .commerce-voucher-message.is-error { color: #c0261d; }
-/* Baris 49: peringatan durasi bank/alfa dibuat merah dan berjarak dari tombol Bayar. */
-/* Baris 50: warna disamakan persis dengan .commerce-field-warning di halaman detail
-   pesanan, dan diberi jarak dari tombol Bayar supaya tidak mepet. */
-.commerce-checkout-warning { display: flex; align-items: flex-start; gap: 8px; margin: 22px 0 0; border-radius: 12px; padding: 11px 13px; color: #c0261d; background: #fdeceb; font-size: 12px; font-weight: 600; line-height: 1.6; }
-.commerce-checkout-warning svg { flex: 0 0 auto; }
+/* Baris 50: tampilannya diwarisi langsung dari .commerce-field-warning agar identik
+   dengan warning detail pesanan; aturan ini hanya menambahkan jarak dari tombol Bayar. */
+.commerce-checkout-summary .commerce-checkout-warning { margin: 22px 0 0; }
 .commerce-checkout-mailto { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 10px; color: var(--commerce-muted); font-size: 11px; font-weight: 600; }
 .commerce-checkout-mailto:hover { color: #4c1ef9; }
 @media (max-width: 767px) {

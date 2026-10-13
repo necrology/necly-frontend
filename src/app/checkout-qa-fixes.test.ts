@@ -32,14 +32,14 @@ describe("QA mobile fixes on checkout and product detail", () => {
     expect(client).toContain("{MANUAL_PAYMENTS.includes(payment) && <div className=\"commerce-payment-note\">");
   });
 
-  it("peringatan durasi minimal 6 bulan dibuat merah dan berjarak dari tombol Bayar (baris 49)", () => {
-    expect(client).toContain('className="commerce-checkout-warning"');
+  it("peringatan durasi minimal 6 bulan memakai warning detail dan berjarak dari tombol Bayar (baris 50)", () => {
+    expect(client).toContain('className="commerce-field-warning commerce-checkout-warning"');
     expect(client).toContain("Pilih durasi minimal 6 bulan untuk metode {payment}.");
-    // Revisi QA (baris 50): jarak dari tombol Bayar ditambah jadi 22px.
-    expect(css).toContain(".commerce-checkout-warning { display: flex; align-items: flex-start; gap: 8px; margin: 22px 0 0;");
+    expect(css).toContain(".commerce-field-warning { display: flex; align-items: center; gap: 7px;");
+    expect(css).toContain(".commerce-checkout-summary .commerce-checkout-warning { margin: 22px 0 0; }");
   });
 
-  it('tombol "Hubungi Admin" diganti "Lapor Kendala" + alamat email (baris 50)', () => {
+  it('tombol "Hubungi Admin" diganti "Lapor Kendala" + alamat email (baris 51)', () => {
     expect(client).not.toContain("wa.me/6282115297376");
     expect(client).toContain('<Link className="commerce-admin-button" href="/laporan-kendala"><LifeBuoy size={22} />Lapor Kendala</Link>');
     expect(client).toContain("href={`mailto:${contact.email}`}");
