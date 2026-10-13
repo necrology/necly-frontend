@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { apiRequest, useAuthStore } from "./api";
+import { apiRequest, authApi, useAuthStore } from "./api";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -12,6 +12,7 @@ describe("apiRequest", () => {
   beforeEach(() => {
     useAuthStore.getState().clearAuth();
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("mengirim cookie refresh dan mengulang satu kali setelah 401", async () => {
@@ -56,5 +57,23 @@ describe("apiRequest", () => {
     expect(new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get("Authorization")).toBe("Bearer token-lama");
     expect(fetchMock.mock.calls[1]?.[0]).toContain("/auth/refresh");
     expect(new Headers(fetchMock.mock.calls[2]?.[1]?.headers).get("Authorization")).toBe("Bearer token-baru");
+  });
+
+  it("mengirim permintaan lupa kata sandi melalui endpoint same-origin", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({ message: "Jika terdaftar, tautan sudah dikirim." }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await authApi.forgotPassword("pelanggan@example.id");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/auth/forgot-password",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "same-origin",
+        body: JSON.stringify({ email: "pelanggan@example.id" }),
+      }),
+    );
   });
 });

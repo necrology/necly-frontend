@@ -263,6 +263,22 @@ export async function apiRequest<T>(
   return payload as T;
 }
 
+async function sameOriginRequest<T>(endpoint: string, options: RequestInit): Promise<T> {
+  const response = await fetch(endpoint, {
+    ...options,
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      ...options.headers,
+    },
+  });
+  const payload = await readPayload(response);
+  if (!response.ok) {
+    throw new ApiError(messageFromPayload(payload, response.status), response.status, payload);
+  }
+  return payload as T;
+}
+
 export async function bootstrapAuth() {
   const state = useAuthStore.getState();
   if (state.accessToken) return state.user;
@@ -313,7 +329,9 @@ export const authApi = {
   // address exists, so the caller must not treat the response as proof that an
   // account was found.
   forgotPassword: (email: string) =>
-    apiRequest<{ message: string }>("/auth/forgot-password", {
+    // Keep this browser request same-origin. The Route Handler relays it to the
+    // backend, so password recovery cannot be broken by cross-origin CSP/CORS.
+    sameOriginRequest<{ message: string }>("/api/auth/forgot-password", {
       method: "POST",
       body: JSON.stringify({ email }),
     }),

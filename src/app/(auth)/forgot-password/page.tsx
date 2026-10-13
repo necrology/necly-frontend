@@ -4,7 +4,7 @@ import { ArrowLeft, MailCheck, Send } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
-import { API_BASE, ApiError, authApi, DEMO_MODE } from "@/lib/api";
+import { ApiError, authApi, DEMO_MODE } from "@/lib/api";
 
 // Baris 67: sebelumnya semua kegagalan (429, 5xx, maupun jaringan) tampil sebagai
 // "Periksa koneksi Anda" sehingga sebab sebenarnya tidak pernah terlihat.
@@ -42,7 +42,7 @@ export default function ForgotPasswordPage() {
       setSent(true);
     } catch (error) {
       // Jejak ke konsol supaya laporan QA berikutnya menyebut sebab yang pasti.
-      console.error(`[forgot-password] gagal menghubungi ${API_BASE}`, error);
+      console.error("[forgot-password] permintaan same-origin gagal", error);
       setErrors({ submit: failureMessage(error) });
     } finally {
       setSubmitting(false);

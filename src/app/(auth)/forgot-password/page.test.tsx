@@ -14,7 +14,6 @@ const { forgotMock, MockApiError } = vi.hoisted(() => {
 });
 
 vi.mock("@/lib/api", () => ({
-  API_BASE: "http://localhost:8080/api/v1",
   ApiError: MockApiError,
   DEMO_MODE: false,
   authApi: { forgotPassword: forgotMock },
