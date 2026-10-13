@@ -69,6 +69,8 @@ describe("revisi QA putaran kedua", () => {
   });
 
   it("baris 50: warning bank/retail memakai tampilan warning detail pesanan", () => {
+    expect(checkout).toContain('className="commerce-field-warning commerce-payment-note"');
+    expect(checkout).toContain("Pilih durasi minimal 6 bulan untuk metode bank/alfa.");
     expect(checkout).toContain('className="commerce-field-warning commerce-checkout-warning"');
     expect(css).toContain(".commerce-checkout-summary .commerce-checkout-warning { margin: 22px 0 0; }");
   });

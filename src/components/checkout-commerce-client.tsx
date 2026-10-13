@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, BadgeCheck, ChevronRight, CircleDollarSign, Headphones, Info, LifeBuoy, LoaderCircle, LockKeyhole, Mail, ShieldCheck, UsersRound, Zap } from "lucide-react";
+import { AlertCircle, BadgeCheck, ChevronRight, CircleDollarSign, Headphones, LifeBuoy, LoaderCircle, LockKeyhole, Mail, ShieldCheck, UsersRound, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -177,8 +177,9 @@ export function CheckoutCommerceClient() {
         <section className="commerce-checkout-section">
           <h2>Pilih Metode Pembayaran</h2>
           <div className="commerce-payment-grid">{payments.map(([label, tone]) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""}`} type="button" aria-pressed={payment === label} onClick={() => setPayment(label)}><span>{label}</span></button>)}</div>
-          {/* Baris 46: catatan ini hanya relevan saat metode bank/retail yang dipilih. */}
-          {MANUAL_PAYMENTS.includes(payment) && <div className="commerce-payment-note"><Info size={25} /><p>Metode pembayaran bank dan retail (Alfamart) hanya tersedia untuk pilihan durasi berlangganan minimal 6 bulan.</p></div>}
+          {/* Baris 50/no. 25: elemen yang ditandai pada dokumentasi memakai warning
+              merah muda yang sama dengan validasi di halaman detail pesanan. */}
+          {MANUAL_PAYMENTS.includes(payment) && <div className="commerce-field-warning commerce-payment-note" role="alert"><AlertCircle size={15} /><p>Pilih durasi minimal 6 bulan untuk metode bank/alfa.</p></div>}
         </section>
       </div>
       <aside className="commerce-checkout-summary">

@@ -29,10 +29,13 @@ describe("QA mobile fixes on checkout and product detail", () => {
   });
 
   it("warning bank/retail hanya tampil saat metode itu yang dipilih (baris 46)", () => {
-    expect(client).toContain("{MANUAL_PAYMENTS.includes(payment) && <div className=\"commerce-payment-note\">");
+    expect(client).toContain('{MANUAL_PAYMENTS.includes(payment) && <div className="commerce-field-warning commerce-payment-note" role="alert">');
   });
 
   it("peringatan durasi minimal 6 bulan memakai warning detail dan berjarak dari tombol Bayar (baris 50)", () => {
+    expect(client).toContain('<AlertCircle size={15} /><p>Pilih durasi minimal 6 bulan untuk metode bank/alfa.</p>');
+    expect(css).toContain(".commerce-checkout-section .commerce-payment-note { margin-top: 14px; }");
+    expect(css).not.toContain("background: #f1ecff;");
     expect(client).toContain('className="commerce-field-warning commerce-checkout-warning"');
     expect(client).toContain("Pilih durasi minimal 6 bulan untuk metode {payment}.");
     expect(css).toContain(".commerce-field-warning { display: flex; align-items: center; gap: 7px;");

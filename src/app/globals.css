@@ -1124,9 +1124,10 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-payment-option.bri span { color: #0a5bb5; }
 .commerce-payment-option.mandiri span { color: #1a3f8f; }
 .commerce-payment-option.mandiri { text-transform: capitalize; }
-.commerce-payment-note { display: flex; gap: 10px; margin-top: 14px; border-radius: 14px; padding: 13px 15px; background: #f1ecff; }
-.commerce-payment-note svg { flex: 0 0 auto; color: #4c1ef9; }
-.commerce-payment-note p { margin: 0; color: #5b5480; font-size: 11px; line-height: 1.65; }
+/* Baris 50/no. 25: warning yang ditandai pada dokumentasi mewarisi seluruh
+   tampilan merah muda dari .commerce-field-warning. */
+.commerce-checkout-section .commerce-payment-note { margin-top: 14px; }
+.commerce-payment-note p { margin: 0; color: inherit; font: inherit; line-height: 1.6; }
 .commerce-checkout-summary { position: sticky; top: 88px; border: 1px solid var(--commerce-line); border-radius: 22px; padding: 20px; background: #fff; box-shadow: 0 20px 40px -34px rgb(48 14 118 / .55); }
 .commerce-checkout-summary h2 { margin: 0 0 16px; color: var(--commerce-ink); font-size: 14px; font-weight: 700; }
 .commerce-checkout-summary > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; color: var(--commerce-muted); font-size: 12px; }
