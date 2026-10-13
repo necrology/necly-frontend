@@ -6,16 +6,6 @@ import { FormEvent, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { API_BASE, ApiError, authApi, DEMO_MODE } from "@/lib/api";
 
-// Baris 67: kegagalan jaringan sesaat dicoba sekali lagi sebelum menyerah.
-async function sendResetLink(email: string) {
-  try {
-    return await authApi.forgotPassword(email);
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    return await authApi.forgotPassword(email);
-  }
-}
-
 // Baris 67: sebelumnya semua kegagalan (429, 5xx, maupun jaringan) tampil sebagai
 // "Periksa koneksi Anda" sehingga sebab sebenarnya tidak pernah terlihat.
 function failureMessage(error: unknown) {
@@ -46,7 +36,7 @@ export default function ForgotPasswordPage() {
     setEmail(nextEmail);
     setSubmitting(true);
     try {
-      if (!DEMO_MODE) await sendResetLink(nextEmail);
+      if (!DEMO_MODE) await authApi.forgotPassword(nextEmail);
       // The backend answers the same way for a registered and an unregistered
       // address, so this screen must not claim that an account was found.
       setSent(true);

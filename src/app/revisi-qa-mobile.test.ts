@@ -21,7 +21,8 @@ describe("revisi QA putaran kedua", () => {
   it("baris 9: ikon panah dihapus, teks CTA putih, badge 'Lebih Hemat' dihapus", () => {
     expect(home).not.toContain("Lebih Hemat<br />");
     expect(home).toContain('<Link className="commerce-hero-cta" href="/products">Lihat Layanan</Link>');
-    expect(css).toContain(".commerce-hero-cta { min-height: 54px; display: inline-flex; align-items: center; gap: 11px; margin-top: 28px; border-radius: 999px; padding: 0 28px; color: #ffffff;");
+    expect(css).toContain(".commerce-hero-cta { min-height: 54px; display: inline-flex; align-items: center; gap: 11px; margin-top: 28px; border-radius: 999px; padding: 0 28px; color: #ffffff; background: var(--commerce-gold);");
+    expect(css).toContain(".commerce-hero-cta { width: fit-content; margin: 22px auto 0; padding: 0 24px; justify-content: center; background: var(--commerce-gold); border: 0; color: #fff; }");
   });
 
   it("baris 16: titik dua keluar dari alur supaya label center di atas kotaknya", () => {
@@ -38,6 +39,8 @@ describe("revisi QA putaran kedua", () => {
   it("baris 33: logo brand hanya dirender sekali di halaman detail", () => {
     expect(detail).not.toContain("commerce-product-image-brand");
     expect(detail).toContain("<ProductBrand product={product} />");
+    expect(detail.match(/<ProductBrand/g)).toHaveLength(1);
+    expect(detail).toContain('className="commerce-summary-product commerce-summary-product--text"');
   });
 
   it("baris 35: nominal dan badge stok tidak lagi ditimpa warna abu-abu induknya", () => {
@@ -55,8 +58,8 @@ describe("revisi QA putaran kedua", () => {
   });
 
   it("baris 43: breadcrumb diperbesar, termasuk di mobile", () => {
-    expect(css).toContain("font-size: 15px; font-weight: 600; }");
-    expect(css).toContain(".commerce-breadcrumbs { font-size: 15px; gap: 10px; }");
+    expect(css).toContain("font-size: 16px; font-weight: 600; }");
+    expect(css).toContain(".commerce-breadcrumbs { font-size: 16px; gap: 11px; }");
   });
 
   it("baris 47: durasi checkout mengikuti pilihan di halaman detail", () => {
@@ -112,6 +115,7 @@ describe("revisi QA putaran kedua", () => {
   it("baris 67: kegagalan dibedakan antara jaringan dan status HTTP", () => {
     expect(forgot).toContain("function failureMessage(error: unknown)");
     expect(forgot).toContain("if (error.status === 429)");
-    expect(forgot).toContain("if (error instanceof ApiError) throw error;");
+    expect(forgot).toContain("await authApi.forgotPassword(nextEmail)");
+    expect(forgot).not.toContain("sendResetLink");
   });
 });

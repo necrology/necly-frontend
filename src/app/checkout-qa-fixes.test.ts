@@ -13,8 +13,8 @@ describe("QA mobile fixes on checkout and product detail", () => {
   it("perbesar icon, panah, dan teks breadcrumb checkout (baris 43)", () => {
     expect(page).toContain('className="commerce-breadcrumbs"');
     expect(page).toContain("<House size={17}");
-    // Revisi QA: ukurannya dinaikkan lagi dari 13px ke 15px.
-    expect(css).toContain(".commerce-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; margin-bottom: 18px; color: var(--commerce-muted); font-size: 15px;");
+    // Revisi QA terbaru: ukurannya dinaikkan lagi dari 15px ke 16px.
+    expect(css).toContain(".commerce-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; margin-bottom: 18px; color: var(--commerce-muted); font-size: 16px;");
   });
 
   it("samakan ukuran ilustrasi checkout dengan halaman detail order (baris 44)", () => {

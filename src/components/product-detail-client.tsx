@@ -147,7 +147,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
       </div>
       <aside className="commerce-order-summary">
         <h2>Ringkasan Pesanan</h2>
-        <div className="commerce-summary-product"><div><ProductBrand product={product} compact /></div><div><strong>{product.name} - {product.packageName}</strong><b>{estimated ? <>{formatRupiahLabel(option.price)} <small>/ bulan</small></> : "—"}</b></div></div>
+        <div className="commerce-summary-product commerce-summary-product--text"><div><strong>{product.name} - {product.packageName}</strong><b>{estimated ? <>{formatRupiahLabel(option.price)} <small>/ bulan</small></> : "—"}</b></div></div>
         <div className="commerce-summary-line"><span>Paket Dipilih</span><strong>{product.packageName}</strong><small>{product.brand}</small></div>
         <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration}>Ubah</button></span><strong>{selectedDuration !== null ? option.label : "Belum dipilih"}</strong></div>
         <div className="commerce-summary-line"><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
