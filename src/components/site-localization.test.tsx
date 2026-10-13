@@ -1,11 +1,40 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { useAuthStore } from "@/lib/api";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/",
+  useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+}));
 
 describe("site localization", () => {
+  afterEach(() => {
+    useAuthStore.getState().clearAuth();
+  });
+
+  // Header dulu selalu menulis "Log In" dan tidak ada tombol keluar di mana pun,
+  // jadi sesi hanya berakhir saat cookie kedaluwarsa.
+  it("menampilkan menu akun dan tombol keluar setelah pengguna masuk", () => {
+    useAuthStore.getState().setAuth(
+      { id: "u-1", email: "budi@example.id", name: "Budi Santoso", role: "customer", emailVerifiedAt: null, createdAt: "", updatedAt: "" },
+      "token-uji",
+    );
+    render(<SiteHeader />);
+
+    expect(screen.queryByRole("link", { name: "Log In" })).not.toBeInTheDocument();
+    const primaryNavigation = screen.getByRole("navigation", { name: "Navigasi utama" });
+    const trigger = within(primaryNavigation).getByRole("button", { name: "Budi" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(trigger);
+    const menu = within(primaryNavigation).getByRole("menu");
+    expect(within(menu).getByRole("menuitem", { name: /Keluar/ })).toBeInTheDocument();
+    // Pelanggan tidak boleh ditawari dashboard yang khusus admin/penjual.
+    expect(within(menu).queryByRole("menuitem", { name: "Dashboard" })).not.toBeInTheDocument();
+  });
+
   it("uses Indonesian navigation and accessible labels", () => {
     render(<SiteHeader />);
     const primaryNavigation = screen.getByRole("navigation", { name: "Navigasi utama" });

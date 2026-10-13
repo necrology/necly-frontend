@@ -325,6 +325,15 @@ export const authApi = {
       body: JSON.stringify({ token }),
     }),
 
+  // Until the address is verified the account cannot sign in at all, so a lost
+  // activation email has to be recoverable. The backend retires the previous
+  // unused link, so only the newest one works.
+  resendVerification: (email: string) =>
+    apiRequest<{ message: string }>("/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+
   // A missing account is returned as 404 so the page can direct the visitor to
   // registration, per the product requirement.
   forgotPassword: (email: string) =>

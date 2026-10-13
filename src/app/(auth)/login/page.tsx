@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { PasswordField } from "@/components/password-field";
-import { authApi, DEMO_MODE } from "@/lib/api";
+import { ApiError, authApi, DEMO_MODE } from "@/lib/api";
 import { passwordError, safeRedirectPath } from "@/lib/auth-validation";
 
 function LoginContent() {
@@ -16,6 +16,24 @@ function LoginContent() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  // Akun yang belum diverifikasi tidak bisa masuk sama sekali, jadi layar ini
+  // harus menawarkan tautan aktivasi baru, bukan sekadar menolak.
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [resendNotice, setResendNotice] = useState("");
+  const [resending, setResending] = useState(false);
+
+  const resendVerification = async () => {
+    setResending(true);
+    setResendNotice("");
+    try {
+      if (!DEMO_MODE) await authApi.resendVerification(unverifiedEmail);
+      setResendNotice("Tautan verifikasi baru sudah dikirim. Periksa kotak masuk dan folder spam Anda.");
+    } catch (error) {
+      setResendNotice(error instanceof ApiError ? error.message : "Gagal mengirim ulang tautan verifikasi.");
+    } finally {
+      setResending(false);
+    }
+  };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -29,6 +47,8 @@ function LoginContent() {
     if (passwordValidation) next.password = passwordValidation;
     setErrors(next);
     setSubmitted(false);
+    setUnverifiedEmail("");
+    setResendNotice("");
     if (Object.keys(next).length) return;
 
     if (DEMO_MODE) {
@@ -40,8 +60,17 @@ function LoginContent() {
     try {
       await authApi.login({ email, password });
       router.push(safeRedirectPath(searchParams.get("redirect")));
-    } catch {
-      setErrors({ submit: "Gagal masuk. Periksa alamat email dan kata sandi Anda, lalu coba lagi." });
+    } catch (error) {
+      // Backend membedakan "kata sandi salah" dari "email belum diverifikasi".
+      // Pesan spesifiknya dulu dibuang, sehingga pengguna yang cuma belum
+      // mengklik tautan aktivasi diberi tahu bahwa kata sandinya salah.
+      const message = error instanceof ApiError ? error.message : "";
+      const unverified = error instanceof ApiError && error.status === 401 && /verifikasi/i.test(message);
+      if (unverified) setUnverifiedEmail(email);
+      // 401 tanpa kata "verifikasi" berarti kredensial salah; untuk kasus itu
+      // pesan generik lebih jelas. Selain itu pesan backend lebih berguna.
+      const showServerMessage = unverified || (error instanceof ApiError && error.status !== 401);
+      setErrors({ submit: showServerMessage && message ? message : "Gagal masuk. Periksa alamat email dan kata sandi Anda, lalu coba lagi." });
     } finally {
       setSubmitting(false);
     }
@@ -73,6 +102,14 @@ function LoginContent() {
           <Link className="button button-ghost button-sm auth-forgot-link" href="/forgot-password">Lupa kata sandi?</Link>
         </div>
         {errors.submit && <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>{errors.submit}</div>}
+        {unverifiedEmail && (
+          <div className="auth-resend">
+            <button className="button button-secondary button-sm" type="button" onClick={resendVerification} disabled={resending}>
+              {resending ? "Mengirim…" : "Kirim ulang tautan verifikasi"}
+            </button>
+            {resendNotice && <p className="muted small" role="status">{resendNotice}</p>}
+          </div>
+        )}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Sedang masuk…" : <>Masuk <ArrowRight size={14} /></>}</button>
       </form>
       {DEMO_MODE && <><div className="auth-divider">Akses demo</div><Link className="button button-secondary" href="/dashboard">Buka demo admin</Link></>}
