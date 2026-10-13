@@ -49,6 +49,20 @@ describe("POST /api/auth/forgot-password", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("meneruskan status email belum terdaftar dari backend", async () => {
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockResolvedValue(new Response(
+      JSON.stringify({ error: "Email belum terdaftar. Silakan membuat akun terlebih dahulu." }),
+      { status: 404, headers: { "Content-Type": "application/json" } },
+    )));
+
+    const response = await POST(request({ email: "baru@example.id" }));
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({
+      error: "Email belum terdaftar. Silakan membuat akun terlebih dahulu.",
+    });
+  });
+
   it("mengubah kegagalan jaringan backend menjadi respons 502", async () => {
     vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockRejectedValue(new TypeError("network down")));
 

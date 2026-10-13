@@ -24,21 +24,29 @@ import ForgotPasswordPage from "./page";
 describe("halaman lupa kata sandi", () => {
   beforeEach(() => {
     forgotMock.mockReset();
-    forgotMock.mockResolvedValue({ message: "Jika email tersebut terdaftar, tautan atur ulang kata sandi sudah dikirim." });
+    forgotMock.mockResolvedValue({ message: "Tautan atur ulang kata sandi sudah dikirim." });
   });
 
-  it("meminta tautan atur ulang lalu menampilkan pesan yang tidak membocorkan keberadaan akun", async () => {
+  it("meminta tautan atur ulang lalu menampilkan alamat tujuan", async () => {
     render(<ForgotPasswordPage />);
 
     fireEvent.change(screen.getByLabelText("Alamat email"), { target: { value: "pelanggan@example.id" } });
     fireEvent.click(screen.getByRole("button", { name: /kirim tautan atur ulang/i }));
 
     await waitFor(() => expect(forgotMock).toHaveBeenCalledWith("pelanggan@example.id"));
-    // The copy must stay conditional ("jika ... terdaftar"), never confirm that
-    // the account exists.
-    expect(await screen.findByText(/terdaftar, kami sudah mengirim tautan atur ulang/i)).toBeInTheDocument();
-    expect(screen.getByText(/tidak menampilkan apakah suatu alamat memiliki akun/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /belum punya akun/i })).toHaveAttribute("href", "/register");
+    expect(await screen.findByText(/kami sudah mengirim tautan atur ulang/i)).toBeInTheDocument();
+    expect(screen.getByText("pelanggan@example.id")).toBeInTheDocument();
+  });
+
+  it("memberi tahu email belum terdaftar dan mengarahkan pembuatan akun", async () => {
+    forgotMock.mockRejectedValue(new MockApiError("Email belum terdaftar.", 404));
+    render(<ForgotPasswordPage />);
+
+    fireEvent.change(screen.getByLabelText("Alamat email"), { target: { value: "baru@example.id" } });
+    fireEvent.click(screen.getByRole("button", { name: /kirim tautan atur ulang/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Email belum terdaftar");
+    expect(screen.getByRole("link", { name: "Buat akun sekarang" })).toHaveAttribute("href", "/register");
   });
 
   it("menolak alamat email yang tidak valid tanpa menghubungi backend", () => {

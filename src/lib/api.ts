@@ -325,9 +325,8 @@ export const authApi = {
       body: JSON.stringify({ token }),
     }),
 
-  // The backend always answers 200 with the same body, whether or not the
-  // address exists, so the caller must not treat the response as proof that an
-  // account was found.
+  // A missing account is returned as 404 so the page can direct the visitor to
+  // registration, per the product requirement.
   forgotPassword: (email: string) =>
     // Keep this browser request same-origin. The Route Handler relays it to the
     // backend, so password recovery cannot be broken by cross-origin CSP/CORS.

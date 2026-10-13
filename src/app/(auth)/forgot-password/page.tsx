@@ -10,6 +10,7 @@ import { ApiError, authApi, DEMO_MODE } from "@/lib/api";
 // "Periksa koneksi Anda" sehingga sebab sebenarnya tidak pernah terlihat.
 function failureMessage(error: unknown) {
   if (error instanceof ApiError) {
+    if (error.status === 404) return "Email belum terdaftar. Silakan membuat akun terlebih dahulu.";
     if (error.status === 429) return "Terlalu banyak permintaan atur ulang. Tunggu beberapa menit lalu coba lagi.";
     if (error.status >= 500) return "Server sedang tidak dapat memproses permintaan. Coba lagi beberapa saat lagi.";
     return error.message || `Permintaan ditolak (HTTP ${error.status}).`;
@@ -22,6 +23,7 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [unregistered, setUnregistered] = useState(false);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -34,15 +36,15 @@ export default function ForgotPasswordPage() {
     if (Object.keys(next).length) return;
 
     setEmail(nextEmail);
+    setUnregistered(false);
     setSubmitting(true);
     try {
       if (!DEMO_MODE) await authApi.forgotPassword(nextEmail);
-      // The backend answers the same way for a registered and an unregistered
-      // address, so this screen must not claim that an account was found.
       setSent(true);
     } catch (error) {
       // Jejak ke konsol supaya laporan QA berikutnya menyebut sebab yang pasti.
       console.error("[forgot-password] permintaan same-origin gagal", error);
+      setUnregistered(error instanceof ApiError && error.status === 404);
       setErrors({ submit: failureMessage(error) });
     } finally {
       setSubmitting(false);
@@ -58,13 +60,12 @@ export default function ForgotPasswordPage() {
         <p className="muted" style={{ margin: 0 }}>
           {DEMO_MODE
             ? "Mode demo tidak mengirim email. Di produk langsung, tautan atur ulang kata sandi dikirim ke alamat yang terdaftar."
-            : <>Jika <strong style={{ color: "var(--ink)" }}>{email}</strong> terdaftar, kami sudah mengirim tautan atur ulang kata sandi ke alamat itu. Tautan hanya dapat digunakan sekali dan berlaku terbatas.</>}
+            : <>Kami sudah mengirim tautan atur ulang kata sandi ke <strong style={{ color: "var(--ink)" }}>{email}</strong>. Tautan hanya dapat digunakan sekali dan berlaku terbatas.</>}
         </p>
         <p className="muted small" style={{ margin: 0 }}>
-          Tidak menerima email? Periksa folder spam dan pastikan alamat tersebut sudah pernah didaftarkan. Demi keamanan, kami tidak menampilkan apakah suatu alamat memiliki akun.
+          Tidak menerima email? Periksa folder spam, lalu tunggu beberapa menit sebelum mengirim ulang.
         </p>
         <button className="button button-secondary" style={{ width: "100%", marginTop: 8 }} type="button" onClick={() => setSent(false)}>Kirim ulang</button>
-        <Link className="button button-ghost" style={{ width: "100%" }} href="/register">Belum punya akun? Daftar</Link>
         <Link className="button button-ghost" style={{ width: "100%" }} href="/login"><ArrowLeft size={14} /> Kembali ke masuk</Link>
       </div>
     );
@@ -85,6 +86,7 @@ export default function ForgotPasswordPage() {
           {errors.email && <span className="field-error" role="alert">{errors.email}</span>}
         </div>
         {errors.submit && <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>{errors.submit}</div>}
+        {unregistered && <Link className="button button-secondary" href="/register">Buat akun sekarang</Link>}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Mengirim…" : <>Kirim tautan atur ulang <Send size={14} /></>}</button>
       </form>
       <Link className="button button-ghost" href="/login"><ArrowLeft size={14} /> Kembali ke masuk</Link>
