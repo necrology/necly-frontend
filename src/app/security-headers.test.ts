@@ -9,4 +9,10 @@ describe("security headers", () => {
     expect(config).toContain("script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com");
     expect(config).toContain("https://cloudflareinsights.com");
   });
+
+  it("allows every API path on the configured origin", () => {
+    expect(config).toContain("const apiOrigin = new URL(");
+    expect(config).toContain("`connect-src 'self' ${apiOrigin}");
+    expect(config).not.toContain("`connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL");
+  });
 });
