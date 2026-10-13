@@ -53,7 +53,7 @@ function LoginContent() {
       <div className="figma-desktop-auth-logo"><Image src="/design-assets/necly-logo.png" alt="Necly Services" width={112} height={111} loading="eager" unoptimized /></div>
       <div className="auth-login-intro">
         {/* Baris 63: sapaan dibuat lebih ramah sesuai permintaan QA. */}
-        <span className="eyebrow">Hi, Senang Bertemu Kembali</span>
+        <span className="eyebrow auth-login-greeting">Hi, Senang Bertemu Kembali</span>
         <h1 className="h2" style={{ marginTop: 10 }}>Masuk ke Necly Services.</h1>
         {/* Baris 64: jarak subtitle ke judul ditambah supaya tidak mepet. */}
         <p className="muted auth-login-subtitle">{DEMO_MODE ? "Mode demo aktif. Data login tidak akan dikirim." : "Kelola pesanan dan akses langganan Anda."}</p>

@@ -110,7 +110,7 @@ describe("halaman Laporan Kendala", () => {
   });
 
   // QA baris 56 & 57: layar sukses menampilkan ceklis dan hanya tombol kembali.
-  it("menampilkan ceklis dan tombol Kembali ke beranda pada laporan pertama", async () => {
+  it("menampilkan ceklis di samping judul dan tombol Beranda pada laporan pertama", async () => {
     createMock.mockResolvedValue({ message: "Laporan kendala diterima", report: { id: "rep-1" } });
     render(<IssueReportPage />);
 
@@ -119,7 +119,7 @@ describe("halaman Laporan Kendala", () => {
 
     expect(await screen.findByText("Laporan Diterima")).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Laporan berhasil dikirim" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Kembali ke beranda/ })).toHaveAttribute("href", "/");
+    expect(screen.getByRole("link", { name: /^Beranda$/ })).toHaveAttribute("href", "/");
     expect(screen.queryByText(/Kirim laporan lain/)).not.toBeInTheDocument();
     expect(screen.getByText(/laporan berikutnya dapat dikirim kembali setelah 3 jam/)).toBeInTheDocument();
   });

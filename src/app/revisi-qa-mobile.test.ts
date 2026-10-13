@@ -86,10 +86,18 @@ describe("revisi QA putaran kedua", () => {
     expect(required).toHaveLength(5);
   });
 
-  it("baris 60: tombol Kembali ke beranda tampil putih lalu jadi biru saat disorot", () => {
+  it("baris 58: animasi ceklis berada di sebelah teks Laporan Diterima", () => {
+    expect(issue).toContain('className="issue-success-heading"');
+    expect(issue).toMatch(/issue-success-heading[\s\S]*issue-check[\s\S]*<h2>Laporan Diterima<\/h2>/);
+    expect(css).toContain(".issue-success-heading { display: flex; align-items: center; gap: 12px; }");
+  });
+
+  it("baris 60: tombol Beranda tampil putih lalu jadi biru saat disorot", () => {
     // Layar "Laporan Diterima" dan tautan di dalam form sama-sama jadi tombol putih.
     expect(issue).toContain('className="button issue-home-button"');
     expect(issue).toContain('className="button issue-back-button"');
+    expect(issue.match(/> Beranda<\/Link>/g)).toHaveLength(2);
+    expect(issue).not.toContain("Kembali ke beranda</Link>");
     expect(css).toContain(".issue-success .issue-home-button { width: fit-content; color: #4c1ef9; background: #fff;");
     expect(css).toContain(".issue-success .issue-home-button:hover, .issue-success .issue-home-button:focus-visible { color: #fff; background: #4c1ef9;");
     expect(css).toContain(".issue-page .issue-back-button:hover, .issue-page .issue-back-button:focus-visible { color: #fff; background: #4c1ef9;");
@@ -107,7 +115,8 @@ describe("revisi QA putaran kedua", () => {
   });
 
   it("baris 63 & 64: sapaan login baru dan subtitle diberi jarak dari judul", () => {
-    expect(login).toContain("Hi, Senang Bertemu Kembali");
+    expect(login).toContain('className="eyebrow auth-login-greeting">Hi, Senang Bertemu Kembali</span>');
+    expect(css).toContain(".auth-form-login .auth-login-greeting { font-size: clamp(13px, 1.5vw, 15px); line-height: 1.4; }");
     expect(css).toContain(".auth-form-login .auth-login-intro p { margin-top: clamp(14px, 2.2vh, 22px) !important; }");
   });
 

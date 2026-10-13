@@ -92,18 +92,20 @@ export default function IssueReportPage() {
         <form className="card issue-form" onSubmit={submit} noValidate>
           {sent ? (
             <div className="issue-success">
-              {/* Baris 56: animasi ceklis sebagai penanda laporan berhasil terkirim. */}
-              <svg className="issue-check" viewBox="0 0 52 52" role="img" aria-label="Laporan berhasil dikirim">
-                <circle className="issue-check-ring" cx="26" cy="26" r="23" fill="none" />
-                <path className="issue-check-mark" fill="none" d="M15 27l7.5 7.5L37.5 19" />
-              </svg>
-              <h2>Laporan Diterima</h2>
+              {/* Baris 58: animasi ceklis harus berada di sebelah teks, bukan di atasnya. */}
+              <div className="issue-success-heading">
+                <svg className="issue-check" viewBox="0 0 52 52" role="img" aria-label="Laporan berhasil dikirim">
+                  <circle className="issue-check-ring" cx="26" cy="26" r="23" fill="none" />
+                  <path className="issue-check-mark" fill="none" d="M15 27l7.5 7.5L37.5 19" />
+                </svg>
+                <h2>Laporan Diterima</h2>
+              </div>
               <p>Catat nomor pesanan Anda. Tim akan meninjau laporan berdasarkan informasi yang dikirimkan.</p>
               {/* Baris 57: info cooldown 3 jam, tanpa tombol "kirim laporan lain". */}
               <p className="issue-cooldown">{cooldownCopy}</p>
               {/* Baris 60: tombol putih, dan berubah seperti tombol "Kirim laporan"
                   saat disorot — mengikuti pola tombol di halaman Testimoni. */}
-              <Link className="button issue-home-button" href="/"><Home size={14} /> Kembali ke beranda</Link>
+              <Link className="button issue-home-button" href="/"><Home size={14} /> Beranda</Link>
             </div>
           ) : (
             <>
@@ -144,7 +146,7 @@ export default function IssueReportPage() {
               <button className="button button-primary" type="submit" disabled={submitting} style={{ marginTop: 22 }}>{submitting ? "Mengirim…" : "Kirim laporan"}</button>
               {/* Baris 60: dipasangkan dengan tombol "Kirim laporan" seperti pola di
                   halaman Testimoni — putih, lalu jadi biru saat disorot. */}
-              <Link className="button issue-back-button" href="/"><ArrowLeft size={15} /> Kembali ke beranda</Link>
+              <Link className="button issue-back-button" href="/"><ArrowLeft size={15} /> Beranda</Link>
             </>
           )}
         </form>
