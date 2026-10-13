@@ -48,9 +48,9 @@ describe("revisi QA putaran kedua", () => {
     expect(css).toContain(".commerce-product-information > .commerce-detail-price { color: #4c1ef9;");
   });
 
-  it("baris 36: catatan kendala disejajarkan, diberi bintang, dan berwarna merah", () => {
+  it("baris 36: catatan kendala disejajarkan, diberi bintang, berwarna merah, dan rata kanan-kiri", () => {
     expect(detail).toContain('className="commerce-accordion-note"');
-    expect(css).toContain(".commerce-accordion-copy p.commerce-accordion-note { padding-left: 20px; color: #c0261d; }");
+    expect(css).toContain(".commerce-accordion-copy p.commerce-accordion-note { padding-left: 20px; color: #c0261d; text-align: justify; text-align-last: left; }");
   });
 
   it("baris 40: tombol Ubah diperbesar", () => {
