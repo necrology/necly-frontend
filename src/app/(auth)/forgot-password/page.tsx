@@ -60,8 +60,11 @@ export default function ForgotPasswordPage() {
             ? "Mode demo tidak mengirim email. Di produk langsung, tautan atur ulang kata sandi dikirim ke alamat yang terdaftar."
             : <>Jika <strong style={{ color: "var(--ink)" }}>{email}</strong> terdaftar, kami sudah mengirim tautan atur ulang kata sandi ke alamat itu. Tautan hanya dapat digunakan sekali dan berlaku terbatas.</>}
         </p>
-        <p className="muted small" style={{ margin: 0 }}>Tidak menerima email? Periksa folder spam, atau tunggu beberapa menit lalu kirim ulang.</p>
+        <p className="muted small" style={{ margin: 0 }}>
+          Tidak menerima email? Periksa folder spam dan pastikan alamat tersebut sudah pernah didaftarkan. Demi keamanan, kami tidak menampilkan apakah suatu alamat memiliki akun.
+        </p>
         <button className="button button-secondary" style={{ width: "100%", marginTop: 8 }} type="button" onClick={() => setSent(false)}>Kirim ulang</button>
+        <Link className="button button-ghost" style={{ width: "100%" }} href="/register">Belum punya akun? Daftar</Link>
         <Link className="button button-ghost" style={{ width: "100%" }} href="/login"><ArrowLeft size={14} /> Kembali ke masuk</Link>
       </div>
     );

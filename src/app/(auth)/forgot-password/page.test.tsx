@@ -37,6 +37,8 @@ describe("halaman lupa kata sandi", () => {
     // The copy must stay conditional ("jika ... terdaftar"), never confirm that
     // the account exists.
     expect(await screen.findByText(/terdaftar, kami sudah mengirim tautan atur ulang/i)).toBeInTheDocument();
+    expect(screen.getByText(/tidak menampilkan apakah suatu alamat memiliki akun/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /belum punya akun/i })).toHaveAttribute("href", "/register");
   });
 
   it("menolak alamat email yang tidak valid tanpa menghubungi backend", () => {
