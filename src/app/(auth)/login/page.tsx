@@ -76,7 +76,8 @@ function LoginContent() {
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Sedang masuk…" : <>Masuk <ArrowRight size={14} /></>}</button>
       </form>
       {DEMO_MODE && <><div className="auth-divider">Akses demo</div><Link className="button button-secondary" href="/dashboard">Buka demo admin</Link></>}
-      <p className="muted small" style={{ textAlign: "center", margin: 0 }}>Belum memiliki akun? <Link href="/register" style={{ color: "var(--blue)", fontWeight: 600 }}>Daftar</Link></p>
+      {/* Baris 66: font bagian ini diperbesar supaya jelas terlihat. */}
+      <p className="muted auth-register-prompt">Belum memiliki akun? <Link href="/register">Daftar</Link></p>
     </div>
   );
 }

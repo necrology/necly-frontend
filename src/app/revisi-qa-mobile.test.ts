@@ -81,9 +81,17 @@ describe("revisi QA putaran kedua", () => {
   });
 
   it("baris 60: tombol Kembali ke beranda tampil putih lalu jadi biru saat disorot", () => {
+    // Layar "Laporan Diterima" dan tautan di dalam form sama-sama jadi tombol putih.
     expect(issue).toContain('className="button issue-home-button"');
+    expect(issue).toContain('className="button issue-back-button"');
     expect(css).toContain(".issue-success .issue-home-button { width: fit-content; color: #4c1ef9; background: #fff;");
     expect(css).toContain(".issue-success .issue-home-button:hover, .issue-success .issue-home-button:focus-visible { color: #fff; background: #4c1ef9;");
+    expect(css).toContain(".issue-page .issue-back-button:hover, .issue-page .issue-back-button:focus-visible { color: #fff; background: #4c1ef9;");
+  });
+
+  it("baris 66: ajakan daftar di halaman login diperbesar", () => {
+    expect(login).toContain('className="muted auth-register-prompt"');
+    expect(css).toContain(".auth-register-prompt { margin: 0 !important; text-align: center; font-size: 14px !important; }");
   });
 
   it("baris 61 & 62: deskripsi dipecah dua baris, aside dibuat bold tanpa panah", () => {

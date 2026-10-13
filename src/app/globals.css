@@ -296,6 +296,9 @@ body:has(.auth-form-login) { overflow: hidden; }
 .auth-form-login .auth-login-subtitle { margin-bottom: 0 !important; }
 .auth-forgot-link { color: #4c1ef9 !important; text-decoration: underline; text-underline-offset: 3px; }
 .auth-forgot-link:hover { background: #f1ecff !important; }
+/* Baris 66: ajakan daftar diperbesar supaya jelas terlihat. */
+.auth-register-prompt { margin: 0 !important; text-align: center; font-size: 14px !important; }
+.auth-register-prompt a { color: var(--blue); font-size: 15px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .auth-form-login .figma-desktop-auth-logo { margin-top: 0; }
 .auth-form-login .figma-desktop-auth-logo img { width: clamp(68px, 12vh, 100px); height: clamp(68px, 12vh, 100px); }
 
@@ -1525,6 +1528,10 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .issue-submit-error svg { flex: 0 0 auto; margin-top: 2px; }
 .issue-hint { display: flex; align-items: flex-start; gap: 8px; margin: 16px 0 0; border-radius: 12px; padding: 11px 13px; color: #6b5a1f; background: #fdf3dd; font-size: 12px; line-height: 1.7; }
 .issue-back { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; color: var(--commerce-muted); font-size: 12px; font-weight: 600; }
+/* Baris 60: "Kembali ke beranda" di dalam form dijadikan tombol putih, lalu berubah
+   biru seperti "Kirim laporan" saat disorot — sepasang seperti di halaman Testimoni. */
+.issue-page .issue-back-button { width: fit-content; min-height: 46px; margin-top: 16px; border-radius: 14px; color: #4c1ef9; background: #fff; border: 1px solid #d9d9e8; box-shadow: 0 9px 20px -16px rgb(40 15 180 / .55); font-size: 13px; font-weight: 700; }
+.issue-page .issue-back-button:hover, .issue-page .issue-back-button:focus-visible { color: #fff; background: #4c1ef9; border-color: #4c1ef9; }
 /* Baris 56: ceklis beranimasi di samping "Laporan Diterima". */
 .issue-success { justify-items: start; }
 .issue-check { width: 66px; height: 66px; }
