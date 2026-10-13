@@ -115,6 +115,17 @@ export type ApiOrder = {
   updated_at: string;
 };
 
+/** One active sign-in, as returned by GET /auth/sessions. The token itself is
+ * never sent to the browser; only enough to recognise the device. */
+export type ApiSession = {
+  id: string;
+  user_agent: string;
+  ip_address: string;
+  created_at: string;
+  expires_at: string;
+  current: boolean;
+};
+
 export type ApiTestimonial = {
   id: string;
   title: string;
@@ -349,6 +360,22 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+
+  // Menyertakan kata sandi saat ini walau pemanggilnya sudah punya sesi, supaya
+  // token akses yang dicuri sendirian tidak cukup untuk mengunci pemilik akun.
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    apiRequest<{ message: string }>("/auth/change-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  listSessions: () => apiRequest<{ sessions: ApiSession[] }>("/auth/sessions"),
+
+  revokeSession: (id: string) =>
+    apiRequest<{ message: string }>(`/auth/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
+
+  revokeOtherSessions: () =>
+    apiRequest<{ message: string; ended: number }>("/auth/sessions", { method: "DELETE" }),
 
   getMe: () => apiRequest<ApiUser>("/me"),
   googleLoginUrl: `${API_BASE}/auth/google`,

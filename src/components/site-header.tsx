@@ -97,6 +97,7 @@ export function SiteHeader() {
       {accountOpen && (
         <div className="commerce-account-menu" role="menu">
           <p className="commerce-account-identity"><strong>{user.name}</strong><small>{user.email}</small></p>
+          <Link role="menuitem" href="/akun" onClick={() => setAccountOpen(false)}>Akun &amp; keamanan</Link>
           {canUseDashboard && <Link role="menuitem" href="/dashboard" onClick={() => setAccountOpen(false)}>Dashboard</Link>}
           <Link role="menuitem" href="/products" onClick={() => setAccountOpen(false)}>Lihat Layanan</Link>
           <button role="menuitem" type="button" onClick={signOut} disabled={signingOut}>{signingOut ? "Keluar…" : <><LogOut size={14} /> Keluar</>}</button>
@@ -134,6 +135,7 @@ export function SiteHeader() {
         {links.map((link) => <Link className={cn("commerce-mobile-nav-link", isActive(link.href) && "active")} aria-current={isActive(link.href) ? "page" : undefined} href={link.href} key={link.href} onClick={closeMobileMenu}>{link.label}</Link>)}
         {user ? (
           <>
+            <Link className="commerce-mobile-login" href="/akun" onClick={closeMobileMenu}>Akun &amp; keamanan</Link>
             {canUseDashboard && <Link className="commerce-mobile-login" href="/dashboard" onClick={closeMobileMenu}>Dashboard</Link>}
             <button className="commerce-mobile-login commerce-mobile-signout" type="button" onClick={signOut} disabled={signingOut}>{signingOut ? "Keluar…" : `Keluar (${user.name.split(" ")[0]})`}</button>
           </>
