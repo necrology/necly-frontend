@@ -36,16 +36,16 @@ function getItemKey(item: CartProduct): string {
 const initializer = (set: (partial: Partial<CartState> | ((state: CartState) => Partial<CartState>)) => void, get: () => CartState): CartState => ({
   items: [],
   addItem: (item) => set((state) => {
-    const key = getItemKey(item);
-    const existing = state.items.find((entry) => getItemKey(entry) === key);
-    const stock = item.selectedStock ?? item.stock;
+    const existing = state.items.find((entry) => entry.id === item.id);
     if (existing) {
+      let selectionReplaced = false;
       return {
-        items: state.items.map((entry) =>
-          getItemKey(entry) === key
-            ? { ...entry, quantity: Math.min(entry.quantity + 1, stock) }
-            : entry,
-        ),
+        items: state.items.flatMap((entry) => {
+          if (entry.id !== item.id) return [entry];
+          if (selectionReplaced) return [];
+          selectionReplaced = true;
+          return [{ ...item, quantity: 1 }];
+        }),
       };
     }
     return { items: [...state.items, { ...item, quantity: 1 }] };

@@ -46,7 +46,7 @@ describe("halaman pelacakan pesanan (live)", () => {
     render(<OrderClient orderId="ord-1" />);
 
     await waitFor(() => expect(screen.getByText("Dibayar")).toBeInTheDocument());
-    expect(screen.getAllByText("Netflix Premium")).toHaveLength(2);
+    expect(screen.getAllByText("Netflix Premium")).toHaveLength(1);
   });
 
   it("menampilkan error saat gagal mengambil pesanan", async () => {

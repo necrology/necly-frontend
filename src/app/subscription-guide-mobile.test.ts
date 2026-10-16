@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const css = readFileSync(new URL("./storefront-fixes.css", import.meta.url), "utf8");
+const css = readFileSync(join(process.cwd(), "src", "app", "storefront-fixes.css"), "utf8");
 
 describe("subscription guide on mobile", () => {
   it("uses a compact one-column flow and keeps the help card in document flow", () => {

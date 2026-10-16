@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const css = [
-  readFileSync(new URL("./globals.css", import.meta.url), "utf8"),
-  readFileSync(new URL("./storefront-fixes.css", import.meta.url), "utf8"),
+  readFileSync(join(process.cwd(), "src", "app", "globals.css"), "utf8"),
+  readFileSync(join(process.cwd(), "src", "app", "storefront-fixes.css"), "utf8"),
 ].join("\n");
 
 describe("storefront mobile safeguards", () => {

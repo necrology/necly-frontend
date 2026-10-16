@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const source = readFileSync(new URL("./site-header.tsx", import.meta.url), "utf8");
-const css = readFileSync(new URL("../app/storefront-fixes.css", import.meta.url), "utf8");
+const source = readFileSync(join(process.cwd(), "src", "components", "site-header.tsx"), "utf8");
+const css = readFileSync(join(process.cwd(), "src", "app", "storefront-fixes.css"), "utf8");
 
 describe("site header", () => {
   it("has no header search action and centers its logo", () => {

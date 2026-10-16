@@ -41,7 +41,7 @@ describe("cart store (price selection)", () => {
     });
   });
 
-  it("treats different price options for same product as separate cart entries", () => {
+  it("replaces an older selection when the same product is ordered again", () => {
     useCartStore.getState().addItem({
       ...baseProduct,
       product_price_id: "price-monthly",
@@ -55,61 +55,87 @@ describe("cart store (price selection)", () => {
       selectedDuration: "365 hari",
       selectedPrice: 1_900_000,
       selectedStock: 2,
-    });
-
-    const items = useCartStore.getState().items;
-    expect(items).toHaveLength(2);
-    expect(items.find((i) => i.product_price_id === "price-monthly")).toBeDefined();
-    expect(items.find((i) => i.product_price_id === "price-annual")).toBeDefined();
-  });
-
-  it("increments quantity when same product_price_id is added again", () => {
-    useCartStore.getState().addItem({
-      ...baseProduct,
-      product_price_id: "price-monthly",
-      selectedDuration: "30 hari",
-      selectedPrice: 186_000,
-      selectedStock: 4,
-    });
-    useCartStore.getState().addItem({
-      ...baseProduct,
-      product_price_id: "price-monthly",
-      selectedDuration: "30 hari",
-      selectedPrice: 186_000,
-      selectedStock: 4,
+      selectedDevice: 3,
     });
 
     const items = useCartStore.getState().items;
     expect(items).toHaveLength(1);
-    expect(items[0].quantity).toBe(2);
-    expect(items[0].product_price_id).toBe("price-monthly");
+    expect(items[0]).toMatchObject({
+      product_price_id: "price-annual",
+      selectedDuration: "365 hari",
+      selectedPrice: 1_900_000,
+      selectedStock: 2,
+      selectedDevice: 3,
+      quantity: 1,
+    });
   });
 
-  it("respects stock limit for selected price option", () => {
+  it("keeps the latest device selection when the same price is ordered again", () => {
     useCartStore.getState().addItem({
       ...baseProduct,
-      product_price_id: "price-annual",
-      selectedDuration: "365 hari",
-      selectedPrice: 1_900_000,
-      selectedStock: 2,
+      product_price_id: "price-monthly",
+      selectedDuration: "30 hari",
+      selectedPrice: 186_000,
+      selectedStock: 4,
+      selectedDevice: 1,
     });
     useCartStore.getState().addItem({
       ...baseProduct,
-      product_price_id: "price-annual",
-      selectedDuration: "365 hari",
-      selectedPrice: 1_900_000,
-      selectedStock: 2,
-    });
-    useCartStore.getState().addItem({
-      ...baseProduct,
-      product_price_id: "price-annual",
-      selectedDuration: "365 hari",
-      selectedPrice: 1_900_000,
-      selectedStock: 2,
+      product_price_id: "price-monthly",
+      selectedDuration: "30 hari",
+      selectedPrice: 186_000,
+      selectedStock: 4,
+      selectedDevice: 4,
     });
 
     const items = useCartStore.getState().items;
-    expect(items[0].quantity).toBe(2);
+    expect(items).toHaveLength(1);
+    expect(items[0].quantity).toBe(1);
+    expect(items[0].product_price_id).toBe("price-monthly");
+    expect(items[0].selectedDevice).toBe(4);
+  });
+
+  it("cleans up duplicate legacy selections for the same product", () => {
+    useCartStore.setState({
+      items: [
+        { ...baseProduct, product_price_id: "price-monthly", selectedDuration: "30 hari", quantity: 1 },
+        { ...baseProduct, product_price_id: "price-annual", selectedDuration: "365 hari", quantity: 1 },
+      ],
+    });
+
+    useCartStore.getState().addItem({
+      ...baseProduct,
+      product_price_id: "price-annual",
+      selectedDuration: "365 hari",
+      selectedPrice: 1_900_000,
+      selectedStock: 2,
+      selectedDevice: 2,
+    });
+
+    expect(useCartStore.getState().items).toEqual([
+      expect.objectContaining({ product_price_id: "price-annual", selectedDevice: 2, quantity: 1 }),
+    ]);
+  });
+
+  it("preserves different products as separate cart entries", () => {
+    useCartStore.getState().addItem({
+      ...baseProduct,
+      product_price_id: "price-monthly",
+      selectedDuration: "30 hari",
+      selectedPrice: 186_000,
+      selectedStock: 4,
+    });
+    useCartStore.getState().addItem({
+      ...baseProduct,
+      id: "prd-2",
+      slug: "spotify-premium",
+      name: "Spotify Premium",
+      product_price_id: "price-spotify-monthly",
+    });
+
+    const items = useCartStore.getState().items;
+    expect(items).toHaveLength(2);
+    expect(items.map((item) => item.id)).toEqual(["prd-1", "prd-2"]);
   });
 
   it("persists cart items with product_price_id to localStorage", () => {

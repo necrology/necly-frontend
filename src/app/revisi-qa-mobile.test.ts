@@ -16,6 +16,9 @@ const login = read("src", "app", "(auth)", "login", "page.tsx");
 const forgot = read("src", "app", "(auth)", "forgot-password", "page.tsx");
 const guide = read("src", "app", "(site)", "cara-berlangganan", "page.tsx");
 const reportButton = read("src", "components", "report-issue-button.tsx");
+const cartStore = read("src", "stores", "cart-store.ts");
+const about = read("src", "app", "(site)", "about", "page.tsx");
+const header = read("src", "components", "site-header.tsx");
 
 describe("revisi QA putaran kedua", () => {
   it("baris 9: ikon panah dihapus, teks CTA putih, badge 'Lebih Hemat' dihapus", () => {
@@ -66,6 +69,9 @@ describe("revisi QA putaran kedua", () => {
     expect(checkout).toContain("const durationFromCart = useMemo(");
     expect(checkout).toContain("setDurationOverride(index)");
     expect(checkout).not.toContain("const [duration, setDuration] = useState(0);");
+    expect(cartStore).toContain("entry.id === item.id");
+    expect(cartStore).toContain("return [{ ...item, quantity: 1 }]");
+    expect(cartStore).toContain("if (selectionReplaced) return []");
   });
 
   it("baris 50: warning bank/retail memakai tampilan warning detail pesanan", () => {
@@ -101,6 +107,20 @@ describe("revisi QA putaran kedua", () => {
     expect(css).toContain(".issue-success .issue-home-button { width: fit-content; color: #4c1ef9; background: #fff;");
     expect(css).toContain(".issue-success .issue-home-button:hover, .issue-success .issue-home-button:focus-visible { color: #fff; background: #4c1ef9;");
     expect(css).toContain(".issue-page .issue-back-button:hover, .issue-page .issue-back-button:focus-visible { color: #fff; background: #4c1ef9;");
+    expect(issue).toContain('className="issue-form-actions"');
+    expect(css).toContain(".issue-form-actions { display: grid; gap: 14px; margin-top: 22px; }");
+    expect(css).toContain(".issue-form-actions .button { width: 100%;");
+  });
+
+  it("baris 68: jarak vertikal halaman Tentang dirapatkan di desktop dan mobile", () => {
+    expect(about).toContain('className="section section-rule about-section"');
+    expect(css).toContain(".about-section { padding-block: 56px; }");
+    expect(css).toContain(".about-grid { grid-template-columns: 1fr; gap: 22px; }");
+  });
+
+  it("baris 71: teks akun dan keluar di menu mobile berwarna putih", () => {
+    expect(header.match(/commerce-mobile-account-action/g)).toHaveLength(2);
+    expect(css).toContain(".commerce-mobile-account-action { color: #fff; }");
   });
 
   it("baris 66: ajakan daftar di halaman login diperbesar", () => {

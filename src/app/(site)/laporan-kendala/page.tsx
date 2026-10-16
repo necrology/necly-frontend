@@ -143,10 +143,11 @@ export default function IssueReportPage() {
               </label>
               {submitError && <p className="issue-submit-error" role="alert"><AlertCircle size={16} />{submitError}</p>}
               {!cooldown && <p className="issue-hint">Nomor pesanan dan email harus sesuai dengan pesanan Anda. Untuk menghindari laporan berulang, laporan berikutnya dapat dikirim kembali setelah 3 jam.</p>}
-              <button className="button button-primary" type="submit" disabled={submitting} style={{ marginTop: 22 }}>{submitting ? "Mengirim…" : "Kirim laporan"}</button>
-              {/* Baris 60: dipasangkan dengan tombol "Kirim laporan" seperti pola di
-                  halaman Testimoni — putih, lalu jadi biru saat disorot. */}
-              <Link className="button issue-back-button" href="/"><ArrowLeft size={15} /> Beranda</Link>
+              <div className="issue-form-actions">
+                <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Mengirim…" : "Kirim laporan"}</button>
+                {/* Baris 60: kedua tombol diberi jarak dan lebar yang sama dengan form. */}
+                <Link className="button issue-back-button" href="/"><ArrowLeft size={15} /> Beranda</Link>
+              </div>
             </>
           )}
         </form>
