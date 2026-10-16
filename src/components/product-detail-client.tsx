@@ -60,6 +60,9 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   const deviceOptions: number[] = product.deviceOptions?.length ? product.deviceOptions : [...defaultDeviceOptions];
   const option = selectedDuration === null ? product.priceOptions[0] : (product.priceOptions[selectedDuration] ?? product.priceOptions[0]);
   const estimated = selectedPackage && selectedDuration !== null;
+  // Stok yang berlaku adalah milik paket yang sedang dipilih: backend memeriksa
+  // slot per product_price, bukan per produk.
+  const inStock = (option.stock ?? product.stock) > 0;
   const packageMissing = showWarnings && !selectedPackage;
   const durationMissing = showWarnings && selectedDuration === null;
   const deviceMissing = showWarnings && selectedDevice === null;
@@ -81,7 +84,11 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
       return;
     }
     const duration = product.priceOptions[selectedDuration] ?? product.priceOptions[0];
-    addItem({ id: product.id, slug: product.slug, name: product.name, category: product.category, price: duration.price, stock: product.stock, accessType: product.accessType, product_price_id: duration.id, selectedDuration: duration.label, selectedPrice: duration.price, selectedStock: product.stock, selectedDevice });
+    // Stok dicatat per harga: backend memeriksa slot milik product_price yang
+    // dipesan (checkout.go). Memakai stok tingkat produk membuat keranjang
+    // mengizinkan jumlah yang lebih besar daripada slot paket yang dipilih.
+    const durationStock = duration.stock ?? product.stock;
+    addItem({ id: product.id, slug: product.slug, name: product.name, category: product.category, price: duration.price, stock: durationStock, accessType: product.accessType, product_price_id: duration.id, selectedDuration: duration.label, selectedPrice: duration.price, selectedStock: durationStock, selectedDevice });
     setAdded(true);
     router.push("/checkout");
   };
@@ -101,7 +108,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
             <h1>{product.name}</h1>
             <p>{product.description}</p>
             <p className="commerce-detail-price">{formatRupiahLabel(option.price)} <small>/ bulan</small></p>
-            <p className={`commerce-stock-ready ${product.stock > 0 ? "" : "is-empty"}`}>{product.stock > 0 ? <CheckCircle2 size={18} /> : <CircleAlert size={18} />}{product.stock > 0 ? "Stok tersedia, langsung bisa diproses!" : "Stok habis, saat ini masuk daftar tunggu"}</p>
+            <p className={`commerce-stock-ready ${inStock ? "" : "is-empty"}`}>{inStock ? <CheckCircle2 size={18} /> : <CircleAlert size={18} />}{inStock ? "Stok tersedia, langsung bisa diproses!" : "Stok habis, saat ini masuk daftar tunggu"}</p>
             <h2 ref={packageSectionRef}>Pilih Paket <span className="commerce-required" aria-hidden="true">*</span></h2>
             <button type="button" className={`commerce-package-option ${selectedPackage ? "selected" : ""}`} aria-pressed={selectedPackage} onClick={() => setSelectedPackage(true)}><span className="commerce-radio" /><span><strong>{product.packageName}</strong><small>{product.brand}</small></span><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></button>
             {packageMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih paket dahulu sebelum memesan.</p>}

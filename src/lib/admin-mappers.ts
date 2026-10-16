@@ -122,7 +122,9 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
       duration: `${price.duration_days ?? price.duration?.days ?? 30} hari`,
       days: price.duration_days ?? price.duration?.days ?? 30,
       price: price.amount,
-      stock: price.stock ?? 0,
+      // Katalog mengirim ketersediaan per harga sebagai `available_slots`
+      // (jumlah slot berstatus available); `stock` tidak pernah ada.
+      stock: price.available_slots ?? price.stock ?? 0,
     }))
     .sort((a, b) => a.days - b.days || a.price - b.price);
 
@@ -136,7 +138,7 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
     eyebrow: "Akun sharing hemat",
     category: mappedCategory,
     price: primaryPrice?.amount ?? 0,
-    stock: apiProduct.stock ?? primaryPrice?.stock ?? 0,
+    stock: apiProduct.stock ?? priceOptions.reduce((sum, option) => sum + (option.stock ?? 0), 0),
     duration: primaryPrice?.duration_name ?? "Belum tersedia",
     summary: apiProduct.description,
     description: apiProduct.description,

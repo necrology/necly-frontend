@@ -28,6 +28,18 @@ function durationLabel(days: number) {
   return `${days} hari`;
 }
 
+/**
+ * Stok per harga datang sebagai `available_slots` — jumlah baris
+ * `inventory_slots` berstatus `available` untuk harga itu, dan itulah yang
+ * diperiksa backend saat checkout (checkout.go: `price.SlotCount < quantity`
+ * → ErrOutOfStock). Katalog tidak pernah mengirim `stock`, jadi membaca
+ * `price.stock` saja selalu menghasilkan nol: seluruh etalase akan tampil
+ * "Stok habis" walaupun slotnya ada.
+ */
+function priceStock(price: NonNullable<ApiProduct["prices"]>[number]) {
+  return price.available_slots ?? price.stock ?? 0;
+}
+
 function mapPriceOption(price: NonNullable<ApiProduct["prices"]>[number]): PriceOption {
   const days = price.duration?.days ?? price.duration_days ?? 30;
   return {
@@ -36,7 +48,7 @@ function mapPriceOption(price: NonNullable<ApiProduct["prices"]>[number]): Price
     duration: `${days} hari`,
     days,
     price: price.amount,
-    stock: price.stock ?? 0,
+    stock: priceStock(price),
   };
 }
 
@@ -47,7 +59,10 @@ export function mapApiProduct(product: ApiProduct): SubscriptionProduct {
     .sort((left, right) => left.days - right.days || left.price - right.price);
   const primaryPrice = priceOptions[0];
   const category = mapCategory(product);
-  const stock = product.stock ?? primaryPrice?.stock ?? 0;
+  // Ketersediaan tingkat produk adalah gabungan seluruh paketnya, karena stok
+  // dicatat per harga. Sebelumnya nilai ini selalu 0 (lihat priceStock),
+  // sehingga kartu katalog menulis "Stok Terbatas" untuk semua produk.
+  const stock = product.stock ?? priceOptions.reduce((sum, option) => sum + (option.stock ?? 0), 0);
 
   return {
     id: product.id,

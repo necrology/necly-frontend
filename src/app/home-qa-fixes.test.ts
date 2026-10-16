@@ -28,7 +28,9 @@ describe("QA mobile fixes on the storefront", () => {
     expect(brand).toContain('<span className="disney-word">Disney+ Hotstar</span>');
     expect(css).toContain(".commerce-stock-ready { display: inline-flex;");
     expect(css).toContain(".commerce-stock-ready.is-empty { color: #a3231b;");
-    expect(detail).toContain('className={`commerce-stock-ready ${product.stock > 0 ? "" : "is-empty"}`}');
+    // Stok mengikuti paket yang dipilih, karena slot dicatat per harga.
+    expect(detail).toContain("const inStock = (option.stock ?? product.stock) > 0;");
+    expect(detail).toContain('className={`commerce-stock-ready ${inStock ? "" : "is-empty"}`}');
   });
 
   it('tampilkan "Cara Berlangganan" dan FAQ di beranda setelah produk (poin 18)', () => {

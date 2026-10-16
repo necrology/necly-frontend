@@ -58,6 +58,13 @@ export type ApiProductPrice = {
   duration?: ApiProductDuration;
   duration_name?: string;
   duration_days?: number;
+  /**
+   * Stok yang sebenarnya dipakai backend: jumlah baris `inventory_slots`
+   * berstatus `available` untuk harga ini (lihat ProductPriceWithStock di
+   * domain/models.go). `stock` tidak pernah dikirim katalog dan hanya
+   * dipertahankan untuk data lama.
+   */
+  available_slots?: number;
   stock?: number;
 };
 
