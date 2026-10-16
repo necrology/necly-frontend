@@ -21,6 +21,7 @@ describe("desktop storefront layout", () => {
   it("ships the original desktop artwork instead of generated placeholders", () => {
     const requiredAssets = [
       "homepage-hero.png",
+      "homepage-hero-mobile.png",
       "necly-logo.png",
       "stat-users.png",
       "stat-transactions.png",

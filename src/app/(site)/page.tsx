@@ -22,7 +22,7 @@ export default function HomePage() {
             <Link className="commerce-hero-cta" href="/products">Lihat Layanan</Link>
           </div>
           {/* Baris 9: teks "Lebih Hemat Lebih Seru Bersama" dihapus karena menutupi animasi. */}
-          <div className="commerce-home-hero-art"><Image src="/design-assets/homepage-hero.png" alt="Orang-orang berbagi layanan premium" width={630} height={424} priority unoptimized /></div>
+          <div className="commerce-home-hero-art"><Image src="/design-assets/homepage-hero-mobile.png" alt="Orang-orang berbagi layanan premium" width={630} height={636} priority unoptimized /></div>
         </div>
       </section>
       <CommerceHomeSections />

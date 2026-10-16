@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 const css = readFileSync(join(process.cwd(), "src/app/storefront-fixes.css"), "utf8");
 const globalCss = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
 const homeSections = readFileSync(join(process.cwd(), "src/components/commerce-home-sections.tsx"), "utf8");
+const homePage = readFileSync(join(process.cwd(), "src/app/(site)/page.tsx"), "utf8");
 const mobileHomeSlides = readFileSync(join(process.cwd(), "src/components/mobile-home-slides.tsx"), "utf8");
 const productsPage = readFileSync(join(process.cwd(), "src/app/(site)/products/page.tsx"), "utf8");
 const loginPage = readFileSync(join(process.cwd(), "src/app/(auth)/login/page.tsx"), "utf8");
@@ -20,10 +21,13 @@ describe("responsive storefront composition", () => {
     expect(css).toContain(".commerce-catalog-hero-art img, .figma-desktop-hero-art, .commerce-stat-art");
   });
 
-  it("uses the desktop service artwork at every viewport", () => {
+  it("uses the revised artwork on mobile without changing the desktop artwork", () => {
+    expect(homePage).toContain('className="figma-desktop-hero-art" src="/design-assets/homepage-hero.png"');
+    expect(homePage).toContain('src="/design-assets/homepage-hero-mobile.png"');
+    expect(homePage).toContain("width={630} height={636}");
     expect(productsPage).toContain('src="/design-assets/homepage-hero.png"');
     expect(productsPage).not.toContain("/illustrations/mobile-sharing-hero.svg");
-    expect(mobileHomeSlides).toContain('image: "/design-assets/homepage-hero.png"');
+    expect(mobileHomeSlides).toContain('image: "/design-assets/homepage-hero-mobile.png"');
     expect(mobileHomeSlides).not.toContain("/illustrations/mobile-sharing-hero.svg");
     expect(productsPage).not.toContain("/illustrations/product-workspace.svg");
     expect(productsPage).not.toContain("Pilihan praktis");
