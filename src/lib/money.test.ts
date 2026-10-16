@@ -8,7 +8,9 @@ describe("formatIDR", () => {
 });
 
 describe("cartTotals", () => {
-  it("calculates subtotal, discount, service fee, and total", () => {
+  // Sama persis dengan perhitungan backend: subtotal dikurangi diskon voucher.
+  // Tidak ada biaya layanan maupun kode unik, karena backend tidak menagihnya.
+  it("menghitung subtotal, diskon, dan total seperti backend", () => {
     expect(
       cartTotals(
         [
@@ -20,8 +22,15 @@ describe("cartTotals", () => {
     ).toEqual({
       subtotal: 1_250_000,
       discount: 100_000,
-      serviceFee: 28_750,
-      total: 1_178_750,
+      total: 1_150_000,
+    });
+  });
+
+  it("tidak mengizinkan diskon melebihi subtotal", () => {
+    expect(cartTotals([{ price: 50_000, quantity: 1 }], 900_000)).toEqual({
+      subtotal: 50_000,
+      discount: 50_000,
+      total: 0,
     });
   });
 });

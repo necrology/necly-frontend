@@ -1488,6 +1488,20 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 /* Baris 50: tampilannya diwarisi langsung dari .commerce-field-warning agar identik
    dengan warning detail pesanan; aturan ini hanya menambahkan jarak dari tombol Bayar. */
 .commerce-checkout-summary .commerce-checkout-warning { margin: 22px 0 0; }
+/* Checkout mengikuti isi keranjang: satu baris per item, dan durasi yang
+   benar-benar dipesan ditampilkan apa adanya. */
+.commerce-checkout-lines { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.commerce-checkout-line { display: flex; align-items: center; justify-content: space-between; gap: 14px; border: 1px solid var(--commerce-line); border-radius: 14px; padding: 12px 14px; }
+.commerce-checkout-line strong { display: block; color: var(--commerce-ink); font-size: 13px; }
+.commerce-checkout-line p { margin: 3px 0 0; color: var(--commerce-muted); font-size: 11px; }
+.commerce-checkout-line b { color: #4c1ef9; font-size: 13px; white-space: nowrap; }
+.commerce-checkout-line b small { color: var(--commerce-muted); font-size: 10px; font-weight: 600; }
+.commerce-checkout-duration-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.commerce-checkout-duration-chips span { border-radius: 999px; padding: 7px 14px; color: #4c1ef9; background: #ecebff; font-size: 12px; font-weight: 700; }
+/* Persetujuan syarat & ketentuan harus terbaca di halaman checkout: dokumennya
+   dipakai Google sebagai "terms of service" pada layar persetujuan OAuth. */
+.commerce-checkout-consent { margin: 10px 0 0; line-height: 1.65; text-align: center; }
+.commerce-checkout-consent a { color: #4c1ef9; font-weight: 700; text-decoration: underline; }
 .commerce-checkout-mailto { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 10px; color: var(--commerce-muted); font-size: 11px; font-weight: 600; }
 .commerce-checkout-mailto:hover { color: #4c1ef9; }
 @media (max-width: 767px) {

@@ -43,15 +43,20 @@ export function formatDateTimeID(value: string): string {
   }
 }
 
+/**
+ * Total keranjang mengikuti perhitungan backend apa adanya: subtotal adalah
+ * jumlah harga × kuantitas, dan total hanya dikurangi diskon voucher. Backend
+ * tidak pernah menambahkan biaya layanan maupun kode unik — tabel `orders`
+ * hanya punya subtotal, discount, dan total — sehingga menampilkannya membuat
+ * angka di layar berbeda dari yang benar-benar ditagih.
+ */
 export function cartTotals(items: readonly PricedItem[], discount = 0) {
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const safeDiscount = Math.min(Math.max(discount, 0), subtotal);
-  const serviceFee = Math.round((subtotal - safeDiscount) * 0.025);
 
   return {
     subtotal,
     discount: safeDiscount,
-    serviceFee,
-    total: subtotal - safeDiscount + serviceFee,
+    total: subtotal - safeDiscount,
   };
 }

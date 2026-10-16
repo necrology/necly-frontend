@@ -11,7 +11,7 @@ const privacy = read("src", "app", "(site)", "kebijakan-privasi", "page.tsx");
 const terms = read("src", "app", "(site)", "syarat-ketentuan", "page.tsx");
 const footer = read("src", "components", "site-footer.tsx");
 const register = read("src", "app", "(auth)", "register", "page.tsx");
-const checkout = read("src", "app", "(site)", "checkout", "checkout-client.tsx");
+const checkout = read("src", "components", "checkout-commerce-client.tsx");
 const css = read("src", "app", "globals.css");
 
 describe("halaman kebijakan privasi dan syarat ketentuan", () => {
@@ -59,5 +59,6 @@ describe("halaman kebijakan privasi dan syarat ketentuan", () => {
     expect(register).toContain('href="/syarat-ketentuan"');
     expect(register).toContain('href="/kebijakan-privasi"');
     expect(checkout).toContain('href="/syarat-ketentuan"');
+    expect(checkout).toContain('href="/kebijakan-privasi"');
   });
 });

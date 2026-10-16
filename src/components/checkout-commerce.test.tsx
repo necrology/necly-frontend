@@ -32,21 +32,32 @@ describe("CheckoutCommerceClient", () => {
     cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1 }];
   });
 
-  it("mengurangi kode unik dari harga paket seperti desain referensi", () => {
+  // Total di layar harus sama dengan yang ditagih backend: jumlah harga ×
+  // kuantitas. Tidak ada kode unik maupun biaya layanan yang ditambahkan.
+  it("menampilkan total sebesar subtotal keranjang", () => {
+    cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 3 }];
+
     render(<CheckoutCommerceClient />);
 
-    // Paket referensi: Rp 81.500, kode unik Rp 33 -> total Rp 81.467 (bukan 81.533).
-    expect(screen.getAllByText("Rp 81.467").length).toBeGreaterThan(0);
-    expect(screen.queryByText("Rp 81.533")).not.toBeInTheDocument();
-    expect(screen.getByText("Kode Unik")).toBeInTheDocument();
+    expect(screen.getAllByText("Rp 150.000").length).toBeGreaterThan(0);
+    expect(screen.getByText("Subtotal (3 item)")).toBeInTheDocument();
+    expect(screen.queryByText("Kode Unik")).not.toBeInTheDocument();
   });
 
-  it("menampilkan bagian Ubah Durasi di samping Detail Pesanan", () => {
+  it("menampilkan satu baris per item keranjang, bukan hanya yang pertama", () => {
+    cartItems.value = [
+      { id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1 },
+      { id: "spotify", slug: "spotify-premium", name: "Spotify Premium", category: "Streaming", price: 30_000, stock: 5, product_price_id: "0c9d8e7f-6a5b-4c3d-9e8f-1a2b3c4d5e6f", quantity: 2 },
+    ];
+
     render(<CheckoutCommerceClient />);
 
-    expect(screen.getByRole("heading", { name: /Pilih Durasi Berlangganan/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Detail Pesanan" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Ubah Durasi" })).toBeInTheDocument();
+    expect(screen.getByText("Netflix Premium")).toBeInTheDocument();
+    expect(screen.getByText("Spotify Premium")).toBeInTheDocument();
+    // 50.000 + (30.000 × 2) = 110.000
+    expect(screen.getAllByText("Rp 110.000").length).toBeGreaterThan(0);
+    expect(screen.getByText("Subtotal (3 item)")).toBeInTheDocument();
   });
 
   it("mengunci metode bank dan retail untuk durasi di bawah 6 bulan", () => {
@@ -59,11 +70,13 @@ describe("CheckoutCommerceClient", () => {
     }
   });
 
-  it("membuka kembali metode bank setelah durasi 6 bulan dipilih", () => {
-    render(<CheckoutCommerceClient />);
+  // Durasi ditentukan di keranjang, jadi aturan bank/retail mengikuti durasi
+  // yang benar-benar dipesan — bukan pilihan di halaman ini.
+  it("membuka metode bank bila keranjang berisi durasi 6 bulan", () => {
+    cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1, selectedDuration: "6 Bulan", selectedDevice: 1 }];
 
+    render(<CheckoutCommerceClient />);
     fireEvent.click(screen.getByRole("button", { name: "BNI" }));
-    fireEvent.click(screen.getAllByRole("button", { name: "6 Bulan" })[0]);
 
     for (const button of screen.getAllByRole("button", { name: "Bayar" })) {
       expect(button).toBeEnabled();

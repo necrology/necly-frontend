@@ -66,9 +66,12 @@ describe("revisi QA putaran kedua", () => {
   });
 
   it("baris 47: durasi checkout mengikuti pilihan di halaman detail", () => {
-    expect(checkout).toContain("const durationFromCart = useMemo(");
-    expect(checkout).toContain("setDurationOverride(index)");
-    expect(checkout).not.toContain("const [duration, setDuration] = useState(0);");
+    // Halaman checkout membangun pesanan dari keranjang, jadi durasi, ringkasan,
+    // dan totalnya tidak lagi dihitung ulang dari data contoh di klien.
+    expect(checkout).toContain("const subtotal = useMemo(() => items.reduce(");
+    expect(checkout).toContain("const months = useMemo(");
+    expect(checkout).not.toContain("UNIQUE_CODE");
+    expect(checkout).toContain("Potongan voucher dihitung saat pesanan dibuat.");
     expect(cartStore).toContain("entry.id === item.id");
     expect(cartStore).toContain("return [{ ...item, quantity: 1 }]");
     expect(cartStore).toContain("if (selectionReplaced) return []");
