@@ -33,6 +33,21 @@ function lineDetail(item: CartItem) {
   return parts.length ? parts.join(" · ") : item.category;
 }
 
+/**
+ * Keranjang menyimpan label durasi apa adanya dari katalog, dan dua sumbernya
+ * memakai satuan berbeda: data contoh menulis "6 Bulan" sementara katalog API
+ * menulis "180 hari" (lihat product-mapper). Keduanya harus dibaca sebagai
+ * jumlah bulan — tanpa konversi ini "180 hari" terbaca 180 bulan, sehingga
+ * paket 1 bulan lolos ke metode bank/retail yang seharusnya terkunci.
+ */
+function durationInMonths(label?: string) {
+  const match = /(\d+)\s*(bulan|hari|days?|months?)/i.exec(label ?? "");
+  if (!match) return 1;
+  const value = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(value) || value <= 0) return 1;
+  return /bulan|month/i.test(match[2]) ? value : Math.max(1, Math.round(value / 30));
+}
+
 export function CheckoutCommerceClient() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
@@ -64,11 +79,12 @@ export function CheckoutCommerceClient() {
 
   // Durasi ditentukan di keranjang, bukan di sini: pesanan dibangun dari id harga
   // yang tersimpan di keranjang. Aturan bank/retail karena itu mengikuti durasi
-  // yang benar-benar dipesan, bukan pilihan di halaman ini.
-  const months = useMemo(() => {
-    const parsed = Number.parseInt(items[0]?.selectedDuration ?? "", 10);
-    return Number.isFinite(parsed) ? parsed : 1;
-  }, [items]);
+  // yang benar-benar dipesan, bukan pilihan di halaman ini. Bila keranjang memuat
+  // beberapa durasi, yang terpendek yang menentukan.
+  const months = useMemo(
+    () => (items.length ? Math.min(...items.map((item) => durationInMonths(item.selectedDuration))) : 1),
+    [items],
+  );
   const manualMethodLocked = MANUAL_PAYMENTS.includes(payment) && months < 6;
 
   // Keranjang bisa memuat id harga dari data contoh lokal — produk yang

@@ -83,6 +83,46 @@ describe("CheckoutCommerceClient", () => {
     }
   });
 
+  // Katalog API menuliskan durasi dalam hari ("180 hari" untuk paket 6 bulan),
+  // jadi angka mentahnya tidak boleh dipakai sebagai jumlah bulan.
+  it("membaca durasi katalog API dalam hari sebagai bulan, bukan angka mentah", () => {
+    cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1, selectedDuration: "180 hari", selectedDevice: 1 }];
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "BNI" }));
+
+    for (const button of screen.getAllByRole("button", { name: "Bayar" })) {
+      expect(button).toBeEnabled();
+    }
+  });
+
+  it("mengunci metode bank untuk paket 30 hari dari katalog API", () => {
+    cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1, selectedDuration: "30 hari", selectedDevice: 1 }];
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "BNI" }));
+
+    for (const button of screen.getAllByRole("button", { name: "Bayar" })) {
+      expect(button).toBeDisabled();
+    }
+  });
+
+  // Keranjang bisa memuat paket 12 bulan dan 1 bulan sekaligus; aturan bank harus
+  // mengikuti yang terpendek, bukan item pertama.
+  it("memakai durasi terpendek bila keranjang memuat beberapa durasi", () => {
+    cartItems.value = [
+      { id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1, selectedDuration: "12 Bulan", selectedDevice: 1 },
+      { id: "spotify", slug: "spotify", name: "Spotify Premium", category: "Streaming", price: 30_000, stock: 5, product_price_id: "0c9d8e7f-6a5b-4c3d-9e8f-1a2b3c4d5e6f", quantity: 1, selectedDuration: "1 Bulan", selectedDevice: 1 },
+    ];
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "BNI" }));
+
+    for (const button of screen.getAllByRole("button", { name: "Bayar" })) {
+      expect(button).toBeDisabled();
+    }
+  });
+
   it("mengirim pesanan ke API lalu mengarahkan ke halaman pembayaran", async () => {
     checkoutMock.mockResolvedValue({ order: { id: "ord-123" }, payment: { id: "pay-1" }, checkout_url: "/payment/ord-123" });
 
