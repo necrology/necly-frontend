@@ -97,12 +97,28 @@ export function CheckoutCommerceClient() {
       }
 
       // Baris 38: jumlah perangkat yang dipilih ikut tersimpan per item pesanan.
+      // Keranjang bisa memuat dua baris dengan harga yang sama — mis. ditambahkan
+      // dari halaman katalog lalu dari halaman detail. Backend menolak item
+      // duplikat dalam satu pesanan (400 "Input tidak valid"), jadi baris seperti
+      // itu digabung lebih dulu, dengan jumlah dijumlahkan sesuai yang terlihat
+      // di keranjang.
+      const merged = new Map<string, { product_price_id: string; quantity: number; device_count?: number }>();
+      for (const item of items) {
+        const priceId = item.product_price_id ?? item.id;
+        const existing = merged.get(priceId);
+        if (existing) {
+          existing.quantity += item.quantity;
+          existing.device_count = existing.device_count ?? item.selectedDevice ?? selectedDevice ?? undefined;
+          continue;
+        }
+        merged.set(priceId, {
+          product_price_id: priceId,
+          quantity: item.quantity,
+          device_count: item.selectedDevice ?? selectedDevice ?? undefined,
+        });
+      }
       const orderItems = items.length
-        ? items.map((item) => ({
-            product_price_id: item.product_price_id ?? item.id,
-            quantity: item.quantity,
-            device_count: item.selectedDevice ?? selectedDevice ?? undefined,
-          }))
+        ? [...merged.values()]
         : [{ product_price_id: product.priceOptions[duration]?.id ?? product.id, quantity: 1, device_count: selectedDevice ?? undefined }];
 
       const response = await checkoutApi.checkout(

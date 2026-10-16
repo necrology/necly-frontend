@@ -2,14 +2,15 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CheckoutCommerceClient } from "./checkout-commerce-client";
 
-const { checkoutMock, pushMock } = vi.hoisted(() => ({
+const { checkoutMock, pushMock, cartItems } = vi.hoisted(() => ({
   checkoutMock: vi.fn(),
   pushMock: vi.fn(),
+  cartItems: { value: [] as unknown[] },
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock }) }));
 vi.mock("@/stores/cart-store", () => ({
-  useCartStore: (selector: (state: unknown) => unknown) => selector({ items: [] }),
+  useCartStore: (selector: (state: unknown) => unknown) => selector({ items: cartItems.value }),
 }));
 vi.mock("@/lib/api", () => ({
   DEMO_MODE: false,
@@ -22,6 +23,7 @@ describe("CheckoutCommerceClient", () => {
   beforeEach(() => {
     checkoutMock.mockReset();
     pushMock.mockReset();
+    cartItems.value = [];
   });
 
   it("mengurangi kode unik dari harga paket seperti desain referensi", () => {
@@ -73,6 +75,21 @@ describe("CheckoutCommerceClient", () => {
     // QA baris 38: jumlah perangkat yang diklik ikut terkirim bersama item.
     expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: "one-month", quantity: 1, device_count: 1 }]);
     expect(pushMock).toHaveBeenCalledWith("/payment/ord-123");
+  });
+
+  // Keranjang bisa memuat dua baris dengan harga sama; backend menolak item
+  // duplikat dalam satu pesanan, dan itulah yang membuat checkout selalu
+  // dijawab 400 "Input tidak valid".
+  it("menggabungkan baris keranjang dengan harga sama sebelum mengirim", async () => {
+    checkoutMock.mockResolvedValue({ order: { id: "ord-1" }, payment: { id: "pay-1" }, checkout_url: "/payment/ord-1" });
+    const line = { id: "netflix", slug: "netflix", name: "Netflix", category: "Streaming", price: 50_000, stock: 5, product_price_id: "price-1", selectedDevice: 2 };
+    cartItems.value = [{ ...line, quantity: 1 }, { ...line, quantity: 2 }];
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    await waitFor(() => expect(checkoutMock).toHaveBeenCalled());
+    expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: "price-1", quantity: 3, device_count: 2 }]);
   });
 
   it("menampilkan pesan galat saat checkout gagal", async () => {
