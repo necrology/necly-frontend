@@ -175,6 +175,24 @@ describe("CheckoutCommerceClient", () => {
     expect(screen.getByRole("alert")).toHaveTextContent(/Keranjang masih kosong/);
   });
 
+  // Tombol Bayar yang mati tanpa keterangan membuat pembeli mengira dirinya
+  // belum masuk; alasannya harus terbaca tepat di sebelah tombolnya.
+  it("menjelaskan alasan tombol Bayar mati saat keranjang kosong", () => {
+    cartItems.value = [];
+
+    render(<CheckoutCommerceClient />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Keranjang masih kosong, jadi belum ada yang bisa dibayar.");
+  });
+
+  it("menjelaskan alasan tombol Bayar mati saat item berasal dari katalog lama", () => {
+    cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: "one-month", quantity: 1 }];
+
+    render(<CheckoutCommerceClient />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("1 item di keranjang berasal dari katalog lama");
+  });
+
   it("menampilkan pesan galat saat checkout gagal", async () => {
     checkoutMock.mockRejectedValue(new Error("Stok paket habis."));
 

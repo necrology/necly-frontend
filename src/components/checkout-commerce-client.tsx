@@ -232,6 +232,12 @@ export function CheckoutCommerceClient() {
         <button className="commerce-primary-button" type="button" disabled={payDisabled} onClick={pay}>{submitting ? <LoaderCircle className="commerce-spin" size={20} /> : <LockKeyhole size={20} />}{submitting ? "Memproses…" : "Bayar"}</button>
         {/* Baris 50: gunakan komponen visual warning yang sama dengan detail pesanan. */}
         {manualMethodLocked && <p className="commerce-field-warning commerce-checkout-warning" role="alert"><AlertCircle size={16} />Pilih durasi minimal 6 bulan untuk metode {payment}.</p>}
+        {/* Alasan tombol Bayar mati ditaruh tepat di bawah tombolnya: sebelumnya
+            keterangan ini hanya ada di ujung halaman, sehingga tombol tampak
+            terkunci tanpa sebab. */}
+        {!submitting && !manualMethodLocked && (items.length === 0 || staleCount > 0) && (
+          <p className="commerce-field-warning commerce-checkout-warning" role="status"><AlertCircle size={16} />{items.length === 0 ? "Keranjang masih kosong, jadi belum ada yang bisa dibayar." : `${staleCount} item di keranjang berasal dari katalog lama, jadi belum bisa dibayar.`}</p>
+        )}
         <p className="muted small commerce-checkout-consent">Dengan menekan Bayar, Anda menyetujui <Link href="/syarat-ketentuan" target="_blank" rel="noreferrer">syarat &amp; ketentuan</Link> dan <Link href="/kebijakan-privasi" target="_blank" rel="noreferrer">kebijakan privasi</Link> Necly Services.</p>
         {error && <p className="commerce-checkout-error" role="alert"><AlertCircle size={16} />{error}</p>}
         {/* Baris 51: nomor WhatsApp lama tidak terdaftar, jadi arahkan ke halaman laporan kendala + email. */}
