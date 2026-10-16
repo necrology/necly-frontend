@@ -132,7 +132,15 @@ export function CheckoutCommerceClient() {
     }
   };
 
-  const payDisabled = manualMethodLocked || submitting;
+  // Keranjang bisa memuat id harga dari data contoh lokal — produk yang
+  // ditambahkan sebelum katalog dari API selesai dimuat, atau lewat halaman
+  // detail yang mendahulukan data lokal. Id seperti itu tidak ada di database,
+  // jadi checkout tidak akan pernah berhasil; lebih baik dijelaskan di muka
+  // daripada dibiarkan gagal dengan galat server.
+  const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const staleCount = items.filter((item) => !UUID.test(item.product_price_id ?? "")).length;
+  const needsCatalog = !DEMO_MODE && (items.length === 0 || staleCount > 0);
+  const payDisabled = manualMethodLocked || submitting || needsCatalog;
 
   // Baris 45: pesan voucher hanya "Kode Voucher Tidak dikenali" dalam warna merah.
   // Kode promo tidak lagi diumbar lewat teks hint.
@@ -218,7 +226,14 @@ export function CheckoutCommerceClient() {
       </aside>
       <aside className="commerce-transaction-trust"><h2>Transaksi Aman & Terpercaya</h2>{safeguards.map(([title, detail, Icon]) => <article key={title}><span><Icon size={25} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</aside>
       <div className="commerce-mobile-payment-bar"><span><small>Total Bayar</small><b>{formatRupiahLabel(total)}</b></span><button type="button" disabled={payDisabled} onClick={pay}>{submitting ? "Memproses…" : "Bayar"}</button></div>
-      {!items.length && <p className="commerce-checkout-fallback"><AlertCircle size={16} />Menampilkan paket referensi; tambahkan produk dari katalog untuk menyimpannya di keranjang.</p>}
+      {needsCatalog && (
+        <p className="commerce-checkout-fallback" role="alert">
+          <AlertCircle size={16} />
+          {items.length === 0
+            ? <>Keranjang masih kosong. <Link href="/products">Pilih layanan</Link> dulu sebelum membayar.</>
+            : <>{staleCount} item di keranjang berasal dari katalog lama dan tidak bisa diproses. Hapus item itu di <Link href="/cart">keranjang</Link>, lalu tambahkan ulang dari katalog.</>}
+        </p>
+      )}
     </div>
   );
 }
