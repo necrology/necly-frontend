@@ -50,7 +50,7 @@ export default function OrdersAdminPage() {
     }
   }, []);
 
-  const sourceOrders = DEMO_MODE ? dashboardOrders : apiOrders ?? [];
+  const sourceOrders = useMemo(() => DEMO_MODE ? dashboardOrders : apiOrders ?? [], [apiOrders]);
 
   const rows = useMemo(
     () =>

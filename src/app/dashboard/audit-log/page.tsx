@@ -43,7 +43,7 @@ export default function AuditLogPage() {
     }
   }, []);
 
-  const sourceRecords = DEMO_MODE ? auditRecords : apiAuditRecords ?? [];
+  const sourceRecords = useMemo(() => DEMO_MODE ? auditRecords : apiAuditRecords ?? [], [apiAuditRecords]);
   const actors = ["Semua", ...Array.from(new Set(sourceRecords.map((record) => record.actor)))];
   const rows = useMemo(
     () =>

@@ -8,22 +8,25 @@ import type { SubscriptionProduct } from "@/lib/types";
 export function AddToCart({ product }: { product: SubscriptionProduct }) {
   const [added, setAdded] = useState(false);
   const addItem = useCartStore((state) => state.addItem);
-  const available = product.stock > 0 && product.priceOptions.length > 0;
-  const firstPriceOption = product.priceOptions[0];
+  // Stok dicatat per harga/durasi. Jangan mengambil paket pertama bila paket
+  // itu habis sementara durasi lain masih tersedia.
+  const firstPriceOption = product.priceOptions.find((option) => (option.stock ?? product.stock) > 0);
+  const available = Boolean(firstPriceOption);
 
   const add = () => {
+    if (!firstPriceOption) return;
     addItem({
       id: product.id,
       slug: product.slug,
       name: product.name,
       category: product.category,
-      price: firstPriceOption?.price ?? product.price,
-      stock: firstPriceOption?.stock ?? product.stock,
+      price: firstPriceOption.price,
+      stock: firstPriceOption.stock ?? product.stock,
       accessType: product.accessType,
-      product_price_id: firstPriceOption?.id,
-      selectedDuration: firstPriceOption?.duration,
-      selectedPrice: firstPriceOption?.price,
-      selectedStock: firstPriceOption?.stock,
+      product_price_id: firstPriceOption.id,
+      selectedDuration: firstPriceOption.duration,
+      selectedPrice: firstPriceOption.price,
+      selectedStock: firstPriceOption.stock ?? product.stock,
     });
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);

@@ -6,18 +6,21 @@ import { CheckoutCommerceClient } from "./checkout-commerce-client";
 // seperti "one-month", dan checkout menolak yang bukan UUID.
 const PRICE_ID = "3f1a2b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b";
 
-const { checkoutMock, pushMock, cartItems } = vi.hoisted(() => ({
+const { checkoutMock, catalogMock, pushMock, replaceItemsMock, cartItems } = vi.hoisted(() => ({
   checkoutMock: vi.fn(),
+  catalogMock: vi.fn(),
   pushMock: vi.fn(),
+  replaceItemsMock: vi.fn(),
   cartItems: { value: [] as unknown[] },
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock }) }));
 vi.mock("@/stores/cart-store", () => ({
-  useCartStore: (selector: (state: unknown) => unknown) => selector({ items: cartItems.value }),
+  useCartStore: (selector: (state: unknown) => unknown) => selector({ items: cartItems.value, replaceItems: replaceItemsMock }),
 }));
 vi.mock("@/lib/api", () => ({
   DEMO_MODE: false,
+  catalogApi: { listProducts: catalogMock },
   checkoutApi: { checkout: checkoutMock },
   bootstrapAuth: vi.fn().mockResolvedValue({ id: "usr-1" }),
   useAuthStore: { getState: () => ({ user: { id: "usr-1" } }) },
@@ -26,7 +29,9 @@ vi.mock("@/lib/api", () => ({
 describe("CheckoutCommerceClient", () => {
   beforeEach(() => {
     checkoutMock.mockReset();
+    catalogMock.mockReset();
     pushMock.mockReset();
+    replaceItemsMock.mockReset();
     // Sebuah baris keranjang yang sah: id harganya UUID dari katalog API, dan
     // belum ada perangkat terpilih sehingga pemilihnya masih diuji.
     cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1 }];
@@ -60,13 +65,14 @@ describe("CheckoutCommerceClient", () => {
     expect(screen.getByText("Subtotal (3 item)")).toBeInTheDocument();
   });
 
-  it("mengunci metode bank dan retail untuk durasi di bawah 6 bulan", () => {
+  it("memperingatkan metode bank dan retail tanpa mengunci tombol Bayar", () => {
     render(<CheckoutCommerceClient />);
 
     fireEvent.click(screen.getByRole("button", { name: "BNI" }));
+    expect(screen.getAllByRole("alert")[0]).toHaveTextContent(/minimal 6 bulan/);
 
     for (const button of screen.getAllByRole("button", { name: "Bayar" })) {
-      expect(button).toBeDisabled();
+      expect(button).toBeEnabled();
     }
   });
 
@@ -96,15 +102,13 @@ describe("CheckoutCommerceClient", () => {
     }
   });
 
-  it("mengunci metode bank untuk paket 30 hari dari katalog API", () => {
+  it("memperingatkan metode bank untuk paket 30 hari tanpa mengunci pembayaran", () => {
     cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1, selectedDuration: "30 hari", selectedDevice: 1 }];
 
     render(<CheckoutCommerceClient />);
     fireEvent.click(screen.getByRole("button", { name: "BNI" }));
-
-    for (const button of screen.getAllByRole("button", { name: "Bayar" })) {
-      expect(button).toBeDisabled();
-    }
+    expect(screen.getAllByRole("alert")[0]).toHaveTextContent(/minimal 6 bulan/);
+    expect(screen.getAllByRole("button", { name: "Bayar" })[0]).toBeEnabled();
   });
 
   // Keranjang bisa memuat paket 12 bulan dan 1 bulan sekaligus; aturan bank harus
@@ -117,10 +121,8 @@ describe("CheckoutCommerceClient", () => {
 
     render(<CheckoutCommerceClient />);
     fireEvent.click(screen.getByRole("button", { name: "BNI" }));
-
-    for (const button of screen.getAllByRole("button", { name: "Bayar" })) {
-      expect(button).toBeDisabled();
-    }
+    expect(screen.getAllByRole("alert")[0]).toHaveTextContent(/minimal 6 bulan/);
+    expect(screen.getAllByRole("button", { name: "Bayar" })[0]).toBeEnabled();
   });
 
   it("mengirim pesanan ke API lalu mengarahkan ke halaman pembayaran", async () => {
@@ -151,17 +153,17 @@ describe("CheckoutCommerceClient", () => {
     expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: PRICE_ID, quantity: 3, device_count: 2 }]);
   });
 
-  // Id data contoh lokal (slug) tidak ada di database, jadi checkout tidak akan
-  // pernah berhasil; lebih baik tombolnya mati dengan penjelasan.
-  it("menolak membayar ketika item keranjang berasal dari katalog lama", () => {
+  // Keranjang lama tidak boleh mengunci pembeli; checkout akan memigrasikan id
+  // paket dari katalog sebelum membuat pesanan.
+  it("tetap membuka pembayaran ketika item berasal dari katalog lama", () => {
     cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix", category: "Streaming", price: 50_000, stock: 5, product_price_id: "one-month", quantity: 1 }];
 
     render(<CheckoutCommerceClient />);
 
     for (const button of screen.getAllByRole("button", { name: "Bayar" })) {
-      expect(button).toBeDisabled();
+      expect(button).toBeEnabled();
     }
-    expect(screen.getByRole("alert")).toHaveTextContent(/katalog lama/);
+    expect(screen.getByRole("status")).toHaveTextContent(/diperbarui otomatis/);
   });
 
   it("menolak membayar ketika keranjang kosong", () => {
@@ -190,7 +192,7 @@ describe("CheckoutCommerceClient", () => {
 
     render(<CheckoutCommerceClient />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("1 item di keranjang berasal dari katalog lama");
+    expect(screen.getByRole("status")).toHaveTextContent("1 item di keranjang berasal dari katalog lama dan akan diperbarui otomatis");
   });
 
   it("menampilkan pesan galat saat checkout gagal", async () => {

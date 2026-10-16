@@ -45,7 +45,7 @@ export default function VouchersPage() {
     }
   }, []);
 
-  const sourceVouchers = DEMO_MODE ? items : apiVouchers ?? [];
+  const sourceVouchers = useMemo(() => DEMO_MODE ? items : apiVouchers ?? [], [items, apiVouchers]);
   const rows = useMemo(() => sourceVouchers.filter((v) => v.code.includes(query.toUpperCase())), [sourceVouchers, query]);
 
   const toggle = (code: string) => setItems((current) => current.map((item) => (item.code === code ? { ...item, active: !item.active } : item)));

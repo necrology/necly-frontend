@@ -31,7 +31,7 @@ export default function NotificationsPage() {
     }
   }, []);
 
-  const sourceNotifications = DEMO_MODE ? items : apiNotifications ?? [];
+  const sourceNotifications = useMemo(() => DEMO_MODE ? items : apiNotifications ?? [], [items, apiNotifications]);
   const typeLabels: Record<string, string> = {
     order: "Pesanan",
     inventory: "Inventaris",

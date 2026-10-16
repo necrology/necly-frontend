@@ -66,6 +66,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   const packageMissing = showWarnings && !selectedPackage;
   const durationMissing = showWarnings && selectedDuration === null;
   const deviceMissing = showWarnings && selectedDevice === null;
+  const stockMissing = showWarnings && selectedDuration !== null && !inStock;
   const perMember = formatRupiahLabel(Math.round(product.providerPrice / product.groupMembers));
   const priceRows: Array<[string, string]> = [
     ["Nama Paket", product.packageName],
@@ -81,6 +82,11 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
     if (!selectedPackage || selectedDuration === null || selectedDevice === null) {
       setShowWarnings(true);
       scrollTo(!selectedPackage ? packageSectionRef : selectedDuration === null ? durationRowRef : deviceRowRef);
+      return;
+    }
+    if (!inStock) {
+      setShowWarnings(true);
+      scrollTo(durationRowRef);
       return;
     }
     const duration = product.priceOptions[selectedDuration] ?? product.priceOptions[0];
@@ -113,8 +119,9 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
             <button type="button" className={`commerce-package-option ${selectedPackage ? "selected" : ""}`} aria-pressed={selectedPackage} onClick={() => setSelectedPackage(true)}><span className="commerce-radio" /><span><strong>{product.packageName}</strong><small>{product.brand}</small></span><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></button>
             {packageMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih paket dahulu sebelum memesan.</p>}
             <h2 ref={durationSectionRef}>Pilih Durasi Berlangganan <span className="commerce-required" aria-hidden="true">*</span></h2>
-            <div className="commerce-duration-row" ref={durationRowRef}>{product.priceOptions.map((duration, index) => <button type="button" className={index === selectedDuration ? "selected" : ""} aria-pressed={index === selectedDuration} onClick={() => setSelectedDuration(index)} key={duration.id}>{duration.label}</button>)}</div>
+            <div className="commerce-duration-row" ref={durationRowRef}>{product.priceOptions.map((duration, index) => { const hasStock = (duration.stock ?? product.stock) > 0; return <button type="button" className={index === selectedDuration ? "selected" : ""} aria-pressed={index === selectedDuration} disabled={!hasStock} onClick={() => setSelectedDuration(index)} key={duration.id}>{duration.label}{hasStock ? "" : " · Habis"}</button>; })}</div>
             {durationMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih durasi berlangganan dahulu sebelum memesan.</p>}
+            {stockMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Durasi ini sedang habis. Pilih durasi lain yang masih tersedia.</p>}
             <h2>Pilih Jumlah Perangkat <span className="commerce-required" aria-hidden="true">*</span></h2>
             <div className="commerce-duration-row" ref={deviceRowRef}>{deviceOptions.map((devices) => <button type="button" className={devices === selectedDevice ? "selected" : ""} aria-pressed={devices === selectedDevice} onClick={() => setSelectedDevice(devices)} key={devices}>{devices} Perangkat</button>)}</div>
             {deviceMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih jumlah perangkat dahulu sebelum memesan.</p>}
@@ -159,10 +166,10 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
         <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration}>Ubah</button></span><strong>{selectedDuration !== null ? option.label : "Belum dipilih"}</strong></div>
         <div className="commerce-summary-line"><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
         <div className="commerce-summary-total"><span>Total Biaya</span><b>{estimated ? formatRupiahLabel(option.price) : "—"}</b></div>
-        <button className="commerce-primary-button" type="button" onClick={addToCart}>{added ? "Lanjut ke checkout…" : <>Pesan <span>→</span></>}</button>
+        <button className="commerce-primary-button" type="button" disabled={selectedDuration !== null && !inStock} onClick={addToCart}>{added ? "Lanjut ke checkout…" : selectedDuration !== null && !inStock ? "Stok habis" : <>Pesan <span>→</span></>}</button>
       </aside>
       <aside className="commerce-buy-reasons"><h2>Kenapa Beli di Sini?</h2>{purchaseReasons.map(([title, detail, Icon]) => <article key={title}><span><Icon size={25} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</aside>
-      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{estimated ? formatRupiahLabel(option.price) : "Lengkapi pilihan"}</b></span><button type="button" onClick={addToCart}>{added ? "Memproses…" : "Pesan"}</button></div>
+      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{estimated ? formatRupiahLabel(option.price) : "Lengkapi pilihan"}</b></span><button type="button" disabled={selectedDuration !== null && !inStock} onClick={addToCart}>{added ? "Memproses…" : selectedDuration !== null && !inStock ? "Stok habis" : "Pesan"}</button></div>
       <Link className="commerce-detail-backlink" href="/products">Kembali ke Produk</Link>
     </div>
   );

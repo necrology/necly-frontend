@@ -32,7 +32,7 @@ export default function PaymentsPage() {
     }
   }, []);
 
-  const sourcePayments = DEMO_MODE ? payments : apiPayments ?? [];
+  const sourcePayments = useMemo(() => DEMO_MODE ? payments : apiPayments ?? [], [apiPayments]);
 
   const rows = useMemo(
     () =>

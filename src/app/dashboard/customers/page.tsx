@@ -47,7 +47,7 @@ export default function CustomersPage() {
     }
   }, []);
 
-  const sourceCustomers = DEMO_MODE ? customers : apiCustomers ?? [];
+  const sourceCustomers = useMemo(() => DEMO_MODE ? customers : apiCustomers ?? [], [apiCustomers]);
 
   const rows = useMemo(
       () =>

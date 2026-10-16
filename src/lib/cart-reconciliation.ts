@@ -1,0 +1,78 @@
+import type { ApiProduct } from "./api";
+import { mapApiProduct } from "./product-mapper";
+import type { CartItem } from "@/stores/cart-store";
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const LEGACY_PRODUCT_SLUGS: Record<string, string> = {
+  "spotify-premium": "spotify-premium-individual",
+  "microsoft-365": "microsoft-365-personal",
+  "disney-plus-hotstar": "disney-plus-standard",
+};
+
+function durationDays(label?: string) {
+  const match = /(\d+)\s*(bulan|hari|days?|months?)/i.exec(label ?? "");
+  if (!match) return null;
+  const value = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return /bulan|month/i.test(match[2]) ? value * 30 : value;
+}
+
+function productMatches(item: CartItem, product: ReturnType<typeof mapApiProduct>) {
+  if (item.id === product.id || item.slug === product.slug) return true;
+
+  const oldSlug = item.slug.toLocaleLowerCase("id-ID");
+  const currentSlug = product.slug.toLocaleLowerCase("id-ID");
+  if (oldSlug.length >= 5 && (currentSlug.startsWith(`${oldSlug}-`) || oldSlug.startsWith(`${currentSlug}-`))) return true;
+  return LEGACY_PRODUCT_SLUGS[oldSlug] === currentSlug;
+}
+
+export type CartReconciliation = {
+  items: CartItem[];
+  changed: boolean;
+  unresolved: number;
+};
+
+/** Refresh harga/stok dan migrasikan id lama dari katalog tersimpan. */
+export function reconcileCartItems(items: CartItem[], catalog: ApiProduct[]): CartReconciliation {
+  const products = catalog.map(mapApiProduct);
+  let changed = false;
+  let unresolved = 0;
+
+  const reconciled = items.map((item) => {
+    const currentProduct = products.find((product) =>
+      product.priceOptions.some((option) => option.id === item.product_price_id),
+    );
+    const product = currentProduct ?? products.find((candidate) => productMatches(item, candidate));
+    const wantedDays = durationDays(item.selectedDuration);
+    const option = currentProduct
+      ? currentProduct.priceOptions.find((candidate) => candidate.id === item.product_price_id)
+      : product?.priceOptions.find((candidate) => wantedDays === null || Math.abs(candidate.days - wantedDays) <= 1);
+
+    const availableStock = option?.stock ?? 0;
+    if (!product || !option || availableStock < 1 || !UUID.test(option.id)) {
+      unresolved += 1;
+      return item;
+    }
+
+    const next: CartItem = {
+      ...item,
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      category: product.category,
+      price: option.price,
+      stock: availableStock,
+      accessType: product.accessType,
+      product_price_id: option.id,
+      selectedDuration: option.duration,
+      selectedPrice: option.price,
+      selectedStock: availableStock,
+      quantity: Math.min(item.quantity, availableStock),
+    };
+
+    if (JSON.stringify(next) !== JSON.stringify(item)) changed = true;
+    return next;
+  });
+
+  return { items: reconciled, changed, unresolved };
+}

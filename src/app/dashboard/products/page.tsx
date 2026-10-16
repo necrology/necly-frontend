@@ -54,7 +54,7 @@ export default function DashboardProductsPage() {
     }
   }, []);
 
-  const renderProducts = DEMO_MODE ? demoProducts : apiProducts ?? [];
+  const renderProducts = useMemo(() => DEMO_MODE ? demoProducts : apiProducts ?? [], [demoProducts, apiProducts]);
 
   const rows = useMemo(
     () =>

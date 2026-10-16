@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, BadgeCheck, ChevronRight, CircleDollarSign, Headphones, LifeBuoy, LoaderCircle, LockKeyhole, Mail, ShieldCheck, UsersRound, Zap } from "lucide-react";
+import { AlertCircle, BadgeCheck, ChevronRight, CircleDollarSign, CreditCard, Headphones, LifeBuoy, LoaderCircle, Mail, ShieldCheck, UsersRound, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -9,7 +9,8 @@ import { defaultDeviceOptions, products } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { continueToCheckout } from "@/lib/checkout-navigation";
 import { useCartStore, type CartItem } from "@/stores/cart-store";
-import { bootstrapAuth, checkoutApi, DEMO_MODE, useAuthStore } from "@/lib/api";
+import { bootstrapAuth, catalogApi, checkoutApi, DEMO_MODE, useAuthStore } from "@/lib/api";
+import { reconcileCartItems } from "@/lib/cart-reconciliation";
 
 const payments = [
   ["QRIS", "qris"], ["OVO", "ovo"], ["DANA", "dana"], ["ShopeePay", "shopeepay"], ["LinkAja", "linkaja"],
@@ -51,6 +52,7 @@ function durationInMonths(label?: string) {
 export function CheckoutCommerceClient() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
+  const replaceItems = useCartStore((state) => state.replaceItems);
   const [payment, setPayment] = useState("QRIS");
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [voucher, setVoucher] = useState("");
@@ -92,8 +94,7 @@ export function CheckoutCommerceClient() {
   // di database, jadi checkout tidak akan pernah berhasil; lebih baik dijelaskan
   // di muka daripada dibiarkan gagal dengan galat server.
   const staleCount = items.filter((item) => !UUID.test(item.product_price_id ?? "")).length;
-  const needsCatalog = !DEMO_MODE && (items.length === 0 || staleCount > 0);
-  const payDisabled = manualMethodLocked || submitting || needsCatalog;
+  const payDisabled = submitting || items.length === 0;
 
   // Kode voucher hanya bisa diverifikasi backend saat pesanan dibuat — daftar
   // voucher tidak tersedia publik. Klien karena itu tidak mengarang potongan
@@ -123,6 +124,17 @@ export function CheckoutCommerceClient() {
         return;
       }
 
+      let payableItems = items;
+      if (staleCount > 0) {
+        const catalog = await catalogApi.listProducts({ per_page: 100 });
+        const repaired = reconcileCartItems(items, catalog.products);
+        if (repaired.unresolved > 0) {
+          throw new Error(`${repaired.unresolved} item tidak lagi tersedia dengan durasi yang sama. Hapus item tersebut dari keranjang lalu pilih paket yang tersedia.`);
+        }
+        payableItems = repaired.items;
+        if (repaired.changed) replaceItems(repaired.items);
+      }
+
       const user = useAuthStore.getState().user ?? (await bootstrapAuth());
       if (!user) {
         router.push("/login?redirect=/checkout");
@@ -134,7 +146,7 @@ export function CheckoutCommerceClient() {
       // duplikat dalam satu pesanan, jadi baris seperti itu digabung lebih dulu,
       // dengan jumlah dijumlahkan sesuai yang terlihat di keranjang.
       const merged = new Map<string, { product_price_id: string; quantity: number; device_count?: number }>();
-      for (const item of items) {
+      for (const item of payableItems) {
         const priceId = item.product_price_id ?? item.id;
         const existing = merged.get(priceId);
         if (existing) {
@@ -229,14 +241,14 @@ export function CheckoutCommerceClient() {
         <hr />
         <div className="commerce-checkout-total"><span>Total Bayar</span><b>{formatRupiahLabel(subtotal)}</b></div>
         <p className="muted small" style={{ margin: "8px 0 0" }}>Potongan voucher dihitung saat pesanan dibuat.</p>
-        <button className="commerce-primary-button" type="button" disabled={payDisabled} onClick={pay}>{submitting ? <LoaderCircle className="commerce-spin" size={20} /> : <LockKeyhole size={20} />}{submitting ? "Memproses…" : "Bayar"}</button>
+        <button className="commerce-primary-button" type="button" disabled={payDisabled} onClick={pay}>{submitting ? <LoaderCircle className="commerce-spin" size={20} /> : <CreditCard size={20} />}{submitting ? "Memproses…" : "Bayar"}</button>
         {/* Baris 50: gunakan komponen visual warning yang sama dengan detail pesanan. */}
-        {manualMethodLocked && <p className="commerce-field-warning commerce-checkout-warning" role="alert"><AlertCircle size={16} />Pilih durasi minimal 6 bulan untuk metode {payment}.</p>}
+        {manualMethodLocked && <p className="commerce-field-warning commerce-checkout-warning" role="alert"><AlertCircle size={16} />Pilih durasi minimal 6 bulan untuk metode {payment}. Anda tetap dapat melanjutkan dan memilih kanal pembayaran yang tersedia di Xendit.</p>}
         {/* Alasan tombol Bayar mati ditaruh tepat di bawah tombolnya: sebelumnya
             keterangan ini hanya ada di ujung halaman, sehingga tombol tampak
             terkunci tanpa sebab. */}
-        {!submitting && !manualMethodLocked && (items.length === 0 || staleCount > 0) && (
-          <p className="commerce-field-warning commerce-checkout-warning" role="status"><AlertCircle size={16} />{items.length === 0 ? "Keranjang masih kosong, jadi belum ada yang bisa dibayar." : `${staleCount} item di keranjang berasal dari katalog lama, jadi belum bisa dibayar.`}</p>
+        {!submitting && (items.length === 0 || staleCount > 0) && (
+          <p className="commerce-field-warning commerce-checkout-warning" role="status"><AlertCircle size={16} />{items.length === 0 ? "Keranjang masih kosong, jadi belum ada yang bisa dibayar." : `${staleCount} item di keranjang berasal dari katalog lama dan akan diperbarui otomatis saat Anda membayar.`}</p>
         )}
         <p className="muted small commerce-checkout-consent">Dengan menekan Bayar, Anda menyetujui <Link href="/syarat-ketentuan" target="_blank" rel="noreferrer">syarat &amp; ketentuan</Link> dan <Link href="/kebijakan-privasi" target="_blank" rel="noreferrer">kebijakan privasi</Link> Necly Services.</p>
         {error && <p className="commerce-checkout-error" role="alert"><AlertCircle size={16} />{error}</p>}
@@ -246,12 +258,12 @@ export function CheckoutCommerceClient() {
       </aside>
       <aside className="commerce-transaction-trust"><h2>Transaksi Aman & Terpercaya</h2>{safeguards.map(([title, detail, Icon]) => <article key={title}><span><Icon size={25} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</aside>
       <div className="commerce-mobile-payment-bar"><span><small>Total Bayar</small><b>{formatRupiahLabel(subtotal)}</b></span><button type="button" disabled={payDisabled} onClick={pay}>{submitting ? "Memproses…" : "Bayar"}</button></div>
-      {needsCatalog && (
+      {(items.length === 0 || staleCount > 0) && (
         <p className="commerce-checkout-fallback" role="alert">
           <AlertCircle size={16} />
           {items.length === 0
             ? <>Keranjang masih kosong. <Link href="/products">Pilih layanan</Link> dulu sebelum membayar.</>
-            : <>{staleCount} item di keranjang berasal dari katalog lama dan tidak bisa diproses. Hapus item itu di <Link href="/cart">keranjang</Link>, lalu tambahkan ulang dari katalog.</>}
+            : <>{staleCount} item di keranjang berasal dari katalog lama. Data paket akan diperbarui otomatis dari katalog saat Anda menekan Bayar.</>}
         </p>
       )}
     </div>

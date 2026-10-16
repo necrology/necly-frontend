@@ -23,6 +23,7 @@ export type CartItem = CartProduct & { quantity: number };
 type CartState = {
   items: CartItem[];
   addItem: (item: CartProduct) => void;
+  replaceItems: (items: CartItem[]) => void;
   setQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
   clear: () => void;
@@ -50,6 +51,7 @@ const initializer = (set: (partial: Partial<CartState> | ((state: CartState) => 
     }
     return { items: [...state.items, { ...item, quantity: 1 }] };
   }),
+  replaceItems: (items) => set({ items }),
   setQuantity: (id, quantity) => set((state) => {
     const entry = state.items.find((e) => getItemKey(e) === id);
     const stock = entry?.selectedStock ?? entry?.stock ?? 1;
