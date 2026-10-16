@@ -4,11 +4,11 @@ import { ArrowRight, LockKeyhole } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { GoogleSignInButton } from "@/components/google-sign-in";
 import { PasswordField } from "@/components/password-field";
-import { ApiError, authApi, DEMO_MODE } from "@/lib/api";
+import { ApiError, authApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { passwordError, safeRedirectPath } from "@/lib/auth-validation";
 
 function LoginContent() {
@@ -22,6 +22,23 @@ function LoginContent() {
   const [unverifiedEmail, setUnverifiedEmail] = useState("");
   const [resendNotice, setResendNotice] = useState("");
   const [resending, setResending] = useState(false);
+
+  // Pengunjung yang sesinya masih berlaku tidak perlu disuguhi formulir masuk.
+  // Sebelumnya halaman ini selalu menampilkan formulir, sehingga tautan mana pun
+  // yang mengarah ke /login terasa seperti dipaksa keluar lagi.
+  const redirectTarget = safeRedirectPath(searchParams.get("redirect"));
+  useEffect(() => {
+    if (DEMO_MODE) return;
+    let cancelled = false;
+    bootstrapAuth()
+      .then((sessionUser) => {
+        if (!cancelled && sessionUser) router.replace(redirectTarget);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [router, redirectTarget]);
 
   const resendVerification = async () => {
     setResending(true);

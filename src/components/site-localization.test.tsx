@@ -35,6 +35,22 @@ describe("site localization", () => {
     expect(within(menu).queryByRole("menuitem", { name: "Dashboard" })).not.toBeInTheDocument();
   });
 
+  // Ikon profil dulu menunjuk /login untuk siapa pun yang bukan admin/penjual,
+  // jadi pelanggan yang sudah masuk selalu terlempar kembali ke halaman login.
+  it("ikon profil mengarah ke halaman akun untuk pelanggan yang sudah masuk", () => {
+    useAuthStore.getState().setAuth(
+      { id: "u-1", email: "budi@example.id", name: "Budi Santoso", role: "customer", emailVerifiedAt: null, createdAt: "", updatedAt: "" },
+      "token-uji",
+    );
+    render(<SiteHeader />);
+
+    const icons = screen.getAllByRole("link", { name: "Akun Budi Santoso" });
+    expect(icons.length).toBeGreaterThan(0);
+    for (const icon of icons) {
+      expect(icon).toHaveAttribute("href", "/akun");
+    }
+  });
+
   it("uses Indonesian navigation and accessible labels", () => {
     render(<SiteHeader />);
     const primaryNavigation = screen.getByRole("navigation", { name: "Navigasi utama" });

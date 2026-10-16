@@ -79,6 +79,11 @@ export function SiteHeader() {
   };
 
   const canUseDashboard = user?.role === "admin" || user?.role === "seller";
+  // Ikon profil dulu selalu menunjuk /login untuk pelanggan — syaratnya hanya
+  // "boleh memakai dashboard", yang tidak pernah benar bagi pembeli. Akibatnya
+  // setiap klik ikon akun melempar pengguna yang sudah masuk kembali ke halaman
+  // login. Sekarang tujuan ikon mengikuti keadaan sesi yang sebenarnya.
+  const accountHref = user ? (canUseDashboard ? "/dashboard" : "/akun") : "/login";
 
   // Satu sumber kebenaran untuk "menu aktif" supaya nav inline dan drawer mobile
   // tidak pernah menunjuk halaman yang berbeda.
@@ -117,7 +122,7 @@ export function SiteHeader() {
         <div className="figma-desktop-nav-links">
           {links.map((link) => <Link className={cn(isActive(link.href) && "active")} aria-current={isActive(link.href) ? "page" : undefined} href={link.href} key={link.href}>{link.label}</Link>)}
         </div>
-        <Link className="figma-desktop-profile" href={canUseDashboard ? "/dashboard" : "/login"} aria-label={user ? `Akun ${user.name}` : "Log in"}><Image src="/figma/user-circle.svg" alt="" width={49} height={49} /></Link>
+        <Link className="figma-desktop-profile" href={accountHref} aria-label={user ? `Akun ${user.name}` : "Log in"}><Image src="/figma/user-circle.svg" alt="" width={49} height={49} /></Link>
       </nav>
       <nav className="commerce-container site-nav" aria-label="Navigasi utama">
         <button className="commerce-menu-trigger desktop-menu-trigger" type="button" aria-label="Buka menu"><Menu size={23} /></button>
@@ -128,7 +133,7 @@ export function SiteHeader() {
         </div>
         <div className="nav-actions">
           {accountMenu}
-          <Link className="commerce-mobile-profile" href={canUseDashboard ? "/dashboard" : "/login"} aria-label={user ? `Akun ${user.name}` : "Log in"}><UserRound size={27} /></Link>
+          <Link className="commerce-mobile-profile" href={accountHref} aria-label={user ? `Akun ${user.name}` : "Log in"}><UserRound size={27} /></Link>
         </div>
       </nav>
       <nav id="mobile-navigation" className="commerce-mobile-nav" aria-label="Navigasi seluler" inert={!open ? true : undefined}>
