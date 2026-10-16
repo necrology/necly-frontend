@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
+import { GoogleSignInButton } from "@/components/google-sign-in";
 import { PasswordField } from "@/components/password-field";
 import { ApiError, authApi, DEMO_MODE } from "@/lib/api";
 import { passwordError, safeRedirectPath } from "@/lib/auth-validation";
@@ -112,6 +113,7 @@ function LoginContent() {
         )}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Sedang masuk…" : <>Masuk <ArrowRight size={14} /></>}</button>
       </form>
+      <GoogleSignInButton label="Masuk dengan Google" />
       {DEMO_MODE && <><div className="auth-divider">Akses demo</div><Link className="button button-secondary" href="/dashboard">Buka demo admin</Link></>}
       {/* Baris 66: font bagian ini diperbesar supaya jelas terlihat. */}
       <p className="muted auth-register-prompt">Belum memiliki akun? <Link href="/register">Daftar</Link></p>

@@ -304,6 +304,11 @@ body:has(.auth-form-login) { overflow: hidden; }
 /* Tawaran kirim ulang tautan aktivasi saat login ditolak karena belum diverifikasi. */
 .auth-resend { display: grid; gap: 8px; justify-items: start; }
 .auth-resend p { margin: 0; }
+/* Tombol "Masuk dengan Google": putih dengan logo resmi, hanya dirender bila
+   backend melaporkan penyedianya aktif. */
+.auth-google-button { width: 100%; gap: 10px; color: #1f1f1f; background: #fff; border-color: #d9d9e8; font-weight: 600; }
+.auth-google-button:hover { background: #f7f7fb; }
+.auth-google-button svg { flex: 0 0 auto; }
 .auth-form-login .figma-desktop-auth-logo { margin-top: 0; }
 .auth-form-login .figma-desktop-auth-logo img { width: clamp(68px, 12vh, 100px); height: clamp(68px, 12vh, 100px); }
 

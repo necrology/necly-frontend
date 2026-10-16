@@ -378,6 +378,11 @@ export const authApi = {
     apiRequest<{ message: string; ended: number }>("/auth/sessions", { method: "DELETE" }),
 
   getMe: () => apiRequest<ApiUser>("/me"),
+
+  // Which sign-in methods this deployment can actually offer. Public, so the
+  // login screen can hide a provider that has no credentials behind it.
+  authProviders: () => apiRequest<{ password: boolean; google: boolean }>("/public/auth-providers"),
+
   googleLoginUrl: `${API_BASE}/auth/google`,
 };
 

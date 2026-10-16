@@ -8,7 +8,9 @@ const { loginMock, pushMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/api", () => ({
   DEMO_MODE: false,
-  authApi: { login: loginMock },
+  // authProviders stays false so the Google button renders nothing here; the
+  // component itself is covered separately.
+  authApi: { login: loginMock, authProviders: () => Promise.resolve({ password: true, google: false }) },
 }));
 
 vi.mock("next/navigation", () => ({

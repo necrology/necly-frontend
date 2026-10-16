@@ -5,7 +5,7 @@ const { registerMock } = vi.hoisted(() => ({ registerMock: vi.fn() }));
 
 vi.mock("@/lib/api", () => ({
   DEMO_MODE: false,
-  authApi: { register: registerMock },
+  authApi: { register: registerMock, authProviders: () => Promise.resolve({ password: true, google: false }) },
 }));
 
 import RegisterPage from "./page";

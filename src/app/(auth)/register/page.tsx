@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
+import { GoogleSignInButton } from "@/components/google-sign-in";
 import { PasswordField } from "@/components/password-field";
 import { authApi, DEMO_MODE } from "@/lib/api";
 import { passwordError } from "@/lib/auth-validation";
@@ -83,6 +84,7 @@ export default function RegisterPage() {
         {errors.submit && <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>{errors.submit}</div>}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Membuat akun…" : <>Buat akun <ArrowRight size={14} /></>}</button>
       </form>
+      <GoogleSignInButton label="Daftar dengan Google" />
       <p className="muted small" style={{ textAlign: "center", margin: 0 }}>Sudah memiliki akun? <Link href="/login" style={{ color: "var(--blue)", fontWeight: 600 }}>Masuk</Link></p>
     </div>
   );
