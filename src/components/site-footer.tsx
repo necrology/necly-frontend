@@ -4,7 +4,7 @@ import { BrandLogo } from "@/components/brand-logo";
 import { WhatsappIcon } from "@/components/social-icons";
 import { contact, openingHours, whatsappLink } from "@/data/contact";
 
-const links = [["Beranda", "/"], ["Layanan", "/products"], ["Cara Berlangganan", "/cara-berlangganan"], ["FAQ", "/faq"], ["Testimoni", "/testimoni"], ["Tentang Kami", "/about"], ["Laporan Kendala", "/laporan-kendala"]] as const;
+const links = [["Beranda", "/"], ["Layanan", "/products"], ["Cara Berlangganan", "/cara-berlangganan"], ["FAQ", "/faq"], ["Testimoni", "/testimoni"], ["Tentang Kami", "/about"], ["Laporan Kendala", "/laporan-kendala"], ["Kebijakan Privasi", "/kebijakan-privasi"], ["Syarat & Ketentuan", "/syarat-ketentuan"]] as const;
 
 // Copy perkenalan diambil apa adanya dari dokumen QA (poin 16).
 const intro = "Kami hadir sebagai layanan digital yang menyediakan berbagai pilihan akun sharing dan layanan premium untuk kebutuhan hiburan dan produktivitas. Kami membantu pengguna mendapatkan akses ke berbagai layanan digital populer seperti Netflix, Disney+, dan layanan premium lainnya dengan proses yang praktis dan pilihan harga yang lebih terjangkau. Dengan Komitmen kami memberikan pengalaman berlangganan yang mudah, transparan, dan nyaman, mulai dari pemilihan layanan hingga proses aktivasi.";

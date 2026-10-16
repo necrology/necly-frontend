@@ -100,7 +100,7 @@ export function CheckoutClient() {
         <section className="form-section">
           <label className="check-row">
             <input name="terms" type="checkbox" />
-            <span>Saya menyetujui syarat & ketentuan Necly serta memahami bahwa akses diberikan melalui undangan resmi atau kursi berlisensi.</span>
+            <span>Saya menyetujui <Link href="/syarat-ketentuan" target="_blank" rel="noreferrer">syarat &amp; ketentuan</Link> Necly serta memahami bahwa akses diberikan melalui undangan resmi atau kursi berlisensi.</span>
           </label>
           {errors.terms && <span className="field-error" role="alert" style={{ display: "block", marginTop: 8 }}>{errors.terms}</span>}
           {errors.submit && <div className="demo-banner" style={{ marginTop: 12, borderColor: "var(--danger)", background: "var(--danger-bg)", color: "var(--danger)" }}>{errors.submit}</div>}
