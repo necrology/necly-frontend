@@ -843,6 +843,14 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-account-menu a, .commerce-account-menu button, .commerce-mobile-signout { display: flex; align-items: center; gap: 8px; border: 0; border-radius: 11px; padding: 9px 10px; color: var(--commerce-ink); background: transparent; font: inherit; font-size: 12px; font-weight: 600; text-align: left; cursor: pointer; }
 .commerce-account-menu a:hover, .commerce-account-menu button:hover { color: #4c1ef9; background: #f4f2ff; }
 .commerce-account-menu button:disabled, .commerce-mobile-signout:disabled { opacity: .6; cursor: default; }
+/* Jumlah item keranjang di dalam menu akun. */
+.commerce-account-badge { min-width: 20px; height: 20px; display: inline-grid; place-items: center; margin-left: auto; border-radius: 999px; padding: 0 6px; color: #fff; background: var(--commerce-violet); font-size: 10px; font-weight: 700; }
+/* Ikon profil kini tombol pemicu menu, bukan tautan; reset gaya bawaan tombol. */
+.figma-desktop-profile { border: 0; padding: 0; background: transparent; cursor: pointer; }
+@media (min-width: 1024px) {
+  /* Pembungkusnya yang menjadi anak langsung grid navigasi desktop. */
+  .commerce-account.is-figma { position: relative; justify-self: end; }
+}
 /* Halaman akun: profil, ubah kata sandi, dan daftar perangkat yang masih masuk. */
 .account-page { display: grid; gap: 22px; padding: 46px 0 92px; }
 .account-head { display: grid; gap: 12px; }

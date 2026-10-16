@@ -35,20 +35,38 @@ describe("site localization", () => {
     expect(within(menu).queryByRole("menuitem", { name: "Dashboard" })).not.toBeInTheDocument();
   });
 
-  // Ikon profil dulu menunjuk /login untuk siapa pun yang bukan admin/penjual,
-  // jadi pelanggan yang sudah masuk selalu terlempar kembali ke halaman login.
-  it("ikon profil mengarah ke halaman akun untuk pelanggan yang sudah masuk", () => {
+  // Ikon profil dulu menautkan langsung, dan untuk pelanggan tautannya menunjuk
+  // /login — setiap klik terlempar kembali ke halaman masuk. Sekarang ikon
+  // membuka menu yang memuat profil, keranjang, dan keluar.
+  it("ikon profil membuka menu profil, keranjang, dan keluar", () => {
     useAuthStore.getState().setAuth(
       { id: "u-1", email: "budi@example.id", name: "Budi Santoso", role: "customer", emailVerifiedAt: null, createdAt: "", updatedAt: "" },
       "token-uji",
     );
     render(<SiteHeader />);
 
-    const icons = screen.getAllByRole("link", { name: "Akun Budi Santoso" });
-    expect(icons.length).toBeGreaterThan(0);
-    for (const icon of icons) {
-      expect(icon).toHaveAttribute("href", "/akun");
-    }
+    const icon = screen.getByRole("button", { name: "Menu akun Budi Santoso" });
+    expect(icon).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(icon);
+
+    const menu = screen.getByRole("menu", { name: "Menu akun" });
+    expect(within(menu).getByRole("menuitem", { name: /Profil/ })).toHaveAttribute("href", "/akun");
+    expect(within(menu).getByRole("menuitem", { name: /Keranjang/ })).toHaveAttribute("href", "/cart");
+    expect(within(menu).getByRole("menuitem", { name: /Keluar/ })).toBeInTheDocument();
+    // Pelanggan tidak ditawari dashboard yang khusus admin/penjual.
+    expect(within(menu).queryByRole("menuitem", { name: "Dashboard" })).not.toBeInTheDocument();
+  });
+
+  it("ikon profil pada pengunjung yang belum masuk menawarkan masuk dan daftar", () => {
+    render(<SiteHeader />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Menu akun" }));
+
+    const menu = screen.getByRole("menu", { name: "Menu akun" });
+    expect(within(menu).getByRole("menuitem", { name: "Masuk" })).toHaveAttribute("href", "/login");
+    expect(within(menu).getByRole("menuitem", { name: "Buat akun" })).toHaveAttribute("href", "/register");
+    expect(within(menu).getByRole("menuitem", { name: /Keranjang/ })).toHaveAttribute("href", "/cart");
   });
 
   it("uses Indonesian navigation and accessible labels", () => {
