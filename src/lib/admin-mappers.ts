@@ -187,14 +187,25 @@ export function mapApiVoucher(apiVoucher: Record<string, unknown>): Voucher {
   };
 }
 
+// Status dari API ditulis huruf kecil ("active"); tampilan dashboard memakai
+// bahasa Indonesia, jadi diterjemahkan di sini alih-alih dibiarkan apa adanya.
+const inventoryStatusLabels: Record<string, InventoryAccount["status"]> = {
+  active: "Aktif",
+  full: "Hampir penuh",
+  expired: "Kedaluwarsa",
+};
+
 export function mapApiInventoryAccount(apiAccount: Record<string, unknown>): InventoryAccount {
   return {
     id: (apiAccount.id as string) ?? "",
-    product: (apiAccount.product as string) ?? "",
+    // Model mengirim product_id; "product" dan "reference" tidak pernah ada di
+    // payload, sehingga pemetaan lama selalu menghasilkan string kosong dan
+    // dashboard tidak bisa menghubungkan akun dengan produknya.
+    product: (apiAccount.product_id as string) ?? (apiAccount.product as string) ?? "",
     reference: (apiAccount.reference as string) ?? "",
     totalSlots: (apiAccount.total_slots as number) ?? 0,
     usedSlots: (apiAccount.used_slots as number) ?? 0,
-    status: (apiAccount.status as InventoryAccount["status"]) ?? "Aktif",
+    status: inventoryStatusLabels[String(apiAccount.status ?? "").toLowerCase()] ?? "Aktif",
     expires: (apiAccount.expires_at as string) ?? new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
   };
 }

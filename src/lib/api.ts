@@ -588,6 +588,10 @@ export const adminApi = {
     apiRequest<Record<string, unknown>>("/admin/inventory", { method: "POST", body: JSON.stringify(data) }),
   updateInventoryAccount: (id: string, data: Record<string, unknown>) =>
     apiRequest<Record<string, unknown>>(`/admin/inventory/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
+  // Kapasitas jual sebuah paket. Inilah yang membuat produk bisa dibeli: katalog
+  // menghitung ketersediaan dari baris slot berstatus available.
+  createInventorySlots: (data: { product_price_id: string; quantity: number }) =>
+    apiRequest<{ created: number }>("/admin/inventory/slots", { method: "POST", body: JSON.stringify(data) }),
   listAuditLogs: (params?: { page?: number; per_page?: number }) =>
     apiRequest<Record<string, unknown>>(`/admin/audit-logs${toQuery(params)}`),
 };

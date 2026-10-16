@@ -53,7 +53,8 @@ describe("dashboard overview localization", () => {
       expect(pageSource, page).not.toMatch(/DEMO_MODE \|\| !api[A-Za-z]+/);
     }
     expect(pageSources.pembayaran).toContain("DEMO_MODE ? payments : apiPayments ?? []");
-    expect(pageSources.inventaris).toContain("DEMO_MODE ? services : []");
+    // Stok diambil dari katalog API saat mode live; data contoh hanya untuk demo.
+    expect(pageSources.inventaris).toContain("catalogApi.listProducts({ per_page: 100 })");
   });
 
   it("menyediakan keadaan kosong berbahasa Indonesia untuk tabel operasional", () => {
