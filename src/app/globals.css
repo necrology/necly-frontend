@@ -313,18 +313,19 @@ body:has(.auth-form-login) { overflow: hidden; }
 
 /* Baris 68: hierarki tipografi halaman Tentang dirapikan — jarak hero ke section
    berikutnya dirapatkan dan judul utama diperkecil agar tidak jauh dari sub-judul. */
-.about-hero { padding: 58px 0 34px; }
-.about-hero .eyebrow { display: inline-block; margin-bottom: 18px; }
+.about-hero { padding: 46px 0 24px; }
+.about-hero .eyebrow { display: inline-block; margin-bottom: 12px; }
 .about-statement { max-width: 860px; font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1.22; letter-spacing: -.04em; }
 /* Baris 68: ukuran eyebrow "Mengapa kami ada" dan "Prinsip kami" disamakan. */
 .about-grid .eyebrow { font-size: 12px; }
 /* Baris 68: paragraf pembuka disamakan ukurannya dengan paragraf penjelas di bawahnya. */
 .about-grid .lede, .about-grid .muted { font-size: 15px; line-height: 1.75; }
 /* Baris 68: kolom label dan kolom teks dirapatkan supaya tidak ada ruang kosong jomplang. */
-.about-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 56px; }
-.about-section { padding-block: 56px; }
-.about-flow-section { padding-block: 48px; }
-.about-cta-section { padding-block: 44px; }
+.about-grid { display: grid; grid-template-columns: .7fr 1.3fr; gap: 36px; }
+.about-section { padding-block: 40px; }
+.about-principles-section { padding-top: 10px; }
+.about-flow-section { padding-block: 38px; }
+.about-cta-section { padding-block: 36px; }
 .principle-list { display: grid; }
 .principle { display: grid; grid-template-columns: 42px 1fr; gap: 18px; border-top: 1px solid var(--line); padding: 28px 0; }
 .principle-number { color: var(--blue); font-size: 11px; font-weight: 700; }
@@ -443,11 +444,12 @@ body:has(.auth-form-login) { overflow: hidden; }
   .auth-shell { grid-template-columns: 1fr; }
   .auth-story { min-height: 330px; }
   .auth-shell:has(.auth-form-login) .auth-story { display: none; }
-  .about-hero { padding: 38px 0 26px; }
-  .about-section { padding-block: 36px; }
-  .about-flow-section { padding-block: 32px; }
-  .about-cta-section { padding-block: 34px; }
-  .about-grid { grid-template-columns: 1fr; gap: 22px; }
+  .about-hero { padding: 28px 0 18px; }
+  .about-section { padding-block: 24px; }
+  .about-principles-section { padding-top: 8px; }
+  .about-flow-section { padding-block: 26px; }
+  .about-cta-section { padding-block: 28px; }
+  .about-grid { grid-template-columns: 1fr; gap: 12px; }
   .dashboard-layout { display: block; }
   .dashboard-sidebar { position: fixed; left: 0; width: 236px; transform: translateX(-100%); transition: transform 180ms ease; box-shadow: 20px 0 60px rgb(6 27 49 / .16); }
   .dashboard-layout.mobile-open .dashboard-sidebar { transform: translateX(0); }

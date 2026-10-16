@@ -114,8 +114,10 @@ describe("revisi QA putaran kedua", () => {
 
   it("baris 68: jarak vertikal halaman Tentang dirapatkan di desktop dan mobile", () => {
     expect(about).toContain('className="section section-rule about-section"');
-    expect(css).toContain(".about-section { padding-block: 56px; }");
-    expect(css).toContain(".about-grid { grid-template-columns: 1fr; gap: 22px; }");
+    expect(about).toContain("about-principles-section");
+    expect(css).toContain(".about-section { padding-block: 40px; }");
+    expect(css).toContain(".about-principles-section { padding-top: 8px; }");
+    expect(css).toContain(".about-grid { grid-template-columns: 1fr; gap: 12px; }");
   });
 
   it("baris 71: teks akun dan keluar di menu mobile berwarna putih", () => {
