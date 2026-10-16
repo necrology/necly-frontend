@@ -580,12 +580,14 @@ export const adminApi = {
   updateVoucher: (id: string, data: Record<string, unknown>) =>
     apiRequest<Record<string, unknown>>(`/admin/vouchers/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteVoucher: (id: string) => apiRequest<void>(`/admin/vouchers/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  // Rutenya /admin/inventory (lihat registerAdmin): tidak ada segmen "accounts",
+  // dan versi sebelumnya membuat halaman inventory dashboard selalu 404.
   listInventoryAccounts: (params?: { page?: number; per_page?: number; product_id?: string }) =>
-    apiRequest<Record<string, unknown>>(`/admin/inventory/accounts${toQuery(params)}`),
+    apiRequest<Record<string, unknown>>(`/admin/inventory${toQuery(params)}`),
   createInventoryAccount: (data: Record<string, unknown>) =>
-    apiRequest<Record<string, unknown>>("/admin/inventory/accounts", { method: "POST", body: JSON.stringify(data) }),
+    apiRequest<Record<string, unknown>>("/admin/inventory", { method: "POST", body: JSON.stringify(data) }),
   updateInventoryAccount: (id: string, data: Record<string, unknown>) =>
-    apiRequest<Record<string, unknown>>(`/admin/inventory/accounts/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
+    apiRequest<Record<string, unknown>>(`/admin/inventory/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
   listAuditLogs: (params?: { page?: number; per_page?: number }) =>
     apiRequest<Record<string, unknown>>(`/admin/audit-logs${toQuery(params)}`),
 };
