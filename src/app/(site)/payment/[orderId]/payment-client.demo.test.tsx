@@ -21,6 +21,6 @@ describe("halaman pembayaran (demo)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Simulasikan persetujuan/i }));
 
     await waitFor(() => expect(getOrderMock).not.toHaveBeenCalled());
-    expect(screen.getByText("Diarahkan ke pembayaran")).toBeInTheDocument();
+    expect(screen.getByText("Simulasi selesai")).toBeInTheDocument();
   });
 });

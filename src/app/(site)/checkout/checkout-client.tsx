@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { cartTotals, formatIDR } from "@/lib/money";
+import { continueToCheckout } from "@/lib/checkout-navigation";
 import { useCartStore } from "@/stores/cart-store";
-import { checkoutApi, bootstrapAuth, useAuthStore, DEMO_MODE, type CheckoutResponse } from "@/lib/api";
-import { randomUUID } from "crypto";
+import { checkoutApi, bootstrapAuth, useAuthStore, DEMO_MODE } from "@/lib/api";
 
 function generateIdempotencyKey(): string {
   return `idem-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -57,7 +57,7 @@ export function CheckoutClient() {
         generateIdempotencyKey(),
       );
 
-      router.push(`/payment/${response.order.id}`);
+      continueToCheckout(response, router.push);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Checkout gagal. Coba lagi.";
       setErrors({ submit: message });

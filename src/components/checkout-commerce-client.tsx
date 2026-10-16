@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { contact } from "@/data/contact";
 import { defaultDeviceOptions, products } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
+import { continueToCheckout } from "@/lib/checkout-navigation";
 import { ProductBrand } from "@/components/product-brand";
 import { useCartStore } from "@/stores/cart-store";
 import { bootstrapAuth, checkoutApi, DEMO_MODE, useAuthStore } from "@/lib/api";
@@ -108,7 +109,7 @@ export function CheckoutCommerceClient() {
         { voucher_code: voucher.trim().toUpperCase() || undefined, items: orderItems },
         generateIdempotencyKey(),
       );
-      router.push(`/payment/${response.order.id}`);
+      continueToCheckout(response, router.push);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Checkout gagal. Coba lagi.");
       setSubmitting(false);

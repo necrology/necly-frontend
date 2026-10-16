@@ -15,7 +15,7 @@ describe("halaman pembayaran (live)", () => {
     getOrderMock.mockReset();
   });
 
-  it("memanggil checkoutApi.getOrder saat klik lanjutkan ke pembayaran", async () => {
+  it("memuat status pesanan otomatis setelah kembali dari Xendit", async () => {
     getOrderMock.mockResolvedValue({
       id: "ord-1",
       number: "NCL-260906-001",
@@ -39,20 +39,16 @@ describe("halaman pembayaran (live)", () => {
 
     render(<PaymentClient orderId="ord-1" />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Lanjutkan ke pembayaran/i }));
-
     await waitFor(() => expect(getOrderMock).toHaveBeenCalledWith("ord-1"));
-    
-    // Wait for success state to appear - check for visible text
-    await waitFor(() => expect(screen.getByText("Diarahkan ke pembayaran")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Menunggu pembayaran")).toBeInTheDocument());
   });
 
   it("menampilkan error saat gagal mengambil pesanan", async () => {
     getOrderMock.mockRejectedValue(new Error("Not found"));
     render(<PaymentClient orderId="ord-404" />);
 
-    fireEvent.click(screen.getByRole("button", { name: /Lanjutkan ke pembayaran/i }));
-
-    await waitFor(() => expect(screen.getByText(/Gagal memuat detail pesanan/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Gagal memuat status pembayaran/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /Coba lagi/i }));
+    await waitFor(() => expect(getOrderMock).toHaveBeenCalledTimes(2));
   });
 });
