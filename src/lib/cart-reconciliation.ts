@@ -28,7 +28,7 @@ function productMatches(item: CartItem, product: ReturnType<typeof mapApiProduct
   return LEGACY_PRODUCT_SLUGS[oldSlug] === currentSlug;
 }
 
-export type CartIssueReason = "unavailable" | "price_changed" | "quantity_adjusted" | "updated";
+export type CartIssueReason = "unavailable" | "stock_exceeded" | "price_changed" | "quantity_adjusted" | "updated";
 
 export type CartIssue = {
   key: string;
@@ -63,7 +63,10 @@ export function reconcileCartItems(items: CartItem[], catalog: ApiProduct[]): Ca
   let changed = false;
   let unresolved = 0;
 
-  const reconciled = items.map((item) => {
+  // Pass pertama: cocokkan setiap baris ke harga live. Pass kedua baru boleh
+  // memeriksa stok setelah permintaan per product_price_id diagregasi, karena
+  // dua baris duplikat masing-masing bisa lolos batas stok secara individual.
+  const resolved = items.map((item) => {
     const key = cartLineKey(item);
     const hasPriceID = UUID.test(item.product_price_id ?? "");
     const product = products.find((candidate) =>
@@ -77,6 +80,16 @@ export function reconcileCartItems(items: CartItem[], catalog: ApiProduct[]): Ca
           : product.priceOptions.find((candidate) => wantedDays === null || Math.abs(candidate.days - wantedDays) <= 1))
       : undefined;
 
+    return { item, key, product, option };
+  });
+
+  const requestedByPrice = new Map<string, number>();
+  for (const entry of resolved) {
+    if (!entry.option) continue;
+    requestedByPrice.set(entry.option.id, (requestedByPrice.get(entry.option.id) ?? 0) + entry.item.quantity);
+  }
+
+  const reconciled = resolved.map(({ item, key, product, option }) => {
     const availableStock = option?.stock ?? 0;
     if (!product || !option || availableStock < 1 || !UUID.test(option.id)) {
       unresolved += 1;
@@ -84,10 +97,13 @@ export function reconcileCartItems(items: CartItem[], catalog: ApiProduct[]): Ca
       return item;
     }
 
-    const nextQuantity = Math.min(item.quantity, availableStock);
-    if (nextQuantity !== item.quantity) {
-      issues.push({ key, name: item.name, reason: "quantity_adjusted" });
+    const requested = requestedByPrice.get(option.id) ?? item.quantity;
+    if (requested > availableStock) {
+      unresolved += 1;
+      issues.push({ key, name: item.name, reason: "stock_exceeded" });
+      return item;
     }
+
     if (option.price !== item.price) {
       issues.push({ key, name: item.name, reason: "price_changed" });
     }
@@ -105,7 +121,6 @@ export function reconcileCartItems(items: CartItem[], catalog: ApiProduct[]): Ca
       selectedDuration: option.duration,
       selectedPrice: option.price,
       selectedStock: availableStock,
-      quantity: nextQuantity,
     };
 
     if (JSON.stringify(next) !== JSON.stringify(item)) changed = true;

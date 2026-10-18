@@ -64,12 +64,19 @@ export function ProductSearchBar({ mode = "catalog", limit }: ProductSearchBarPr
 
   const liveSource = useMemo(() => liveProducts ?? [], [liveProducts]);
   const source = useMemo(() => {
-    if (!DEMO_MODE) return liveSource;
-    if (mode !== "preview") return products;
     const rank = (slug: string) => {
-      const index = previewProductSlugs.indexOf(slug);
-      return index < 0 ? previewProductSlugs.length : index;
+      const exact = previewProductSlugs.indexOf(slug);
+      if (exact >= 0) return exact;
+      // Slug live dapat berbeda dari seed (mis. disney-plus-standard vs
+      // disney-plus-hotstar), jadi cocokkan juga token brand yang dikurasi.
+      const token = previewProductSlugs.findIndex((candidate) => candidate.split("-")[0] === slug.split("-")[0]);
+      return token < 0 ? previewProductSlugs.length : token;
     };
+    if (!DEMO_MODE) {
+      if (mode !== "preview") return liveSource;
+      return [...liveSource].sort((left, right) => rank(left.slug) - rank(right.slug));
+    }
+    if (mode !== "preview") return products;
     return [...products].sort((a, b) => rank(a.slug) - rank(b.slug));
   }, [liveSource, mode]);
 

@@ -335,4 +335,23 @@ describe("CheckoutCommerceClient", () => {
     expect(await screen.findByText(/tidak lagi tersedia dengan paket yang sama/)).toBeInTheDocument();
     expect(checkoutMock).not.toHaveBeenCalled();
   });
+
+  it("memblokir baris duplikat yang totalnya melebihi stok sebelum bayar", async () => {
+    const base = catalogWith(50_000);
+    catalogMock.mockResolvedValue({
+      ...base,
+      products: [{
+        ...base.products[0],
+        prices: [{ ...base.products[0].prices[0], available_slots: 1 }],
+      }, base.products[1]],
+    });
+    const line = { id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, selectedDevice: 1 };
+    cartItems.value = [{ ...line, quantity: 1 }, { ...line, quantity: 1 }];
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    expect(await screen.findByText(/melebihi stok tersedia/)).toBeInTheDocument();
+    expect(checkoutMock).not.toHaveBeenCalled();
+  });
 });

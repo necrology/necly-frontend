@@ -23,7 +23,7 @@ describe("halaman pelacakan pesanan (demo)", () => {
   it("tidak memanggil checkoutApi.getOrder saat DEMO_MODE=true", async () => {
     render(<OrderClient orderId="ord-1" />);
 
-    await waitFor(() => expect(getOrderMock).not.toHaveBeenCalled());
-    expect(screen.getByText("Pesanan sandbox")).toBeInTheDocument();
+    expect(await screen.findByText("Pesanan sandbox")).toBeInTheDocument();
+    expect(getOrderMock).not.toHaveBeenCalled();
   });
 });

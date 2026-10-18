@@ -47,9 +47,12 @@ export function CartClient() {
         if (cancelled) return;
         const result = reconcileCartItems(items, response.products);
         const unavailable = result.issues.filter((issue) => issue.reason === "unavailable");
-        const changed = result.issues.some((issue) => issue.reason === "price_changed" || issue.reason === "quantity_adjusted");
+        const exceeded = result.issues.filter((issue) => issue.reason === "stock_exceeded");
+        const changed = result.issues.some((issue) => issue.reason === "price_changed");
         if (unavailable.length > 0) {
           setLiveNotice(`${unavailable.length} item tidak lagi tersedia dengan paket yang sama. Hapus item tersebut sebelum membayar.`);
+        } else if (exceeded.length > 0) {
+          setLiveNotice(`Jumlah ${exceeded.map((issue) => issue.name).join(", ")} melebihi stok tersedia. Kurangi jumlah atau hapus baris duplikat sebelum membayar.`);
         } else if (changed) {
           setLiveNotice("Harga atau stok salah satu item berubah di katalog. Total akan dikonfirmasi ulang sebelum pembayaran.");
         } else {

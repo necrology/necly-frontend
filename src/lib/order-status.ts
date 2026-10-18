@@ -43,7 +43,9 @@ const statusIndex: Partial<Record<OrderStatus, number>> = {
 
 export function normalizeOrderStatus(status: string): OrderStatus | null {
   const normalized = status.trim().toLocaleLowerCase("id-ID").replace(/[\s-]+/g, "_");
-  return normalized in statusIndex || normalized in terminalLabels ? (normalized as OrderStatus) : null;
+  return Object.hasOwn(statusIndex, normalized) || Object.hasOwn(terminalLabels, normalized)
+    ? (normalized as OrderStatus)
+    : null;
 }
 
 export function orderStatusLabel(status: string): string {

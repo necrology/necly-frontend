@@ -40,8 +40,11 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
 
   useEffect(() => {
     if (DEMO_MODE) return;
-    const timer = window.setTimeout(() => void loadOrder(), 0);
-    return () => window.clearTimeout(timer);
+    let cancelled = false;
+    void Promise.resolve().then(() => {
+      if (!cancelled) void loadOrder();
+    });
+    return () => { cancelled = true; };
   }, [loadOrder]);
 
   // The browser may return before Xendit's webhook reaches the backend. Poll

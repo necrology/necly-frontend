@@ -51,6 +51,12 @@ type PriceReview = {
   subtotal: number;
 };
 
+type ReviewedPrice = {
+  subtotal: number;
+  /** Persetujuan hanya berlaku untuk isi keranjang/kanal yang sama. */
+  fingerprint: string;
+};
+
 export function CheckoutCommerceClient() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
@@ -64,7 +70,7 @@ export function CheckoutCommerceClient() {
   const [error, setError] = useState("");
   const [unsupportedChannel, setUnsupportedChannel] = useState<string | null>(null);
   const [priceReview, setPriceReview] = useState<PriceReview | null>(null);
-  const [reviewedSubtotal, setReviewedSubtotal] = useState<number | null>(null);
+  const [reviewedPrice, setReviewedPrice] = useState<ReviewedPrice | null>(null);
   const [stockNotice, setStockNotice] = useState<string | null>(null);
   // Baris 38 & 39: jumlah perangkat wajib dipilih. Bila pembeli sudah memilihnya
   // di halaman detail, pilihannya ikut dari keranjang.
@@ -102,9 +108,6 @@ export function CheckoutCommerceClient() {
   // ditambahkan sebelum katalog dari API selesai dimuat. Id seperti itu tidak ada
   // di database; checkout akan merekonsiliasinya dengan katalog lebih dulu.
   const staleCount = items.filter((item) => !UUID.test(item.product_price_id ?? "")).length;
-  // Total yang sudah disetujui pembeli. Bila server melaporkan harga baru yang
-  // belum tercermin di katalog, angka inilah yang ditampilkan dan dikirim.
-  const approvedSubtotal = reviewedSubtotal ?? subtotal;
   const payDisabled = submitting || items.length === 0 || priceReview !== null;
 
   // Satu kunci untuk satu kombinasi keranjang/voucher/kanal. Retry setelah
@@ -118,13 +121,19 @@ export function CheckoutCommerceClient() {
       .map((item) => ({ price: item.product_price_id ?? item.id, quantity: item.quantity, device: item.selectedDevice ?? selectedDevice }))
       .sort((left, right) => left.price.localeCompare(right.price) || String(left.device).localeCompare(String(right.device))),
     voucher: voucher.trim().toUpperCase(),
-    channel: paymentChannelForLabel(payment),
+    channel: paymentChannelForLabel(payment) ?? "unsupported",
   }), [items, payment, selectedDevice, voucher]);
   useEffect(() => {
     if (lastFingerprint.current === attemptFingerprint) return;
     lastFingerprint.current = attemptFingerprint;
     idempotencyKey.current = generateIdempotencyKey();
   }, [attemptFingerprint]);
+
+  // Persetujuan terikat pada fingerprint. Jika isi keranjang, voucher, atau
+  // kanal berubah, persetujuan lama tidak boleh dipakai lagi.
+  const currentApproval = reviewedPrice?.fingerprint === attemptFingerprint ? reviewedPrice.subtotal : null;
+  const approvedSubtotal = currentApproval ?? subtotal;
+  const priceAdjustment = approvedSubtotal - subtotal;
 
   // Kode voucher hanya bisa diverifikasi backend saat pesanan dibuat — daftar
   // voucher tidak tersedia publik. Klien karena itu tidak mengarang potongan
@@ -143,7 +152,7 @@ export function CheckoutCommerceClient() {
 
   const approvePriceReview = () => {
     if (!priceReview) return;
-    setReviewedSubtotal(priceReview.subtotal);
+    setReviewedPrice({ subtotal: priceReview.subtotal, fingerprint: attemptFingerprint });
     setPriceReview(null);
     setError("");
   };
@@ -157,6 +166,11 @@ export function CheckoutCommerceClient() {
       return;
     }
     if (priceReview) return;
+    const channel = paymentChannelForLabel(payment);
+    if (!channel) {
+      setError(`Metode ${payment} tidak dikenal. Pilih metode pembayaran lain.`);
+      return;
+    }
     setSubmitting(true);
 
     let liveSubtotal = subtotal;
@@ -179,17 +193,22 @@ export function CheckoutCommerceClient() {
       liveSubtotal = reconciled.currentSubtotal;
 
       if (reconciled.unresolved > 0) {
-        setStockNotice(`${reconciled.unresolved} item tidak lagi tersedia dengan paket yang sama. Hapus item tersebut dari keranjang lalu pilih paket yang tersedia.`);
+        const exceeded = reconciled.issues.filter((issue) => issue.reason === "stock_exceeded").length;
+        setStockNotice(
+          exceeded > 0
+            ? `Jumlah yang diminta melebihi stok tersedia untuk ${exceeded} baris. Kurangi jumlah atau hapus item duplikat sebelum membayar.`
+            : `${reconciled.unresolved} item tidak lagi tersedia dengan paket yang sama. Hapus item tersebut dari keranjang lalu pilih paket yang tersedia.`,
+        );
         return;
       }
 
       const needsApproval = reconciled.issues.some(
         (issue) => issue.reason === "price_changed" || issue.reason === "quantity_adjusted",
       );
-      if (needsApproval && reviewedSubtotal !== liveSubtotal) {
+      if (needsApproval && currentApproval !== liveSubtotal) {
         replaceItems(reconciled.items);
         setPriceReview({ previousSubtotal: reconciled.previousSubtotal, subtotal: liveSubtotal });
-        setReviewedSubtotal(null);
+        setReviewedPrice(null);
         return;
       }
 
@@ -220,8 +239,8 @@ export function CheckoutCommerceClient() {
         {
           voucher_code: voucher.trim().toUpperCase() || undefined,
           items: [...merged.values()],
-          expected_subtotal: reviewedSubtotal ?? liveSubtotal,
-          payment_channel: paymentChannelForLabel(payment),
+          expected_subtotal: currentApproval ?? liveSubtotal,
+          payment_channel: channel,
         },
         idempotencyKey.current,
       );
@@ -234,8 +253,8 @@ export function CheckoutCommerceClient() {
       if (code === "price_changed") {
         const current = apiErrorNumber(err, "current_subtotal");
         if (current !== null) {
-          setPriceReview({ previousSubtotal: liveSubtotal, subtotal: current });
-          setReviewedSubtotal(null);
+          setPriceReview({ previousSubtotal: approvedSubtotal, subtotal: current });
+          setReviewedPrice(null);
           setError("");
           return;
         }
@@ -313,7 +332,7 @@ export function CheckoutCommerceClient() {
         </section>
         <section className="commerce-checkout-section">
           <h2>Pilih Metode Pembayaran</h2>
-          <div className="commerce-payment-grid">{PAYMENT_METHODS.map(({ label, tone }) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""} ${unsupportedChannel === label ? "is-unsupported" : ""}`} type="button" aria-pressed={payment === label} onClick={() => setPayment(label)}><span>{label}</span></button>)}</div>
+          <div className="commerce-payment-grid">{PAYMENT_METHODS.map(({ label, tone }) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""} ${unsupportedChannel === label ? "is-unsupported" : ""}`} type="button" aria-pressed={payment === label} onClick={() => { setPayment(label); setUnsupportedChannel(null); setError(""); }}><span>{label}</span></button>)}</div>
           {/* Baris 50/no. 25: elemen yang ditandai pada dokumentasi memakai warning
               merah muda yang sama dengan validasi di halaman detail pesanan. */}
           {MANUAL_PAYMENTS.includes(payment) && <div className="commerce-field-warning commerce-payment-note" role="alert"><AlertCircle size={15} /><p>Pilih durasi minimal 6 bulan untuk metode bank/alfa.</p></div>}
@@ -326,6 +345,7 @@ export function CheckoutCommerceClient() {
         <div><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
         <div><span>Metode</span><strong>{payment}</strong></div>
         <div><span>Voucher</span><strong>{voucher.trim() ? voucher.trim().toUpperCase() : "—"}</strong></div>
+        {priceAdjustment !== 0 && <div><span>Penyesuaian harga server</span><strong>{priceAdjustment > 0 ? "+" : ""}{formatRupiahLabel(priceAdjustment)}</strong></div>}
         <hr />
         <div className="commerce-checkout-total"><span>Total Bayar</span><b>{formatRupiahLabel(approvedSubtotal)}</b></div>
         <p className="muted small" style={{ margin: "8px 0 0" }}>Potongan voucher dihitung saat pesanan dibuat.</p>

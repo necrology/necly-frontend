@@ -115,8 +115,11 @@ function OrderClientInner({ orderId }: OrderClientProps) {
   }, [orderId]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void loadOrder(), 0);
-    return () => window.clearTimeout(timer);
+    let cancelled = false;
+    void Promise.resolve().then(() => {
+      if (!cancelled) void loadOrder();
+    });
+    return () => { cancelled = true; };
   }, [loadOrder, reloadToken]);
 
   if (loading) {

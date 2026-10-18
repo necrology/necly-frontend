@@ -88,6 +88,28 @@ describe("reconcileCartItems", () => {
     expect(result.items[0].product_price_id).toBe("0192f0a4-0000-0000-0000-000000000099");
   });
 
+  it("mengagregasi baris duplikat sebelum memeriksa stok", () => {
+    const scarceCatalog = [{ ...catalog[0], prices: [{ ...catalog[0].prices![0], available_slots: 1 }] }];
+    const line: CartItem = {
+      ...oldItem,
+      id: catalog[0].id,
+      slug: catalog[0].slug,
+      product_price_id: catalog[0].prices![0].id,
+      price: 59_000,
+      selectedPrice: 59_000,
+      quantity: 1,
+    };
+
+    const result = reconcileCartItems([line, { ...line }], scarceCatalog);
+
+    expect(result.unresolved).toBe(2);
+    expect(result.issues).toEqual([
+      expect.objectContaining({ reason: "stock_exceeded" }),
+      expect.objectContaining({ reason: "stock_exceeded" }),
+    ]);
+    expect(result.items.every((item) => item.quantity === 1)).toBe(true);
+  });
+
   it("menandai paket tanpa slot tersedia sebagai tidak tersedia", () => {
     const emptyCatalog = [{ ...catalog[0], prices: [{ ...catalog[0].prices![0], available_slots: 0 }] }];
     const liveItem: CartItem = {

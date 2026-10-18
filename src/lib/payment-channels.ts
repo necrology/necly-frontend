@@ -34,6 +34,6 @@ export const PAYMENT_METHODS: readonly PaymentMethod[] = [
   { label: "mandiri", tone: "mandiri", channel: "mandiri_va" },
 ];
 
-export function paymentChannelForLabel(label: string): PaymentChannel {
-  return PAYMENT_METHODS.find((method) => method.label === label)?.channel ?? "qris";
+export function paymentChannelForLabel(label: string): PaymentChannel | null {
+  return PAYMENT_METHODS.find((method) => method.label === label)?.channel ?? null;
 }
