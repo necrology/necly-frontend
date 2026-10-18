@@ -39,6 +39,24 @@ describe("POST /api/auth/forgot-password", () => {
     );
   });
 
+  it("mengutamakan INTERNAL_API_URL untuk panggilan dari dalam jaringan deployment", async () => {
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "https://validation.localhost:58443/api/v1");
+    vi.stubEnv("INTERNAL_API_URL", "http://api:8080/api/v1");
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(
+      JSON.stringify({ message: "Jika terdaftar, tautan sudah dikirim." }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    ));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await POST(request({ email: "pelanggan@example.id" }));
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://api:8080/api/v1/auth/forgot-password",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
   it("menolak email tidak valid tanpa menghubungi backend", async () => {
     const fetchMock = vi.fn<typeof fetch>();
     vi.stubGlobal("fetch", fetchMock);

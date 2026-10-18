@@ -1,7 +1,13 @@
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
 function backendApiBase() {
-  const configured = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1")
+  // Browser-facing builds point NEXT_PUBLIC_API_URL at the public edge. Route
+  // Handlers execute inside the deployment network, so an explicit runtime
+  // INTERNAL_API_URL takes precedence and avoids calling the public origin
+  // from the container itself.
+  const configured = (process.env.INTERNAL_API_URL
+    || process.env.NEXT_PUBLIC_API_URL
+    || "http://localhost:8080/api/v1")
     .replace(/\/+$/, "");
   return configured.endsWith("/api/v1") ? configured : `${configured}/api/v1`;
 }

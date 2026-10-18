@@ -6,3 +6,7 @@ coverage
 .env.local
 *.log
 .vercel
+
+# Playwright
+playwright-report/
+test-results/
