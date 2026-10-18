@@ -102,7 +102,9 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
     } catch (failure) {
       setOrder(null);
       if (failure instanceof ApiError) {
-        if (failure.status === 404 || failure.status === 400 || failure.status === 403) {
+        if (failure.status === 403) {
+          setError({ kind: "forbidden", message: "Halaman detail pesanan hanya untuk admin." });
+        } else if (failure.status === 404 || failure.status === 400) {
           setError({ kind: "not_found", message: "Pesanan tidak ditemukan." });
         } else if (failure.status === 401) {
           setError({ kind: "unauthorized", message: "Sesi Anda sudah berakhir. Masuk kembali untuk melihat pesanan ini." });

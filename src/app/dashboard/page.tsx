@@ -152,13 +152,6 @@ export default function DashboardPage() {
     );
   }
 
-  const emptyData: DashboardData = {
-    grossRevenue: 0,
-    newOrders: 0,
-    activeActivations: 0,
-    availableSlots: 0,
-  };
-
   // Data simulasi hanya dipakai saat mode demo aktif.
   const demoData: DashboardData = {
     grossRevenue: 83_600_000,
@@ -175,12 +168,19 @@ export default function DashboardPage() {
     { id: "NCL-260904-087", customer: "Dewi Sari", customerEmail: "dewi@example.id", product: "LearnLab Plus Member", service: "LearnLab Plus Member", duration: "6 bulan", amount: 185_000, status: "Aktif", date: "04 Sep 2026", due: "04 Sep · 14:21" },
   ];
 
-  const displayData = DEMO_MODE ? demoData : data ?? emptyData;
+  // Saat live dan statistik belum tiba, jangan merender nol. Nilai yang belum
+  // tersedia ditampilkan sebagai "—" sampai respons server benar-benar ada.
+  const displayData = DEMO_MODE ? demoData : data;
   const displayOrders = DEMO_MODE ? demoOrders : recentOrders;
-  const revenueInJuta = displayData.grossRevenue / 1_000_000;
+  const metricsReady = displayData !== null;
+  const revenueLabel = displayData
+    ? DEMO_MODE
+      ? `Rp${(displayData.grossRevenue / 1_000_000).toLocaleString("id-ID", { minimumFractionDigits: 1 })} jt`
+      : formatIDR(displayData.grossRevenue)
+    : "—";
   // Belum ada field perbandingan di kontrak C-06; teks persentase lama tidak
   // boleh ditampilkan seolah-olah berasal dari data.
-  const comparisonText = DEMO_MODE ? "Data simulasi" : "—";
+  const comparisonText = metricsReady ? (DEMO_MODE ? "Data simulasi" : "—") : "Memuat metrik…";
 
   return (
     <div className="dashboard-page">
@@ -201,25 +201,25 @@ export default function DashboardPage() {
       <section className="metric-grid" aria-label="Metrik kunci">
         <MetricCard
           label="Pendapatan kotor"
-          value={DEMO_MODE ? `Rp${revenueInJuta.toLocaleString("id-ID", { minimumFractionDigits: 1 })} jt` : formatIDR(displayData.grossRevenue)}
+          value={revenueLabel}
           change={comparisonText}
           icon={<Banknote size={14} />}
         />
         <MetricCard
           label="Pesanan baru"
-          value={String(displayData.newOrders)}
+          value={displayData ? String(displayData.newOrders) : "—"}
           change={comparisonText}
           icon={<ShoppingCart size={14} />}
         />
         <MetricCard
           label="Aktivasi berjalan"
-          value={String(displayData.activeActivations)}
+          value={displayData ? String(displayData.activeActivations) : "—"}
           change={comparisonText}
           icon={<CircleCheckBig size={14} />}
         />
         <MetricCard
           label="Slot tersedia"
-          value={String(displayData.availableSlots)}
+          value={displayData ? String(displayData.availableSlots) : "—"}
           change={comparisonText}
           icon={<Boxes size={14} />}
         />

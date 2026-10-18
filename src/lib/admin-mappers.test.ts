@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { mapApiAuditLog, mapApiDashboard, mapApiOrderToDashboardOrder } from "./admin-mappers";
+import { ORDER_STATUS_OPTIONS, orderStatusLabel } from "./order-status";
 import type { ApiOrder } from "./api";
 
 const D0 = {
@@ -80,6 +81,12 @@ describe("kontrak W0 C-06 dashboard", () => {
   it("menolak nilai metrik yang bukan angka", () => {
     expect(() => mapApiDashboard({ ...D1, available_slots: null })).toThrow(/available_slots/);
   });
+
+  it("menolak DTO C-06 yang kehilangan field yang tidak tampil di UI", () => {
+    const withoutUsers = { ...D1 } as Record<string, unknown>;
+    delete withoutUsers.total_users;
+    expect(() => mapApiDashboard(withoutUsers)).toThrow(/total_users/);
+  });
 });
 
 describe("kontrak W0 C-07 audit log", () => {
@@ -119,6 +126,13 @@ describe("kontrak W0 C-07 audit log", () => {
     delete missingAction.action;
     expect(() => mapApiAuditLog(missingAction)).toThrow(/tidak lengkap/);
   });
+
+  it("menolak DTO audit tanpa ip_address meskipun string kosong tetap sah", () => {
+    const missingIp = { ...fixture } as Record<string, unknown>;
+    delete missingIp.ip_address;
+    expect(() => mapApiAuditLog(missingIp)).toThrow(/tidak lengkap/);
+    expect(mapApiAuditLog({ ...fixture, ip_address: "" }).ip).toBe("");
+  });
 });
 
 describe("kontrak C-02 pesanan untuk daftar admin", () => {
@@ -134,6 +148,16 @@ describe("kontrak C-02 pesanan untuk daftar admin", () => {
       amount: 167400,
       status: "Menunggu pembayaran",
     });
+  });
+
+  it("menyediakan label untuk seluruh 10 status backend pada satu sumber", () => {
+    const backendStatuses = ["pending_payment", "paid", "fulfilling", "processing", "shipped", "delivered", "completed", "cancelled", "expired", "refunded"] as const;
+    const labels = backendStatuses.map(orderStatusLabel);
+    for (const label of labels) {
+      expect(ORDER_STATUS_OPTIONS).toContain(label);
+    }
+    expect(new Set(ORDER_STATUS_OPTIONS).size).toBe(ORDER_STATUS_OPTIONS.length);
+    expect(orderStatusLabel("delivered")).toBe("Akses diterima");
   });
 
   it.each([

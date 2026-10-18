@@ -90,6 +90,14 @@ describe("detail pesanan admin (C19)", () => {
     expect(screen.queryByText("Netflix Premium")).not.toBeInTheDocument();
   });
 
+  it("memetakan 403 menjadi akses ditolak, bukan pesanan tidak ditemukan", async () => {
+    getOrderMock.mockRejectedValue(new ApiError("Forbidden", 403, { code: "forbidden" }));
+    render(<AdminOrderDetail orderId={ORDER_ID} />);
+
+    expect(await screen.findByText("Akses ditolak")).toBeInTheDocument();
+    expect(screen.queryByText("Pesanan tidak ditemukan")).not.toBeInTheDocument();
+  });
+
   it("menolak id bukan UUID tanpa memanggil API", async () => {
     render(<AdminOrderDetail orderId="not-a-uuid" />);
 

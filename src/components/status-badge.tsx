@@ -18,6 +18,7 @@ const statusLabels: Record<string, { label: string; tone: StatusTone }> = {
   dikirim: { label: "Dikirim", tone: "status-success" },
   shipped: { label: "Dikirim", tone: "status-success" },
   diterima: { label: "Akses diterima", tone: "status-success" },
+  akses_diterima: { label: "Akses diterima", tone: "status-success" },
   delivered: { label: "Akses diterima", tone: "status-success" },
   dikonfirmasi: { label: "Dikonfirmasi", tone: "status-success" },
   confirmed: { label: "Dibayar", tone: "status-success" },

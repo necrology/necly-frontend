@@ -9,8 +9,9 @@ import { formatIDR, formatDateID } from "@/lib/money";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { mapApiOrderToDashboardOrder } from "@/lib/admin-mappers";
 import type { DashboardOrder } from "@/lib/types";
+import { ORDER_STATUS_OPTIONS } from "@/lib/order-status";
 
-const statuses = ["Semua", "Menunggu pembayaran", "Dibayar", "Diproses", "Aktif", "Dibatalkan"] as const;
+const statuses = ["Semua", ...ORDER_STATUS_OPTIONS, "Aktif"] as const;
 type StatusType = (typeof statuses)[number];
 
 export default function OrdersAdminPage() {

@@ -87,6 +87,24 @@ describe("dashboard admin (C12/C19)", () => {
     expect(screen.queryByText("ORD-DASHBOARD-INVENTED")).not.toBeInTheDocument();
   });
 
+  it("tidak menampilkan nol saat metrik masih dimuat", async () => {
+    dashboardMock.mockReturnValue(new Promise(() => {}));
+    render(<DashboardPage />);
+
+    expect((await screen.findAllByText("Memuat metrik…")).length).toBe(4);
+    expect(screen.queryByText("Rp0")).not.toBeInTheDocument();
+    expect(metric("Pesanan baru")).toHaveTextContent("—");
+  });
+
+  it("memvalidasi seluruh DTO C-06, bukan hanya field yang tampil", async () => {
+    const incomplete = { ...D1 } as Record<string, unknown>;
+    delete incomplete.total_users;
+    dashboardMock.mockResolvedValue(incomplete);
+    render(<DashboardPage />);
+
+    expect(await screen.findByText(/Data metrik dashboard dari server tidak lengkap/)).toBeInTheDocument();
+  });
+
   it("menampilkan error saat respons metrik tidak lengkap, bukan nol palsu", async () => {
     const incomplete = { ...D1 } as Record<string, unknown>;
     delete incomplete.total_revenue;

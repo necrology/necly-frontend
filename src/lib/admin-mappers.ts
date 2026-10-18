@@ -22,11 +22,27 @@ export function mapApiDashboard(data: Record<string, unknown>) {
     return value;
   };
 
+  // Validasi seluruh DTO C-06, bukan hanya empat field yang tampil, supaya
+  // respons parsial tidak lolos sebagai data sah.
+  const required = [
+    "total_users",
+    "total_orders",
+    "total_revenue",
+    "pending_orders",
+    "active_users",
+    "new_users_today",
+    "orders_today",
+    "revenue_today",
+    "active_activations",
+    "available_slots",
+  ] as const;
+  const values = Object.fromEntries(required.map((key) => [key, metric(key)]));
+
   return {
-    grossRevenue: metric("total_revenue"),
-    newOrders: metric("orders_today"),
-    activeActivations: metric("active_activations"),
-    availableSlots: metric("available_slots"),
+    grossRevenue: values.total_revenue,
+    newOrders: values.orders_today,
+    activeActivations: values.active_activations,
+    availableSlots: values.available_slots,
   };
 }
 
@@ -63,7 +79,7 @@ export function mapApiOrderToDashboardOrder(apiOrder: ApiOrder): DashboardOrder 
     amount: apiOrder.total,
     // Semua status backend dipetakan lewat satu sumber (C-02), bukan default
     // "Menunggu pembayaran" yang menyesatkan status tak dikenal.
-    status: orderStatusLabel(apiOrder.status) as DashboardOrder["status"],
+    status: orderStatusLabel(apiOrder.status),
     date: createdDate,
     due: dueDate,
   };
@@ -221,7 +237,7 @@ export function mapApiAuditLog(apiLog: Record<string, unknown>): AuditRecord {
   const resourceType = value("resource_type");
   const createdAt = value("created_at");
 
-  if (!id || !action || !resourceType || !createdAt) {
+  if (!id || !action || !resourceType || !createdAt || typeof apiLog.ip_address !== "string") {
     throw new Error("DTO audit log tidak lengkap");
   }
 

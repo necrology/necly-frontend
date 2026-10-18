@@ -72,6 +72,15 @@ describe("audit log admin (C12/C19)", () => {
     expect(await screen.findByText(/Gagal memproses data audit log/)).toBeInTheDocument();
   });
 
+  it("menampilkan error saat ip_address hilang dari DTO", async () => {
+    const withoutIp = { ...FIXTURE } as Record<string, unknown>;
+    delete withoutIp.ip_address;
+    listAuditLogsMock.mockResolvedValue({ logs: [withoutIp], page: 1, per_page: 50, total: 1 });
+    render(<AuditLogPage />);
+
+    expect(await screen.findByText(/Gagal memproses data audit log/)).toBeInTheDocument();
+  });
+
   it("tidak meminta data audit untuk penjual", async () => {
     bootstrapAuthMock.mockResolvedValue({ id: "seller-1", role: "seller" });
     render(<AuditLogPage />);
