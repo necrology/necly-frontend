@@ -69,6 +69,7 @@ describe("getOrderSteps", () => {
 
   it("menolak status yang tidak dikenal tanpa mengarang status lain", () => {
     expect(normalizeOrderStatus("something_else")).toBeNull();
+    expect(normalizeOrderStatus("constructor")).toBeNull();
     expect(orderStatusLabel("something_else")).toBe("Status lainnya");
   });
 });

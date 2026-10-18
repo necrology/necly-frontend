@@ -300,6 +300,8 @@ describe("CheckoutCommerceClient", () => {
     expect(screen.getByText(/total terbaru Rp 75\.000/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Setujui total baru" }));
+    expect(screen.getByText("Penyesuaian harga server")).toBeInTheDocument();
+    expect(screen.getAllByText("Rp 75.000").length).toBeGreaterThan(0);
     fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
 
     await waitFor(() => expect(checkoutMock).toHaveBeenCalledTimes(2));
