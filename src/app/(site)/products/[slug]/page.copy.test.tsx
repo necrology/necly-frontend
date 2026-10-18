@@ -2,6 +2,11 @@ import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { services } from "@/data/seed";
 
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return { ...actual, DEMO_MODE: true, catalogApi: { ...actual.catalogApi, getProduct: vi.fn() } };
+});
+
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(() => { throw new Error("NOT_FOUND"); }),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),

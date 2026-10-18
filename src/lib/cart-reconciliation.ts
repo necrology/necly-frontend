@@ -9,6 +9,8 @@ const LEGACY_PRODUCT_SLUGS: Record<string, string> = {
   "disney-plus-hotstar": "disney-plus-standard",
 };
 
+export const cartLineKey = (item: Pick<CartItem, "id" | "product_price_id">) => item.product_price_id ?? item.id;
+
 function durationDays(label?: string) {
   const match = /(\d+)\s*(bulan|hari|days?|months?)/i.exec(label ?? "");
   if (!match) return null;
@@ -26,32 +28,68 @@ function productMatches(item: CartItem, product: ReturnType<typeof mapApiProduct
   return LEGACY_PRODUCT_SLUGS[oldSlug] === currentSlug;
 }
 
+export type CartIssueReason = "unavailable" | "price_changed" | "quantity_adjusted" | "updated";
+
+export type CartIssue = {
+  key: string;
+  name: string;
+  reason: CartIssueReason;
+};
+
 export type CartReconciliation = {
   items: CartItem[];
   changed: boolean;
   unresolved: number;
+  issues: CartIssue[];
+  previousSubtotal: number;
+  currentSubtotal: number;
 };
 
-/** Refresh harga/stok dan migrasikan id lama dari katalog tersimpan. */
+function subtotal(items: readonly CartItem[]) {
+  return items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+/**
+ * Refresh harga/stok dan migrasikan id lama dari katalog tersimpan.
+ *
+ * Aturan penting untuk live mode: id harga ber-UUID harus cocok persis. Bila
+ * harga itu hilang atau tidak aktif, baris ditandai tidak tersedia — tidak
+ * boleh diam-diam dipindahkan ke paket lain dengan durasi mirip, karena itu
+ * bisa mengubah jumlah yang ditagih.
+ */
 export function reconcileCartItems(items: CartItem[], catalog: ApiProduct[]): CartReconciliation {
   const products = catalog.map(mapApiProduct);
+  const issues: CartIssue[] = [];
   let changed = false;
   let unresolved = 0;
 
   const reconciled = items.map((item) => {
-    const currentProduct = products.find((product) =>
-      product.priceOptions.some((option) => option.id === item.product_price_id),
-    );
-    const product = currentProduct ?? products.find((candidate) => productMatches(item, candidate));
+    const key = cartLineKey(item);
+    const hasPriceID = UUID.test(item.product_price_id ?? "");
+    const product = products.find((candidate) =>
+      candidate.priceOptions.some((option) => option.id === item.product_price_id),
+    ) ?? (hasPriceID ? undefined : products.find((candidate) => productMatches(item, candidate)));
+
     const wantedDays = durationDays(item.selectedDuration);
-    const option = currentProduct
-      ? currentProduct.priceOptions.find((candidate) => candidate.id === item.product_price_id)
-      : product?.priceOptions.find((candidate) => wantedDays === null || Math.abs(candidate.days - wantedDays) <= 1);
+    const option = product
+      ? (hasPriceID
+          ? product.priceOptions.find((candidate) => candidate.id === item.product_price_id)
+          : product.priceOptions.find((candidate) => wantedDays === null || Math.abs(candidate.days - wantedDays) <= 1))
+      : undefined;
 
     const availableStock = option?.stock ?? 0;
     if (!product || !option || availableStock < 1 || !UUID.test(option.id)) {
       unresolved += 1;
+      issues.push({ key, name: item.name, reason: "unavailable" });
       return item;
+    }
+
+    const nextQuantity = Math.min(item.quantity, availableStock);
+    if (nextQuantity !== item.quantity) {
+      issues.push({ key, name: item.name, reason: "quantity_adjusted" });
+    }
+    if (option.price !== item.price) {
+      issues.push({ key, name: item.name, reason: "price_changed" });
     }
 
     const next: CartItem = {
@@ -67,12 +105,19 @@ export function reconcileCartItems(items: CartItem[], catalog: ApiProduct[]): Ca
       selectedDuration: option.duration,
       selectedPrice: option.price,
       selectedStock: availableStock,
-      quantity: Math.min(item.quantity, availableStock),
+      quantity: nextQuantity,
     };
 
     if (JSON.stringify(next) !== JSON.stringify(item)) changed = true;
     return next;
   });
 
-  return { items: reconciled, changed, unresolved };
+  return {
+    items: reconciled,
+    changed,
+    unresolved,
+    issues,
+    previousSubtotal: subtotal(items),
+    currentSubtotal: subtotal(reconciled),
+  };
 }

@@ -3,19 +3,16 @@
 import { AlertCircle, BadgeCheck, ChevronRight, CircleDollarSign, CreditCard, Headphones, LifeBuoy, LoaderCircle, Mail, ShieldCheck, UsersRound, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { contact } from "@/data/contact";
-import { defaultDeviceOptions, products } from "@/data/products";
+import { defaultDeviceOptions } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { continueToCheckout } from "@/lib/checkout-navigation";
 import { useCartStore, type CartItem } from "@/stores/cart-store";
-import { bootstrapAuth, catalogApi, checkoutApi, DEMO_MODE, useAuthStore } from "@/lib/api";
+import { ApiError, apiErrorCode, apiErrorNumber, bootstrapAuth, catalogApi, checkoutApi, DEMO_MODE, useAuthStore } from "@/lib/api";
 import { reconcileCartItems } from "@/lib/cart-reconciliation";
+import { PAYMENT_METHODS, paymentChannelForLabel } from "@/lib/payment-channels";
 
-const payments = [
-  ["QRIS", "qris"], ["OVO", "ovo"], ["DANA", "dana"], ["ShopeePay", "shopeepay"], ["LinkAja", "linkaja"],
-  ["Alfamart", "alfamart"], ["BNI", "bni"], ["BSI", "bsi"], ["BANK BRI", "bri"], ["mandiri", "mandiri"],
-] as const;
 const safeguards = [["Pembayaran Aman", "Semua transaksi diproses dengan enkripsi terpercaya.", ShieldCheck], ["Proses Cepat", "Pembayaran otomatis terkonfirmasi.", Zap], ["Dukungan 24/7", "Tim kami siap membantu kapan saja.", Headphones], ["Ribuan Pelanggan Puas", "Dipercaya oleh 75.000+ pengguna di seluruh Indonesia.", UsersRound]] as const;
 const MANUAL_PAYMENTS = ["Alfamart", "BNI", "BSI", "BANK BRI", "mandiri"];
 const DEMO_ORDER_ID = "NCL-DEMO-260906";
@@ -49,6 +46,11 @@ function durationInMonths(label?: string) {
   return /bulan|month/i.test(match[2]) ? value : Math.max(1, Math.round(value / 30));
 }
 
+type PriceReview = {
+  previousSubtotal: number;
+  subtotal: number;
+};
+
 export function CheckoutCommerceClient() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
@@ -60,22 +62,29 @@ export function CheckoutCommerceClient() {
   const [voucherFailed, setVoucherFailed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [unsupportedChannel, setUnsupportedChannel] = useState<string | null>(null);
+  const [priceReview, setPriceReview] = useState<PriceReview | null>(null);
+  const [reviewedSubtotal, setReviewedSubtotal] = useState<number | null>(null);
+  const [stockNotice, setStockNotice] = useState<string | null>(null);
   // Baris 38 & 39: jumlah perangkat wajib dipilih. Bila pembeli sudah memilihnya
   // di halaman detail, pilihannya ikut dari keranjang.
   const [device, setDevice] = useState<number | null>(null);
   const [showWarnings, setShowWarnings] = useState(false);
 
-  const product = useMemo(() => {
-    const cartItem = items[0];
-    return products.find((item) => item.id === cartItem?.id || item.slug === cartItem?.slug) ?? products[0];
+  // Pilihan perangkat tidak lagi diambil dari data contoh. Nilai yang tersedia
+  // adalah pilihan yang memang dibawa item keranjang plus bawaan satu perangkat.
+  const deviceOptions = useMemo(() => {
+    const values = new Set<number>(defaultDeviceOptions);
+    for (const item of items) {
+      if (item.selectedDevice && item.selectedDevice > 0) values.add(item.selectedDevice);
+    }
+    return [...values].sort((left, right) => left - right);
   }, [items]);
-  const deviceOptions: number[] = product.deviceOptions?.length ? product.deviceOptions : [...defaultDeviceOptions];
   const selectedDevice = device ?? items[0]?.selectedDevice ?? null;
 
-  // Seluruh angka di halaman ini berasal dari keranjang. Sebelumnya harga dihitung
-  // dari satu produk contoh dan dikurangi "kode unik" Rp33 serta potongan voucher
-  // yang dikarang di klien — tidak satu pun pernah ditagih backend, sehingga total
-  // di layar berbeda dari yang benar-benar dibayar.
+  // Seluruh angka di halaman ini berasal dari keranjang. Total yang ditampilkan
+  // juga dikirim sebagai expected_subtotal supaya backend menolak percobaan bayar
+  // bila harga berubah di antara tampilan dan permintaan.
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
   const totalUnits = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
@@ -91,10 +100,31 @@ export function CheckoutCommerceClient() {
 
   // Keranjang bisa memuat id harga dari data contoh lokal — produk yang
   // ditambahkan sebelum katalog dari API selesai dimuat. Id seperti itu tidak ada
-  // di database, jadi checkout tidak akan pernah berhasil; lebih baik dijelaskan
-  // di muka daripada dibiarkan gagal dengan galat server.
+  // di database; checkout akan merekonsiliasinya dengan katalog lebih dulu.
   const staleCount = items.filter((item) => !UUID.test(item.product_price_id ?? "")).length;
-  const payDisabled = submitting || items.length === 0;
+  // Total yang sudah disetujui pembeli. Bila server melaporkan harga baru yang
+  // belum tercermin di katalog, angka inilah yang ditampilkan dan dikirim.
+  const approvedSubtotal = reviewedSubtotal ?? subtotal;
+  const payDisabled = submitting || items.length === 0 || priceReview !== null;
+
+  // Satu kunci untuk satu kombinasi keranjang/voucher/kanal. Retry setelah
+  // gangguan jaringan memakai kunci yang sama sehingga backend mengembalikan
+  // hasil tersimpan, bukan membuat pesanan kedua. Mengubah isi atau kanal
+  // membuat kunci baru karena fingerprint-nya berubah.
+  const idempotencyKey = useRef(generateIdempotencyKey());
+  const lastFingerprint = useRef("");
+  const attemptFingerprint = useMemo(() => JSON.stringify({
+    items: items
+      .map((item) => ({ price: item.product_price_id ?? item.id, quantity: item.quantity, device: item.selectedDevice ?? selectedDevice }))
+      .sort((left, right) => left.price.localeCompare(right.price) || String(left.device).localeCompare(String(right.device))),
+    voucher: voucher.trim().toUpperCase(),
+    channel: paymentChannelForLabel(payment),
+  }), [items, payment, selectedDevice, voucher]);
+  useEffect(() => {
+    if (lastFingerprint.current === attemptFingerprint) return;
+    lastFingerprint.current = attemptFingerprint;
+    idempotencyKey.current = generateIdempotencyKey();
+  }, [attemptFingerprint]);
 
   // Kode voucher hanya bisa diverifikasi backend saat pesanan dibuat — daftar
   // voucher tidak tersedia publik. Klien karena itu tidak mengarang potongan
@@ -111,28 +141,29 @@ export function CheckoutCommerceClient() {
     setVoucherMessage(`Kode ${code} akan diperiksa saat pesanan dibuat.`);
   };
 
+  const approvePriceReview = () => {
+    if (!priceReview) return;
+    setReviewedSubtotal(priceReview.subtotal);
+    setPriceReview(null);
+    setError("");
+  };
+
   const pay = async () => {
     setError("");
+    setStockNotice(null);
+    setUnsupportedChannel(null);
     if (selectedDevice === null) {
       setShowWarnings(true);
       return;
     }
+    if (priceReview) return;
     setSubmitting(true);
+
+    let liveSubtotal = subtotal;
     try {
       if (DEMO_MODE) {
         router.push(`/payment/${DEMO_ORDER_ID}`);
         return;
-      }
-
-      let payableItems = items;
-      if (staleCount > 0) {
-        const catalog = await catalogApi.listProducts({ per_page: 100 });
-        const repaired = reconcileCartItems(items, catalog.products);
-        if (repaired.unresolved > 0) {
-          throw new Error(`${repaired.unresolved} item tidak lagi tersedia dengan durasi yang sama. Hapus item tersebut dari keranjang lalu pilih paket yang tersedia.`);
-        }
-        payableItems = repaired.items;
-        if (repaired.changed) replaceItems(repaired.items);
       }
 
       const user = useAuthStore.getState().user ?? (await bootstrapAuth());
@@ -140,6 +171,30 @@ export function CheckoutCommerceClient() {
         router.push("/login?redirect=/checkout");
         return;
       }
+
+      // Rekonsiliasi selalu dijalankan sebelum pembayaran, bukan hanya untuk id
+      // lama: harga dan stok bisa berubah sejak produk dimasukkan ke keranjang.
+      const catalog = await catalogApi.listProducts({ per_page: 100 });
+      const reconciled = reconcileCartItems(items, catalog.products);
+      liveSubtotal = reconciled.currentSubtotal;
+
+      if (reconciled.unresolved > 0) {
+        setStockNotice(`${reconciled.unresolved} item tidak lagi tersedia dengan paket yang sama. Hapus item tersebut dari keranjang lalu pilih paket yang tersedia.`);
+        return;
+      }
+
+      const needsApproval = reconciled.issues.some(
+        (issue) => issue.reason === "price_changed" || issue.reason === "quantity_adjusted",
+      );
+      if (needsApproval && reviewedSubtotal !== liveSubtotal) {
+        replaceItems(reconciled.items);
+        setPriceReview({ previousSubtotal: reconciled.previousSubtotal, subtotal: liveSubtotal });
+        setReviewedSubtotal(null);
+        return;
+      }
+
+      const payableItems = reconciled.items;
+      if (reconciled.changed) replaceItems(payableItems);
 
       // Keranjang bisa memuat dua baris dengan harga yang sama — mis. ditambahkan
       // dari halaman katalog lalu dari halaman detail. Backend menolak item
@@ -162,12 +217,43 @@ export function CheckoutCommerceClient() {
       }
 
       const response = await checkoutApi.checkout(
-        { voucher_code: voucher.trim().toUpperCase() || undefined, items: [...merged.values()] },
-        generateIdempotencyKey(),
+        {
+          voucher_code: voucher.trim().toUpperCase() || undefined,
+          items: [...merged.values()],
+          expected_subtotal: reviewedSubtotal ?? liveSubtotal,
+          payment_channel: paymentChannelForLabel(payment),
+        },
+        idempotencyKey.current,
       );
       continueToCheckout(response, router.push);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Checkout gagal. Coba lagi.";
+      const code = apiErrorCode(err);
+
+      // Server melihat harga yang berbeda dari yang disetujui pembeli. Tampilkan
+      // konflik yang bisa ditinjau, bukan langsung menagih jumlah baru.
+      if (code === "price_changed") {
+        const current = apiErrorNumber(err, "current_subtotal");
+        if (current !== null) {
+          setPriceReview({ previousSubtotal: liveSubtotal, subtotal: current });
+          setReviewedSubtotal(null);
+          setError("");
+          return;
+        }
+      }
+
+      if (code === "unsupported_payment_channel" || code === "payment_channel_not_eligible") {
+        setUnsupportedChannel(payment);
+        setError(`Metode ${payment} tidak didukung oleh penyedia pembayaran untuk pesanan ini. Pilih metode lain; pilihan Anda tidak diganti otomatis.`);
+        return;
+      }
+
+      if (code === "out_of_stock") {
+        setStockNotice("Stok paket yang dipilih sudah habis. Perbarui keranjang lalu pilih paket yang masih tersedia.");
+        setError("Stok paket yang dipilih sudah habis.");
+        return;
+      }
+
+      const message = err instanceof ApiError ? err.message : err instanceof Error ? err.message : "Checkout gagal. Coba lagi.";
       // Backend menolak kode voucher yang tidak dikenal pada saat pesanan dibuat;
       // tampilkan sebagai masalah voucher supaya jelas bagi pembeli.
       if (/voucher/i.test(message)) {
@@ -175,6 +261,7 @@ export function CheckoutCommerceClient() {
         setVoucherMessage("Kode Voucher Tidak dikenali");
       }
       setError(message);
+    } finally {
       setSubmitting(false);
     }
   };
@@ -185,7 +272,7 @@ export function CheckoutCommerceClient() {
         <section className="commerce-checkout-section commerce-duration-section">
           <h2>Durasi Berlangganan</h2>
           <div className="commerce-checkout-duration-chips">
-            {items.map((item) => <span key={lineKey(item)}>{item.selectedDuration ?? "1 Bulan"}</span>)}
+            {items.map((item, index) => <span key={`${lineKey(item)}-${index}`}>{item.selectedDuration ?? "1 Bulan"}</span>)}
           </div>
           <p className="muted small" style={{ marginTop: 10 }}>
             Durasi mengikuti pilihan Anda saat menambahkan produk, dan pesanan dibangun dari keranjang. Untuk mengubahnya, hapus item di <Link href="/cart">keranjang</Link> lalu pilih ulang dari halaman produk.
@@ -199,8 +286,8 @@ export function CheckoutCommerceClient() {
         <section className="commerce-checkout-section">
           <h2>Detail Pesanan</h2>
           <ul className="commerce-checkout-lines">
-            {items.map((item) => (
-              <li className="commerce-checkout-line" key={lineKey(item)}>
+            {items.map((item, index) => (
+              <li className="commerce-checkout-line" key={`${lineKey(item)}-${index}`}>
                 <div>
                   <strong>{item.name}</strong>
                   <p>{lineDetail(item)}</p>
@@ -226,10 +313,11 @@ export function CheckoutCommerceClient() {
         </section>
         <section className="commerce-checkout-section">
           <h2>Pilih Metode Pembayaran</h2>
-          <div className="commerce-payment-grid">{payments.map(([label, tone]) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""}`} type="button" aria-pressed={payment === label} onClick={() => setPayment(label)}><span>{label}</span></button>)}</div>
+          <div className="commerce-payment-grid">{PAYMENT_METHODS.map(({ label, tone }) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""} ${unsupportedChannel === label ? "is-unsupported" : ""}`} type="button" aria-pressed={payment === label} onClick={() => setPayment(label)}><span>{label}</span></button>)}</div>
           {/* Baris 50/no. 25: elemen yang ditandai pada dokumentasi memakai warning
               merah muda yang sama dengan validasi di halaman detail pesanan. */}
           {MANUAL_PAYMENTS.includes(payment) && <div className="commerce-field-warning commerce-payment-note" role="alert"><AlertCircle size={15} /><p>Pilih durasi minimal 6 bulan untuk metode bank/alfa.</p></div>}
+          {unsupportedChannel && <p className="commerce-field-warning" role="alert"><AlertCircle size={15} />Penyedia pembayaran tidak mendukung metode {unsupportedChannel} untuk pesanan ini. Pilih metode lain.</p>}
         </section>
       </div>
       <aside className="commerce-checkout-summary">
@@ -239,9 +327,18 @@ export function CheckoutCommerceClient() {
         <div><span>Metode</span><strong>{payment}</strong></div>
         <div><span>Voucher</span><strong>{voucher.trim() ? voucher.trim().toUpperCase() : "—"}</strong></div>
         <hr />
-        <div className="commerce-checkout-total"><span>Total Bayar</span><b>{formatRupiahLabel(subtotal)}</b></div>
+        <div className="commerce-checkout-total"><span>Total Bayar</span><b>{formatRupiahLabel(approvedSubtotal)}</b></div>
         <p className="muted small" style={{ margin: "8px 0 0" }}>Potongan voucher dihitung saat pesanan dibuat.</p>
-        <button className="commerce-primary-button" type="button" disabled={payDisabled} onClick={pay}>{submitting ? <LoaderCircle className="commerce-spin" size={20} /> : <CreditCard size={20} />}{submitting ? "Memproses…" : "Bayar"}</button>
+        {priceReview && (
+          <div className="commerce-field-warning commerce-checkout-warning" role="alert">
+            <AlertCircle size={16} />
+            <div>
+              <p style={{ margin: 0 }}>Harga atau stok berubah sebelum pembayaran. Total sebelumnya {formatRupiahLabel(priceReview.previousSubtotal)}, total terbaru {formatRupiahLabel(priceReview.subtotal)}.</p>
+              <button className="button button-secondary button-sm" style={{ marginTop: 10 }} type="button" onClick={approvePriceReview}>Setujui total baru</button>
+            </div>
+          </div>
+        )}
+        <button className="commerce-primary-button" type="button" disabled={payDisabled} onClick={pay}>{submitting ? <LoaderCircle className="commerce-spin" size={20} /> : <CreditCard size={20} />}{submitting ? "Memproses…" : priceReview ? "Tinjau total baru" : "Bayar"}</button>
         {/* Baris 50: gunakan komponen visual warning yang sama dengan detail pesanan. */}
         {manualMethodLocked && <p className="commerce-field-warning commerce-checkout-warning" role="alert"><AlertCircle size={16} />Pilih durasi minimal 6 bulan untuk metode {payment}. Anda tetap dapat melanjutkan dan memilih kanal pembayaran yang tersedia di Xendit.</p>}
         {/* Alasan tombol Bayar mati ditaruh tepat di bawah tombolnya: sebelumnya
@@ -250,6 +347,7 @@ export function CheckoutCommerceClient() {
         {!submitting && (items.length === 0 || staleCount > 0) && (
           <p className="commerce-field-warning commerce-checkout-warning" role="status"><AlertCircle size={16} />{items.length === 0 ? "Keranjang masih kosong, jadi belum ada yang bisa dibayar." : `${staleCount} item di keranjang berasal dari katalog lama dan akan diperbarui otomatis saat Anda membayar.`}</p>
         )}
+        {stockNotice && <p className="commerce-checkout-error" role="alert"><AlertCircle size={16} />{stockNotice}</p>}
         <p className="muted small commerce-checkout-consent">Dengan menekan Bayar, Anda menyetujui <Link href="/syarat-ketentuan" target="_blank" rel="noreferrer">syarat &amp; ketentuan</Link> dan <Link href="/kebijakan-privasi" target="_blank" rel="noreferrer">kebijakan privasi</Link> Necly Services.</p>
         {error && <p className="commerce-checkout-error" role="alert"><AlertCircle size={16} />{error}</p>}
         {/* Baris 51: nomor WhatsApp lama tidak terdaftar, jadi arahkan ke halaman laporan kendala + email. */}
@@ -257,7 +355,7 @@ export function CheckoutCommerceClient() {
         <a className="commerce-checkout-mailto" href={`mailto:${contact.email}`}><Mail size={15} />{contact.email}</a>
       </aside>
       <aside className="commerce-transaction-trust"><h2>Transaksi Aman & Terpercaya</h2>{safeguards.map(([title, detail, Icon]) => <article key={title}><span><Icon size={25} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</aside>
-      <div className="commerce-mobile-payment-bar"><span><small>Total Bayar</small><b>{formatRupiahLabel(subtotal)}</b></span><button type="button" disabled={payDisabled} onClick={pay}>{submitting ? "Memproses…" : "Bayar"}</button></div>
+      <div className="commerce-mobile-payment-bar"><span><small>Total Bayar</small><b>{formatRupiahLabel(approvedSubtotal)}</b></span><button type="button" disabled={payDisabled} onClick={pay}>{submitting ? "Memproses…" : priceReview ? "Tinjau total" : "Bayar"}</button></div>
       {(items.length === 0 || staleCount > 0) && (
         <p className="commerce-checkout-fallback" role="alert">
           <AlertCircle size={16} />

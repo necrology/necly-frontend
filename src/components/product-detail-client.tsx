@@ -74,7 +74,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
     ["Jumlah Member Per Grup", `${product.groupMembers} orang`],
     ["Harga Patungan", `${formatRupiahLabel(product.providerPrice)} ÷ ${product.groupMembers} = ${perMember}`],
     ["Biaya Admin Akunmu", "Rp 0"],
-    ["Diskon 8%", formatRupiahLabel(product.discount)],
+    [product.discount > 0 ? "Diskon 8%" : "Diskon", formatRupiahLabel(product.discount)],
     ["Harga Paket", formatRupiahLabel(option.price)],
   ];
 

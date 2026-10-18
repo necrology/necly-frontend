@@ -3,10 +3,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getOrderMock } = vi.hoisted(() => ({ getOrderMock: vi.fn() }));
 
-vi.mock("@/lib/api", () => ({
-  DEMO_MODE: true,
-  checkoutApi: { getOrder: getOrderMock },
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    DEMO_MODE: true,
+    checkoutApi: { ...actual.checkoutApi, getOrder: getOrderMock },
+    bootstrapAuth: vi.fn().mockResolvedValue({ id: "usr-1" }),
+  };
+});
 
 import { OrderClient } from "./order-client";
 

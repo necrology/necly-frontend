@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { ApiError } from "@/lib/api";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CheckoutCommerceClient } from "./checkout-commerce-client";
 
@@ -18,18 +19,51 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock }) }));
 vi.mock("@/stores/cart-store", () => ({
   useCartStore: (selector: (state: unknown) => unknown) => selector({ items: cartItems.value, replaceItems: replaceItemsMock }),
 }));
-vi.mock("@/lib/api", () => ({
-  DEMO_MODE: false,
-  catalogApi: { listProducts: catalogMock },
-  checkoutApi: { checkout: checkoutMock },
-  bootstrapAuth: vi.fn().mockResolvedValue({ id: "usr-1" }),
-  useAuthStore: { getState: () => ({ user: { id: "usr-1" } }) },
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    DEMO_MODE: false,
+    catalogApi: { ...actual.catalogApi, listProducts: catalogMock },
+    checkoutApi: { ...actual.checkoutApi, checkout: checkoutMock },
+    bootstrapAuth: vi.fn().mockResolvedValue({ id: "usr-1" }),
+    useAuthStore: { getState: () => ({ user: { id: "usr-1" } }) },
+  };
+});
+
+const SECOND_PRICE_ID = "0c9d8e7f-6a5b-4c3d-9e8f-1a2b3c4d5e6f";
+
+function catalogWith(price: number) {
+  return {
+    products: [
+      {
+        id: "netflix",
+        name: "Netflix Premium",
+        slug: "netflix",
+        description: "Slot Netflix",
+        category: { id: "cat-streaming", name: "Streaming", slug: "streaming" },
+        prices: [{ id: PRICE_ID, amount: price, active: true, available_slots: 5, duration: { id: "dur-30", name: "1 Bulan", days: 30 } }],
+      },
+      {
+        id: "spotify",
+        name: "Spotify Premium",
+        slug: "spotify-premium",
+        description: "Slot Spotify",
+        category: { id: "cat-streaming", name: "Streaming", slug: "streaming" },
+        prices: [{ id: SECOND_PRICE_ID, amount: 30_000, active: true, available_slots: 5, duration: { id: "dur-30", name: "1 Bulan", days: 30 } }],
+      },
+    ],
+    page: 1,
+    per_page: 100,
+    total: 2,
+  };
+}
 
 describe("CheckoutCommerceClient", () => {
   beforeEach(() => {
     checkoutMock.mockReset();
     catalogMock.mockReset();
+    catalogMock.mockResolvedValue(catalogWith(50_000));
     pushMock.mockReset();
     replaceItemsMock.mockReset();
     // Sebuah baris keranjang yang sah: id harganya UUID dari katalog API, dan
@@ -52,7 +86,7 @@ describe("CheckoutCommerceClient", () => {
   it("menampilkan satu baris per item keranjang, bukan hanya yang pertama", () => {
     cartItems.value = [
       { id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1 },
-      { id: "spotify", slug: "spotify-premium", name: "Spotify Premium", category: "Streaming", price: 30_000, stock: 5, product_price_id: "0c9d8e7f-6a5b-4c3d-9e8f-1a2b3c4d5e6f", quantity: 2 },
+      { id: "spotify", slug: "spotify-premium", name: "Spotify Premium", category: "Streaming", price: 30_000, stock: 5, product_price_id: SECOND_PRICE_ID, quantity: 2 },
     ];
 
     render(<CheckoutCommerceClient />);
@@ -116,7 +150,7 @@ describe("CheckoutCommerceClient", () => {
   it("memakai durasi terpendek bila keranjang memuat beberapa durasi", () => {
     cartItems.value = [
       { id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1, selectedDuration: "12 Bulan", selectedDevice: 1 },
-      { id: "spotify", slug: "spotify", name: "Spotify Premium", category: "Streaming", price: 30_000, stock: 5, product_price_id: "0c9d8e7f-6a5b-4c3d-9e8f-1a2b3c4d5e6f", quantity: 1, selectedDuration: "1 Bulan", selectedDevice: 1 },
+      { id: "spotify", slug: "spotify", name: "Spotify Premium", category: "Streaming", price: 30_000, stock: 5, product_price_id: SECOND_PRICE_ID, quantity: 1, selectedDuration: "1 Bulan", selectedDevice: 1 },
     ];
 
     render(<CheckoutCommerceClient />);
@@ -214,6 +248,91 @@ describe("CheckoutCommerceClient", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
 
     expect(screen.getByRole("alert")).toHaveTextContent("Pilih jumlah perangkat dahulu sebelum membayar.");
+    expect(checkoutMock).not.toHaveBeenCalled();
+  });
+
+  it("mengirim total yang ditampilkan dan kanal pembayaran kanonik", async () => {
+    checkoutMock.mockResolvedValue({ order: { id: "ord-1" }, payment: { id: "pay-1" }, checkout_url: "/payment/ord-1" });
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "1 Perangkat" }));
+    fireEvent.click(screen.getByRole("button", { name: "BNI" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    await waitFor(() => expect(checkoutMock).toHaveBeenCalled());
+    expect(checkoutMock.mock.calls[0][0]).toMatchObject({
+      items: [{ product_price_id: PRICE_ID, quantity: 1, device_count: 1 }],
+      expected_subtotal: 50_000,
+      payment_channel: "bni_va",
+    });
+  });
+
+  it("meminta persetujuan harga baru sebelum memanggil checkout", async () => {
+    catalogMock.mockResolvedValue(catalogWith(60_000));
+    checkoutMock.mockResolvedValue({ order: { id: "ord-1" }, payment: { id: "pay-1" }, checkout_url: "/payment/ord-1" });
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "1 Perangkat" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    expect(await screen.findByRole("button", { name: "Setujui total baru" })).toBeInTheDocument();
+    expect(checkoutMock).not.toHaveBeenCalled();
+    expect(replaceItemsMock).toHaveBeenCalledWith([
+      expect.objectContaining({ product_price_id: PRICE_ID, price: 60_000, selectedPrice: 60_000 }),
+    ]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Setujui total baru" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    await waitFor(() => expect(checkoutMock).toHaveBeenCalled());
+    expect(checkoutMock.mock.calls[0][0]).toMatchObject({ expected_subtotal: 60_000 });
+  });
+
+  it("menampilkan konflik harga dari server sebagai total yang harus disetujui", async () => {
+    checkoutMock.mockRejectedValueOnce(new ApiError("Harga berubah", 409, { code: "price_changed", current_subtotal: 75_000, currency: "IDR" }));
+    checkoutMock.mockResolvedValueOnce({ order: { id: "ord-1" }, payment: { id: "pay-1" }, checkout_url: "/payment/ord-1" });
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "1 Perangkat" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    expect(await screen.findByRole("button", { name: "Setujui total baru" })).toBeInTheDocument();
+    expect(screen.getByText(/total terbaru Rp 75\.000/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Setujui total baru" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    await waitFor(() => expect(checkoutMock).toHaveBeenCalledTimes(2));
+    expect(checkoutMock.mock.calls[1][0]).toMatchObject({ expected_subtotal: 75_000 });
+  });
+
+  it("menampilkan error kanal tidak didukung tanpa mengganti metode", async () => {
+    checkoutMock.mockRejectedValue(new ApiError("Metode pembayaran tidak didukung", 400, { code: "unsupported_payment_channel" }));
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "1 Perangkat" }));
+    fireEvent.click(screen.getByRole("button", { name: "DANA" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    expect(await screen.findByText(/Metode DANA tidak didukung oleh penyedia pembayaran/)).toBeInTheDocument();
+    expect(checkoutMock).toHaveBeenCalledTimes(1);
+    expect(checkoutMock.mock.calls[0][0]).toMatchObject({ payment_channel: "dana" });
+  });
+
+  it("memblokir pembayaran ketika harga di keranjang sudah tidak ada di katalog", async () => {
+    catalogMock.mockResolvedValue({
+      ...catalogWith(50_000),
+      products: [{
+        ...catalogWith(50_000).products[1],
+        prices: [{ id: "0192f0a4-0000-0000-0000-000000000099", amount: 50_000, active: true, available_slots: 5, duration: { id: "dur-30", name: "1 Bulan", days: 30 } }],
+      }],
+    });
+
+    render(<CheckoutCommerceClient />);
+    fireEvent.click(screen.getByRole("button", { name: "1 Perangkat" }));
+    fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
+
+    expect(await screen.findByText(/tidak lagi tersedia dengan paket yang sama/)).toBeInTheDocument();
     expect(checkoutMock).not.toHaveBeenCalled();
   });
 });

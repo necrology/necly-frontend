@@ -41,7 +41,10 @@ export type ApiCategory = {
   name: string;
   slug: string;
   description?: string;
+  image_url?: string;
   active?: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type ApiProductDuration = {
@@ -78,7 +81,10 @@ export type ApiProduct = {
   image_url?: string;
   active?: boolean;
   prices?: ApiProductPrice[];
+  /** Tidak pernah dikirim katalog; stok dihitung dari available_slots. */
   stock?: number;
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type ApiCartItem = {
@@ -92,28 +98,38 @@ export type ApiCartItem = {
 export type ApiOrder = {
   id: string;
   number: string;
+  user_id?: string;
+  voucher_id?: string | null;
   status: string;
   subtotal: number;
   discount: number;
   total: number;
   currency: string;
   payment_due_at: string;
+  shipping_address?: string;
+  notes?: string;
   items: Array<{
     id: string;
+    order_id?: string;
     product_price_id: string;
     product_name: string;
     duration_name: string;
     unit_price: number;
     quantity: number;
+    device_count?: number;
     line_total: number;
   }>;
   payments?: Array<{
     id: string;
+    order_id?: string;
     provider: string;
+    provider_payment_id?: string;
     status: string;
     amount: number;
     checkout_url?: string;
     paid_at?: string | null;
+    created_at?: string;
+    updated_at?: string;
   }>;
   // Present on the admin order list and dashboard, which preload it. The
   // storefront's own order endpoints do not, so it stays optional.
@@ -157,7 +173,11 @@ export type CheckoutResponse = {
 };
 
 function apiBaseFromEnvironment() {
-  const configured = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1").replace(/\/+$/, "");
+  // Server Components run inside the deployment network. They must use the
+  // internal service URL when one is provided; the public edge URL may not be
+  // resolvable (or its certificate trusted) from the container itself.
+  const serverInternal = typeof window === "undefined" ? process.env.INTERNAL_API_URL : undefined;
+  const configured = (serverInternal || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1").replace(/\/+$/, "");
   return configured.endsWith("/api/v1") ? configured : `${configured}/api/v1`;
 }
 
@@ -174,6 +194,22 @@ export class ApiError extends Error {
     this.status = status;
     this.payload = payload;
   }
+}
+
+/** Machine-readable error code from the W0 error envelope, if present. */
+export function apiErrorCode(error: unknown): string | null {
+  if (!(error instanceof ApiError)) return null;
+  if (!error.payload || typeof error.payload !== "object" || !("code" in error.payload)) return null;
+  const code = (error.payload as { code?: unknown }).code;
+  return typeof code === "string" ? code : null;
+}
+
+/** Additive fields that accompany a `price_changed` checkout conflict. */
+export function apiErrorNumber(error: unknown, field: string): number | null {
+  if (!(error instanceof ApiError)) return null;
+  if (!error.payload || typeof error.payload !== "object" || !(field in error.payload)) return null;
+  const value = (error.payload as Record<string, unknown>)[field];
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 export const useAuthStore = create<AuthState>()((set) => ({
@@ -460,6 +496,7 @@ export const catalogApi = {
 
   listProducts: (params?: {
     category?: string;
+    search?: string;
     min_price?: number;
     max_price?: number;
     in_stock?: boolean;
@@ -468,6 +505,7 @@ export const catalogApi = {
   }) => {
     const searchParams = new URLSearchParams();
     if (params?.category) searchParams.set("category", params.category);
+    if (params?.search) searchParams.set("search", params.search);
     if (params?.min_price !== undefined) searchParams.set("min_price", String(params.min_price));
     if (params?.max_price !== undefined) searchParams.set("max_price", String(params.max_price));
     if (params?.in_stock !== undefined) searchParams.set("in_stock", String(params.in_stock));
@@ -524,6 +562,10 @@ export const checkoutApi = {
     data: {
       voucher_code?: string;
       items: Array<{ product_price_id: string; quantity: number; device_count?: number }>;
+      /** Total sebelum diskon yang sudah dilihat dan disetujui pembeli. */
+      expected_subtotal?: number;
+      /** Kanal kanonik pilihan pembeli; kosong berarti kanal bawaan provider. */
+      payment_channel?: string;
     },
     idempotencyKey: string,
   ) =>

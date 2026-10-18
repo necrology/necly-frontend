@@ -4,7 +4,7 @@ import { Check, Clock3, ExternalLink, RefreshCw, ShieldCheck, TriangleAlert } fr
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { formatIDR } from "@/lib/money";
-import { checkoutApi, DEMO_MODE, type ApiOrder } from "@/lib/api";
+import { bootstrapAuth, checkoutApi, DEMO_MODE, type ApiOrder } from "@/lib/api";
 
 interface PaymentClientProps {
   orderId: string;
@@ -23,6 +23,13 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
     setLoading(true);
     setError(null);
     try {
+      // Kembali dari hosted checkout memuat ulang halaman, sehingga token di
+      // memori hilang; pulihkan sesi dari refresh cookie sebelum membaca order.
+      const user = await bootstrapAuth();
+      if (!user) {
+        setError("Sesi Anda sudah berakhir. Masuk kembali untuk memeriksa pembayaran.");
+        return;
+      }
       setOrder(await checkoutApi.getOrder(orderId));
     } catch {
       setError("Gagal memuat status pembayaran. Silakan coba lagi.");

@@ -4,11 +4,16 @@ const { getProductMock } = vi.hoisted(() => ({
   getProductMock: vi.fn(),
 }));
 
-vi.mock("@/lib/api", () => ({
-  DEMO_MODE: false,
-  catalogApi: { getProduct: getProductMock },
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    DEMO_MODE: false,
+    catalogApi: { ...actual.catalogApi, getProduct: getProductMock },
+  };
+});
 
+import { ApiError } from "@/lib/api";
 import { fetchProductFromApi } from "./page";
 
 describe("fetchProductFromApi (live-first behavior)", () => {
@@ -46,11 +51,17 @@ describe("fetchProductFromApi (live-first behavior)", () => {
     expect(product).toBeNull();
   });
 
-  it("mengembalikan null saat API error", async () => {
-    getProductMock.mockRejectedValue(new Error("Network error"));
+  it("mengembalikan null hanya ketika API menjawab 404", async () => {
+    getProductMock.mockRejectedValue(new ApiError("Produk tidak ditemukan", 404, { code: "not_found" }));
 
-    const product = await fetchProductFromApi("error-slug");
+    const product = await fetchProductFromApi("tidak-ada");
 
     expect(product).toBeNull();
+  });
+
+  it("meneruskan kegagalan jaringan agar tidak menjadi produk contoh", async () => {
+    getProductMock.mockRejectedValue(new Error("Network error"));
+
+    await expect(fetchProductFromApi("error-slug")).rejects.toThrow("Network error");
   });
 });
