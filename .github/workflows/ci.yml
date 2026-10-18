@@ -4,6 +4,12 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      push_image:
+        description: Push the built image to GHCR and record its digest
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -13,6 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   NEXT_PUBLIC_API_URL: http://127.0.0.1:58080/api/v1
   NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
   NEXT_PUBLIC_DEMO_MODE: "false"
@@ -72,12 +79,12 @@ jobs:
           labels: |
             org.opencontainers.image.title=necly-frontend
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=sha-${{ github.sha }}
+            org.opencontainers.image.revision=${{ env.SOURCE_SHA }}
+            org.opencontainers.image.version=sha-${{ env.SOURCE_SHA }}
           tags: |
-            type=sha,prefix=sha-,format=long
+            type=raw,value=sha-${{ env.SOURCE_SHA }}
       - name: Login to GHCR (push events only)
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event.inputs.push_image == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -88,7 +95,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: ${{ github.event_name == 'push' }}
+          push: ${{ github.event_name == 'push' || github.event.inputs.push_image == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
@@ -104,7 +111,7 @@ jobs:
           {
             echo "### Frontend image provenance"
             echo ""
-            echo "- source_sha: \`${{ github.sha }}\`"
+            echo "- source_sha: \`${{ env.SOURCE_SHA }}\`"
             echo "- image_digest: \`${{ steps.build.outputs.digest }}\`"
             echo "- image_ref: \`ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}\`"
             echo "- lockfile_sha256: \`$(sha256sum package-lock.json | awk '{print $1}')\`"
