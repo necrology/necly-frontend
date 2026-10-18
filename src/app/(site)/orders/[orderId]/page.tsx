@@ -2,20 +2,26 @@ import type { Metadata } from "next";
 import { Check, Circle, Headphones, Mail, MapPin, PackageCheck } from "lucide-react";
 import Link from "next/link";
 import { dashboardOrders } from "@/data/seed";
+import { DEMO_MODE } from "@/lib/api";
 import { formatIDR } from "@/lib/money";
 import { getOrderSteps, type OrderStatus } from "@/lib/order-status";
 import { cn } from "@/lib/utils";
+import { OrderClient } from "./order-client";
 
 export const metadata: Metadata = { title: "Lacak pesanan", robots: { index: false, follow: false } };
 
 function resolveStatus(orderId: string): OrderStatus {
   const order = dashboardOrders.find((item) => item.id === orderId);
   if (!order) return "in_progress";
-  return { "Menunggu pembayaran": "pending_payment", Dibayar: "confirmed", Diproses: "in_progress", Aktif: "delivered", Dibatalkan: "cancelled" }[order.status] as OrderStatus;
+  return { "Menunggu pembayaran": "pending_payment", Dibayar: "paid", Diproses: "processing", Aktif: "delivered", Dibatalkan: "cancelled" }[order.status] as OrderStatus;
 }
 
-export default async function OrderPage({ params }: { params: Promise<{ orderId: string }> }) {
-  const { orderId } = await params;
+/**
+ * Konten sandbox hanya untuk DEMO_MODE eksplisit. Live mode memakai
+ * OrderClient yang memanggil API pesanan terautentikasi dan tidak pernah
+ * mengganti pesanan yang gagal/tidak ditemukan dengan data contoh.
+ */
+function DemoOrderPage({ orderId }: { orderId: string }) {
   const order = dashboardOrders.find((item) => item.id === orderId) ?? dashboardOrders[0];
   const isDemo = orderId.includes("DEMO") || !dashboardOrders.some((item) => item.id === orderId);
   const steps = getOrderSteps(resolveStatus(orderId));
@@ -39,4 +45,10 @@ export default async function OrderPage({ params }: { params: Promise<{ orderId:
       </div>
     </>
   );
+}
+
+export default async function OrderPage({ params }: { params: Promise<{ orderId: string }> }) {
+  const { orderId } = await params;
+  if (DEMO_MODE) return <DemoOrderPage orderId={orderId} />;
+  return <OrderClient orderId={orderId} />;
 }

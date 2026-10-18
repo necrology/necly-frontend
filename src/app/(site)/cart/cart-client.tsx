@@ -2,7 +2,10 @@
 
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { catalogApi, DEMO_MODE } from "@/lib/api";
+import { reconcileCartItems } from "@/lib/cart-reconciliation";
 import { cartTotals, formatIDR } from "@/lib/money";
 import { useCartStore, type CartItem } from "@/stores/cart-store";
 
@@ -31,6 +34,36 @@ export function CartClient() {
   const removeItem = useCartStore((state) => state.removeItem);
   const clear = useCartStore((state) => state.clear);
   const totals = cartTotals(items);
+  const [liveNotice, setLiveNotice] = useState<string | null>(null);
+
+  // Keranjang tetap sumber pilihan pembeli, tetapi harga/stok live diperiksa
+  // agar baris yang sudah tidak tersedia tidak baru ketahuan di pembayaran.
+  // Harga tidak diubah diam-diam: perubahan harus disetujui di checkout.
+  useEffect(() => {
+    if (DEMO_MODE || !hydrated || items.length === 0) return;
+    let cancelled = false;
+    catalogApi.listProducts({ per_page: 100 })
+      .then((response) => {
+        if (cancelled) return;
+        const result = reconcileCartItems(items, response.products);
+        const unavailable = result.issues.filter((issue) => issue.reason === "unavailable");
+        const exceeded = result.issues.filter((issue) => issue.reason === "stock_exceeded");
+        const changed = result.issues.some((issue) => issue.reason === "price_changed");
+        if (unavailable.length > 0) {
+          setLiveNotice(`${unavailable.length} item tidak lagi tersedia dengan paket yang sama. Hapus item tersebut sebelum membayar.`);
+        } else if (exceeded.length > 0) {
+          setLiveNotice(`Jumlah ${exceeded.map((issue) => issue.name).join(", ")} melebihi stok tersedia. Kurangi jumlah atau hapus baris duplikat sebelum membayar.`);
+        } else if (changed) {
+          setLiveNotice("Harga atau stok salah satu item berubah di katalog. Total akan dikonfirmasi ulang sebelum pembayaran.");
+        } else {
+          setLiveNotice(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLiveNotice("Keranjang belum dapat diverifikasi ke katalog. Periksa kembali saat checkout.");
+      });
+    return () => { cancelled = true; };
+  }, [hydrated, items]);
 
   if (!hydrated) return <div className="empty-state"><span className="skeleton" style={{ width: 180, height: 18 }} /></div>;
 
@@ -43,10 +76,11 @@ export function CartClient() {
   return (
     <div className="commerce-layout">
       <section className="cart-list" aria-label="Daftar produk di keranjang">
-        {items.map((item) => {
+        {liveNotice && <p className="commerce-field-warning" role="status"><span aria-hidden="true">!</span>{liveNotice}</p>}
+        {items.map((item, index) => {
           const key = lineKey(item);
           return (
-            <article className="card cart-item accent-blue" key={key}>
+            <article className="card cart-item accent-blue" key={`${key}-${index}`}>
               <span className="cart-thumb" aria-hidden="true">{initials(item.name)}</span>
               <div>
                 <span className="eyebrow" style={{ fontSize: 9 }}>{item.category}</span>
