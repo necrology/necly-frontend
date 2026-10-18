@@ -4,36 +4,35 @@ import type {
   Customer,
   Payment,
   Voucher,
-  NotificationItem,
   AuditRecord,
   InventoryAccount,
   SubscriptionProduct,
 } from "./types";
-import { formatIDR } from "./money";
+import { orderStatusLabel } from "./order-status";
 
 export function mapApiDashboard(data: Record<string, unknown>) {
+  // Backend hanya mengirim nol ketika query berhasil dan memang kosong. Field
+  // yang tidak ada berarti respons tidak sesuai kontrak, jadi jangan diterjemahkan
+  // menjadi nol palsu di dashboard.
+  const metric = (key: string) => {
+    const value = data[key];
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      throw new Error(`Metrik dashboard "${key}" tidak tersedia`);
+    }
+    return value;
+  };
+
   return {
-    grossRevenue: (data.gross_revenue as number) ?? 0,
-    newOrders: (data.new_orders as number) ?? 0,
-    activeActivations: (data.active_activations as number) ?? 0,
-    availableSlots: (data.available_slots as number) ?? 0,
-    recentOrders: (((data.recent_orders as unknown[]) ?? []) as ApiOrder[]).map(mapApiOrderToDashboardOrder),
+    grossRevenue: metric("total_revenue"),
+    newOrders: metric("orders_today"),
+    activeActivations: metric("active_activations"),
+    availableSlots: metric("available_slots"),
   };
 }
 
 export function mapApiOrderToDashboardOrder(apiOrder: ApiOrder): DashboardOrder {
-  const statusMap: Record<string, DashboardOrder["status"]> = {
-    pending: "Menunggu pembayaran",
-    paid: "Dibayar",
-    processing: "Diproses",
-    active: "Aktif",
-    cancelled: "Dibatalkan",
-    expired: "Dibatalkan",
-    refunded: "Dibatalkan",
-  };
-
-  const status = statusMap[apiOrder.status.toLowerCase()] ?? "Menunggu pembayaran";
-
+  const items = apiOrder.items ?? [];
+  const firstItem = items[0];
   const dueDate = apiOrder.payment_due_at
     ? new Date(apiOrder.payment_due_at).toLocaleString("id-ID", {
         day: "2-digit",
@@ -43,23 +42,28 @@ export function mapApiOrderToDashboardOrder(apiOrder: ApiOrder): DashboardOrder 
       })
     : "—";
 
-  const createdDate = new Date(apiOrder.created_at).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  const createdDate = apiOrder.created_at
+    ? new Date(apiOrder.created_at).toLocaleDateString("id-ID", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
 
   return {
+    // `id` tetap nomor pesanan yang dibaca operator; `apiId` adalah UUID yang
+    // dipakai route detail dan API admin.
     id: apiOrder.number,
-    // The admin list preloads the customer alongside the order; storefront
-    // responses omit it, so both columns fall back rather than guessing.
+    apiId: apiOrder.id,
     customer: apiOrder.customer?.name ?? "—",
     customerEmail: apiOrder.customer?.email ?? "—",
-    product: apiOrder.items[0]?.product_name ?? "—",
-    service: apiOrder.items[0]?.product_name ?? "—",
-    duration: apiOrder.items[0]?.duration_name ?? "—",
+    product: firstItem?.product_name ?? "—",
+    service: firstItem?.product_name ?? "—",
+    duration: firstItem?.duration_name ?? "—",
     amount: apiOrder.total,
-    status,
+    // Semua status backend dipetakan lewat satu sumber (C-02), bukan default
+    // "Menunggu pembayaran" yang menyesatkan status tak dikenal.
+    status: orderStatusLabel(apiOrder.status) as DashboardOrder["status"],
     date: createdDate,
     due: dueDate,
   };
@@ -211,19 +215,27 @@ export function mapApiInventoryAccount(apiAccount: Record<string, unknown>): Inv
 }
 
 export function mapApiAuditLog(apiLog: Record<string, unknown>): AuditRecord {
+  const value = (key: string) => (typeof apiLog[key] === "string" ? (apiLog[key] as string) : "");
+  const id = value("id");
+  const action = value("action");
+  const resourceType = value("resource_type");
+  const createdAt = value("created_at");
+
+  if (!id || !action || !resourceType || !createdAt) {
+    throw new Error("DTO audit log tidak lengkap");
+  }
+
+  const actorUser = apiLog.actor_user as { name?: unknown } | null | undefined;
+  const actorName = typeof actorUser?.name === "string" && actorUser.name ? actorUser.name : "—";
+  const resourceId = value("resource_id");
+
   return {
-    id: (apiLog.id as string) ?? "",
-    actor: (apiLog.actor as string) ?? "",
-    action: (apiLog.action as string) ?? "",
-    resource: (apiLog.resource as string) ?? "",
-    ip: (apiLog.ip as string) ?? "",
-    time: (apiLog.created_at as string) ?? new Date().toLocaleString("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    id,
+    actor: actorName,
+    action,
+    resource: resourceId ? `${resourceType} · ${resourceId}` : resourceType,
+    ip: value("ip_address"),
+    time: createdAt,
   };
 }
 

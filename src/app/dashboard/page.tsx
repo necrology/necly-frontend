@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { formatIDR } from "@/lib/money";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
-import { mapApiDashboard } from "@/lib/admin-mappers";
+import { mapApiDashboard, mapApiOrderToDashboardOrder } from "@/lib/admin-mappers";
 import type { DashboardOrder } from "@/lib/types";
 
 interface DashboardData {
@@ -17,13 +17,19 @@ interface DashboardData {
   newOrders: number;
   activeActivations: number;
   availableSlots: number;
-  recentOrders: DashboardOrder[];
 }
+
+type DashboardError = {
+  kind: "forbidden" | "unauthorized" | "generic";
+  message: string;
+};
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [recentOrders, setRecentOrders] = useState<DashboardOrder[]>([]);
+  const [recentError, setRecentError] = useState<string | null>(null);
   const [loading, setLoading] = useState(!DEMO_MODE);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<DashboardError | null>(null);
 
   useEffect(() => {
     if (DEMO_MODE) {
@@ -36,27 +42,71 @@ export default function DashboardPage() {
     async function loadDashboard() {
       setLoading(true);
       setError(null);
+      setRecentError(null);
 
       try {
         const user = await bootstrapAuth();
+        if (cancelled) return;
         if (!user) {
-          setError("Sesi tidak valid. Silakan masuk kembali.");
+          setError({
+            kind: "unauthorized",
+            message: "Sesi tidak valid. Silakan masuk kembali.",
+          });
           return;
         }
 
-        if (user.role !== "admin" && user.role !== "seller") {
-          setError("Akses ditolak: hanya admin dan penjual yang diizinkan.");
+        // Backend C19 hanya mengizinkan admin. Penjual tidak boleh memicu
+        // permintaan data admin sama sekali, bukan sekadar melihat nol.
+        if (user.role !== "admin") {
+          setError({
+            kind: "forbidden",
+            message: "Akses ditolak: halaman dashboard hanya untuk admin.",
+          });
           return;
         }
 
-        const response = await adminApi.dashboard();
+        const [statsResult, ordersResult] = await Promise.allSettled([
+          adminApi.dashboard(),
+          // Baris terbaru berasal dari daftar pesanan, bukan metrik rekaan pada
+          // respons dashboard (W0 C-06).
+          adminApi.listOrders({ page: 1, per_page: 5 }),
+        ]);
+
         if (cancelled) return;
 
-        const mapped = mapApiDashboard(response);
-        setData(mapped);
-      } catch (err) {
-        if (cancelled) return;
-        setError("Gagal memuat ringkasan dashboard dari server.");
+        if (statsResult.status === "fulfilled") {
+          try {
+            setData(mapApiDashboard(statsResult.value as unknown as Record<string, unknown>));
+          } catch {
+            setError({
+              kind: "generic",
+              message: "Data metrik dashboard dari server tidak lengkap. Muat ulang untuk mencoba lagi.",
+            });
+          }
+        } else {
+          setError({
+            kind: "generic",
+            message: "Gagal memuat ringkasan dashboard dari server.",
+          });
+        }
+
+        if (ordersResult.status === "fulfilled") {
+          const orders = ordersResult.value.orders;
+          if (!Array.isArray(orders)) {
+            setRecentError("Data pesanan terbaru dari server tidak sesuai kontrak.");
+          } else {
+            setRecentOrders(orders.map(mapApiOrderToDashboardOrder).slice(0, 5));
+          }
+        } else {
+          setRecentError("Gagal memuat pesanan terbaru dari server.");
+        }
+      } catch {
+        if (!cancelled) {
+          setError({
+            kind: "generic",
+            message: "Gagal memuat ringkasan dashboard dari server.",
+          });
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -70,20 +120,33 @@ export default function DashboardPage() {
   }, []);
 
   if (error && !DEMO_MODE) {
+    const title =
+      error.kind === "forbidden"
+        ? "Akses ditolak"
+        : error.kind === "unauthorized"
+          ? "Sesi tidak valid"
+          : "Tidak dapat memuat dashboard";
+
     return (
       <div className="dashboard-page" style={{ display: "grid", placeItems: "center", minHeight: "50vh" }}>
         <div className="card" style={{ padding: 40, textAlign: "center", maxWidth: 380 }}>
-          <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Tidak dapat memuat dashboard</h2>
+          <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>{title}</h2>
           <p className="muted" style={{ margin: "0 0 16px", fontSize: 13 }}>
-            {error}
+            {error.message}
           </p>
-          <button
-            className="button button-primary button-sm"
-            onClick={() => window.location.reload()}
-            style={{ minWidth: 160 }}
-          >
-            Coba lagi
-          </button>
+          {error.kind === "forbidden" ? (
+            <Link className="button button-primary button-sm" href="/" style={{ minWidth: 160 }}>
+              Kembali ke marketplace
+            </Link>
+          ) : (
+            <button
+              className="button button-primary button-sm"
+              onClick={() => window.location.reload()}
+              style={{ minWidth: 160 }}
+            >
+              Coba lagi
+            </button>
+          )}
         </div>
       </div>
     );
@@ -94,7 +157,6 @@ export default function DashboardPage() {
     newOrders: 0,
     activeActivations: 0,
     availableSlots: 0,
-    recentOrders: [],
   };
 
   // Data simulasi hanya dipakai saat mode demo aktif.
@@ -103,17 +165,22 @@ export default function DashboardPage() {
     newOrders: 83,
     activeActivations: 17,
     availableSlots: 38,
-    recentOrders: [
-      { id: "NCL-260906-091", customer: "Nabila Rahma", customerEmail: "nabila@example.id", product: "StreamFlix Family Slot", service: "StreamFlix Family Slot", duration: "3 bulan", amount: 109_000, status: "Diproses", date: "06 Sep 2026", due: "06 Sep · 10:20" },
-      { id: "NCL-260906-090", customer: "Rafi Akbar", customerEmail: "rafi@example.id", product: "CineMax Family Member", service: "CineMax Family Member", duration: "1 bulan", amount: 32_000, status: "Dibayar", date: "06 Sep 2026", due: "06 Sep · 10:35" },
-      { id: "NCL-260905-089", customer: "Andra Kurnia", customerEmail: "andra@example.id", product: "OfficeCloud Family Seat", service: "OfficeCloud Family Seat", duration: "12 bulan", amount: 499_000, status: "Aktif", date: "05 Sep 2026", due: "05 Sep · 16:08" },
-      { id: "NCL-260905-088", customer: "Tio Hadi", customerEmail: "tio@example.id", product: "AI Studio Team Seat", service: "AI Studio Team Seat", duration: "1 bulan", amount: 79_000, status: "Menunggu pembayaran", date: "05 Sep 2026", due: "—" },
-      { id: "NCL-260904-087", customer: "Dewi Sari", customerEmail: "dewi@example.id", product: "LearnLab Plus Member", service: "LearnLab Plus Member", duration: "6 bulan", amount: 185_000, status: "Aktif", date: "04 Sep 2026", due: "04 Sep · 14:21" },
-    ],
   };
 
+  const demoOrders: DashboardOrder[] = [
+    { id: "NCL-260906-091", customer: "Nabila Rahma", customerEmail: "nabila@example.id", product: "StreamFlix Family Slot", service: "StreamFlix Family Slot", duration: "3 bulan", amount: 109_000, status: "Diproses", date: "06 Sep 2026", due: "06 Sep · 10:20" },
+    { id: "NCL-260906-090", customer: "Rafi Akbar", customerEmail: "rafi@example.id", product: "CineMax Family Member", service: "CineMax Family Member", duration: "1 bulan", amount: 32_000, status: "Dibayar", date: "06 Sep 2026", due: "06 Sep · 10:35" },
+    { id: "NCL-260905-089", customer: "Andra Kurnia", customerEmail: "andra@example.id", product: "OfficeCloud Family Seat", service: "OfficeCloud Family Seat", duration: "12 bulan", amount: 499_000, status: "Aktif", date: "05 Sep 2026", due: "05 Sep · 16:08" },
+    { id: "NCL-260905-088", customer: "Tio Hadi", customerEmail: "tio@example.id", product: "AI Studio Team Seat", service: "AI Studio Team Seat", duration: "1 bulan", amount: 79_000, status: "Menunggu pembayaran", date: "05 Sep 2026", due: "—" },
+    { id: "NCL-260904-087", customer: "Dewi Sari", customerEmail: "dewi@example.id", product: "LearnLab Plus Member", service: "LearnLab Plus Member", duration: "6 bulan", amount: 185_000, status: "Aktif", date: "04 Sep 2026", due: "04 Sep · 14:21" },
+  ];
+
   const displayData = DEMO_MODE ? demoData : data ?? emptyData;
+  const displayOrders = DEMO_MODE ? demoOrders : recentOrders;
   const revenueInJuta = displayData.grossRevenue / 1_000_000;
+  // Belum ada field perbandingan di kontrak C-06; teks persentase lama tidak
+  // boleh ditampilkan seolah-olah berasal dari data.
+  const comparisonText = DEMO_MODE ? "Data simulasi" : "—";
 
   return (
     <div className="dashboard-page">
@@ -134,26 +201,26 @@ export default function DashboardPage() {
       <section className="metric-grid" aria-label="Metrik kunci">
         <MetricCard
           label="Pendapatan kotor"
-          value={`Rp${revenueInJuta.toLocaleString("id-ID", { minimumFractionDigits: 1 })} jt`}
-          change="↑ 12,4% dari periode sebelumnya"
+          value={DEMO_MODE ? `Rp${revenueInJuta.toLocaleString("id-ID", { minimumFractionDigits: 1 })} jt` : formatIDR(displayData.grossRevenue)}
+          change={comparisonText}
           icon={<Banknote size={14} />}
         />
         <MetricCard
           label="Pesanan baru"
           value={String(displayData.newOrders)}
-          change="↑ 8 pesanan minggu ini"
+          change={comparisonText}
           icon={<ShoppingCart size={14} />}
         />
         <MetricCard
           label="Aktivasi berjalan"
           value={String(displayData.activeActivations)}
-          change="4 jatuh tempo 48 jam"
+          change={comparisonText}
           icon={<CircleCheckBig size={14} />}
         />
         <MetricCard
           label="Slot tersedia"
           value={String(displayData.availableSlots)}
-          change="2 layanan perlu perhatian"
+          change={comparisonText}
           icon={<Boxes size={14} />}
         />
       </section>
@@ -168,7 +235,13 @@ export default function DashboardPage() {
             </div>
             <span className="badge status-info">Harian</span>
           </div>
-          <RevenueChart />
+          {DEMO_MODE ? (
+            <RevenueChart />
+          ) : (
+            <p className="muted small" style={{ margin: 0, padding: "16px 0" }} role="status">
+              Deret pendapatan harian belum tersedia dari API. Angka metrik di atas berasal dari ringkasan server.
+            </p>
+          )}
         </article>
         <article className="card panel">
           <div className="panel-header">
@@ -178,7 +251,11 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="activity-list">
-            {displayData.recentOrders.slice(0, 4).map((order) => (
+            {recentError && <p className="muted small" role="alert" style={{ margin: 0 }}>{recentError}</p>}
+            {!recentError && displayOrders.length === 0 && !loading && (
+              <p className="muted small" style={{ margin: 0 }}>Belum ada pesanan.</p>
+            )}
+            {!recentError && displayOrders.slice(0, 4).map((order) => (
               <div className="activity-row" key={order.id}>
                 <span className="activity-dot" />
                 <span>
@@ -218,9 +295,19 @@ export default function DashboardPage() {
               </tr>
             </thead>
             <tbody>
-              {displayData.recentOrders.slice(0, 5).map((order) => (
+              {recentError && !DEMO_MODE ? (
+                <tr>
+                  <td colSpan={6} className="muted" style={{ textAlign: "center" }} role="alert">{recentError}</td>
+                </tr>
+              ) : displayOrders.length === 0 && !loading ? (
+                <tr>
+                  <td colSpan={6} className="muted" style={{ textAlign: "center" }}>Belum ada pesanan.</td>
+                </tr>
+              ) : displayOrders.slice(0, 5).map((order) => (
                 <tr key={order.id}>
-                  <td className="table-primary">{order.id}</td>
+                  <td className="table-primary">
+                    <Link href={`/dashboard/orders/${encodeURIComponent(order.apiId ?? order.id)}`}>{order.id}</Link>
+                  </td>
                   <td>
                     <span className="table-primary">{order.customer}</span>
                     <br />

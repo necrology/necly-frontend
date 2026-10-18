@@ -5,5 +5,5 @@ import { DashboardGuard } from "@/components/dashboard-guard";
 export const metadata: Metadata = { title: { default: "Dasbor", template: "%s | Admin Necly" }, robots: { index: false, follow: false } };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <DashboardShell><DashboardGuard>{children}</DashboardGuard></DashboardShell>;
+  return <DashboardGuard><DashboardShell>{children}</DashboardShell></DashboardGuard>;
 }

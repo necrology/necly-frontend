@@ -1,13 +1,13 @@
 "use client";
 
 import { Download, Search, ShieldCheck } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { auditRecords } from "@/data/seed";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { mapApiAuditLog } from "@/lib/admin-mappers";
 import type { AuditRecord } from "@/lib/types";
-import { formatDateTimeID } from "@/lib/money";
+import { formatDateTimeWIB } from "@/lib/money";
 
 export default function AuditLogPage() {
   const [query, setQuery] = useState("");
@@ -16,32 +16,49 @@ export default function AuditLogPage() {
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [apiAuditRecords, setApiAuditRecords] = useState<AuditRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
-  useEffect(() => {
-    if (!DEMO_MODE) {
-      bootstrapAuth().then((user) => {
-        if (user?.role === "admin") {
-          adminApi.listAuditLogs({ page: 1, per_page: 50 }).then((res) => {
-            try {
-              const logs = (res.auditLogs as unknown as Record<string, unknown>[]) ?? [];
-              const mappedLogs = logs.map(mapApiAuditLog);
-              setApiAuditRecords(mappedLogs);
-              setLoading(false);
-            } catch {
-              setError("Gagal memproses data audit log dari API");
-              setLoading(false);
-            }
-          }).catch(() => {
-            setError("Gagal memuat audit log dari server");
-            setLoading(false);
-          });
-        } else {
-          setError("Akses ditolak: hanya admin yang dapat melihat audit log");
-          setLoading(false);
-        }
-      });
+  const loadAuditLogs = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const user = await bootstrapAuth();
+      if (!user) {
+        setError("Sesi tidak valid. Silakan masuk kembali.");
+        return;
+      }
+      if (user.role !== "admin") {
+        // Penjual tidak boleh memicu request data audit admin.
+        setError("Akses ditolak: hanya admin yang dapat melihat audit log");
+        return;
+      }
+
+      const response = await adminApi.listAuditLogs({ page: 1, per_page: 50 });
+      if (!Array.isArray(response.logs)) {
+        setError("Respons audit log dari server tidak sesuai kontrak");
+        return;
+      }
+
+      try {
+        setApiAuditRecords(response.logs.map((log) => mapApiAuditLog(log as unknown as Record<string, unknown>)));
+      } catch {
+        setError("Gagal memproses data audit log dari API");
+      }
+    } catch {
+      setError("Gagal memuat audit log dari server");
+    } finally {
+      setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (DEMO_MODE) {
+      Promise.resolve().then(() => setLoading(false));
+      return;
+    }
+    void Promise.resolve().then(() => loadAuditLogs());
+  }, [loadAuditLogs, reloadToken]);
 
   const sourceRecords = useMemo(() => DEMO_MODE ? auditRecords : apiAuditRecords ?? [], [apiAuditRecords]);
   const actors = ["Semua", ...Array.from(new Set(sourceRecords.map((record) => record.actor)))];
@@ -68,7 +85,7 @@ export default function AuditLogPage() {
           </p>
           <button
             className="button button-primary button-sm"
-            onClick={() => window.location.reload()}
+            onClick={() => setReloadToken((value) => value + 1)}
             style={{ minWidth: 160 }}
           >
             Coba lagi
@@ -105,7 +122,7 @@ export default function AuditLogPage() {
                 <th>Aksi</th>
                 <th>Sumber daya</th>
                 <th>IP Sumber</th>
-                <th>Waktu</th>
+                <th>Waktu (WIB)</th>
               </tr>
             </thead>
             <tbody>
@@ -117,8 +134,8 @@ export default function AuditLogPage() {
                   <td>{record.actor}</td>
                   <td><span className="badge status-info">{record.action}</span></td>
                   <td>{record.resource}</td>
-                  <td className="tabular">{record.ip}</td>
-                  <td>{formatDateTimeID(record.time)}</td>
+                  <td className="tabular">{record.ip || "—"}</td>
+                  <td>{record.time ? formatDateTimeWIB(record.time) : "—"}</td>
                 </tr>
               ))}
             </tbody>

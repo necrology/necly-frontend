@@ -46,11 +46,18 @@ export type DashboardOrderStatus =
   | "Menunggu pembayaran"
   | "Dibayar"
   | "Diproses"
+  | "Dikirim"
   | "Aktif"
-  | "Dibatalkan";
+  | "Selesai"
+  | "Dibatalkan"
+  | "Kedaluwarsa"
+  | "Dikembalikan"
+  | "Status lainnya";
 
 export type DashboardOrder = {
   id: string;
+  /** UUID dari API; `id` tetap nomor pesanan untuk ditampilkan. */
+  apiId?: string;
   customer: string;
   customerEmail: string;
   product: string;
