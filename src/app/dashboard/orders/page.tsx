@@ -4,15 +4,14 @@ import { Download, Eye, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
-import { StatusBadge } from "@/components/status-badge";
 import { dashboardOrders } from "@/data/seed";
 import { formatIDR, formatDateID } from "@/lib/money";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { mapApiOrderToDashboardOrder } from "@/lib/admin-mappers";
 import type { DashboardOrder } from "@/lib/types";
-import type { ApiOrder } from "@/lib/api";
+import { ORDER_STATUS_OPTIONS } from "@/lib/order-status";
 
-const statuses = ["Semua", "Menunggu pembayaran", "Dibayar", "Diproses", "Aktif", "Dibatalkan"] as const;
+const statuses = ["Semua", ...ORDER_STATUS_OPTIONS, "Aktif"] as const;
 type StatusType = (typeof statuses)[number];
 
 export default function OrdersAdminPage() {
@@ -25,29 +24,44 @@ export default function OrdersAdminPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!DEMO_MODE) {
-      bootstrapAuth().then((user) => {
-        if (user?.role === "admin") {
-          adminApi.listOrders({ page: 1, per_page: 50 }).then((res) => {
-            try {
-              const orders = (res.orders as unknown as ApiOrder[]) ?? [];
-              const mappedOrders = orders.map(mapApiOrderToDashboardOrder);
-              setApiOrders(mappedOrders);
-              setLoading(false);
-            } catch {
-              setError("Gagal memproses data pesanan dari API");
-              setLoading(false);
-            }
-          }).catch(() => {
-            setError("Gagal memuat pesanan dari server");
-            setLoading(false);
-          });
-        } else {
-          setError("Akses ditolak: hanya admin yang dapat mengelola pesanan");
-          setLoading(false);
-        }
-      });
+    if (DEMO_MODE) {
+      Promise.resolve().then(() => setLoading(false));
+      return;
     }
+
+    let cancelled = false;
+
+    async function loadOrders() {
+      try {
+        const user = await bootstrapAuth();
+        if (cancelled) return;
+        if (!user) {
+          setError("Sesi tidak valid. Silakan masuk kembali.");
+          return;
+        }
+        if (user.role !== "admin") {
+          // Penjual tidak boleh memicu request data pesanan admin.
+          setError("Akses ditolak: hanya admin yang dapat mengelola pesanan");
+          return;
+        }
+
+        const response = await adminApi.listOrders({ page: 1, per_page: 50 });
+        if (!Array.isArray(response.orders)) {
+          setError("Respons pesanan dari server tidak sesuai kontrak");
+          return;
+        }
+        setApiOrders(response.orders.map(mapApiOrderToDashboardOrder));
+      } catch {
+        if (!cancelled) setError("Gagal memuat pesanan dari server");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadOrders();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const sourceOrders = useMemo(() => DEMO_MODE ? dashboardOrders : apiOrders ?? [], [apiOrders]);
@@ -147,9 +161,9 @@ export default function OrdersAdminPage() {
                       </select>
                     </td>
                     <td>{formatDateID(order.date)}</td>
-                    <td><StatusBadge status={order.due === "—" ? "Menunggu" : order.due} /></td>
+                    <td>{order.due}</td>
                     <td>
-                      <Link className="table-action" href={`/orders/${order.id}`} aria-label={`Lihat ${order.id}`}>
+                      <Link className="table-action" href={`/dashboard/orders/${encodeURIComponent(order.apiId ?? order.id)}`} aria-label={`Lihat ${order.id}`}>
                         <Eye size={13} />
                       </Link>
                     </td>

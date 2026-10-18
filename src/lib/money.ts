@@ -43,6 +43,25 @@ export function formatDateTimeID(value: string): string {
   }
 }
 
+/** Waktu operasional admin selalu ditampilkan dalam zona Asia/Jakarta (WIB),
+ * terlepas dari zona waktu browser atau server. */
+export function formatDateTimeWIB(value: string): string {
+  try {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    }).format(date);
+  } catch {
+    return value;
+  }
+}
+
 /**
  * Total keranjang mengikuti perhitungan backend apa adanya: subtotal adalah
  * jumlah harga × kuantitas, dan total hanya dikurangi diskon voucher. Backend

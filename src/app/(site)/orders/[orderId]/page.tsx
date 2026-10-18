@@ -13,7 +13,18 @@ export const metadata: Metadata = { title: "Lacak pesanan", robots: { index: fal
 function resolveStatus(orderId: string): OrderStatus {
   const order = dashboardOrders.find((item) => item.id === orderId);
   if (!order) return "in_progress";
-  return { "Menunggu pembayaran": "pending_payment", Dibayar: "paid", Diproses: "processing", Aktif: "delivered", Dibatalkan: "cancelled" }[order.status] as OrderStatus;
+  const statusMap: Record<string, OrderStatus> = {
+    "Menunggu pembayaran": "pending_payment",
+    Dibayar: "paid",
+    Diproses: "processing",
+    Dikirim: "shipped",
+    Aktif: "delivered",
+    Selesai: "completed",
+    Dibatalkan: "cancelled",
+    Kedaluwarsa: "expired",
+    Dikembalikan: "refunded",
+  };
+  return statusMap[order.status] ?? "in_progress";
 }
 
 /**

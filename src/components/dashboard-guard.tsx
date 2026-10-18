@@ -8,10 +8,11 @@ import { cn } from "@/lib/utils";
 
 interface DashboardGuardProps {
   children: React.ReactNode;
-  allowedRoles?: ("admin" | "seller")[];
 }
 
-export function DashboardGuard({ children, allowedRoles = ["admin", "seller"] }: DashboardGuardProps) {
+// Backend C19 hanya mengizinkan admin. Guard ini tidak menyediakan prop peran
+// yang bisa dipakai untuk memperlebar akses penjual.
+export function DashboardGuard({ children }: DashboardGuardProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(!DEMO_MODE);
@@ -44,7 +45,7 @@ export function DashboardGuard({ children, allowedRoles = ["admin", "seller"] }:
           return;
         }
 
-        if (!allowedRoles.includes(sessionUser.role as "admin" | "seller")) {
+        if (sessionUser.role !== "admin") {
           setForbidden(true);
           return;
         }
@@ -63,7 +64,7 @@ export function DashboardGuard({ children, allowedRoles = ["admin", "seller"] }:
     return () => {
       cancelled = true;
     };
-  }, [router, searchParams, allowedRoles]);
+  }, [router, searchParams]);
 
   if (DEMO_MODE) {
     return <>{children}</>;
@@ -111,7 +112,7 @@ export function DashboardGuard({ children, allowedRoles = ["admin", "seller"] }:
           <Lock className="text-amber-600" size={32} style={{ marginBottom: 12 }} />
           <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Akses ditolak</h2>
           <p className="muted" style={{ margin: "0 0 16px", fontSize: 13 }}>
-            Anda tidak memiliki izin untuk mengakses halaman ini. Hanya admin dan penjual yang diizinkan.
+            Anda tidak memiliki izin untuk mengakses halaman ini. Halaman dashboard hanya untuk admin.
           </p>
           <button
             className="button button-secondary button-sm"
@@ -120,6 +121,19 @@ export function DashboardGuard({ children, allowedRoles = ["admin", "seller"] }:
           >
             Kembali ke marketplace
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Tanpa sesi, jangan pernah merender children: halaman anak akan memicu
+  // permintaan data admin sebelum pengalihan ke login selesai.
+  if (!user) {
+    return (
+      <div className="dashboard-page" style={{ display: "grid", placeItems: "center", minHeight: "50vh" }}>
+        <div className="card" style={{ padding: 40, textAlign: "center", maxWidth: 320 }}>
+          <h2 style={{ margin: "0 0 8px", fontSize: 16 }}>Mengalihkan ke login</h2>
+          <p className="muted" style={{ margin: 0, fontSize: 13 }}>Sesi tidak ditemukan.</p>
         </div>
       </div>
     );

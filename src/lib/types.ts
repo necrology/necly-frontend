@@ -1,3 +1,5 @@
+import type { OrderStatusLabel } from "./order-status";
+
 export type ProductCategory =
   | "Streaming"
   | "Produktivitas"
@@ -42,15 +44,12 @@ export type SubscriptionProduct = {
 /** @deprecated Use SubscriptionProduct. Kept for component compatibility. */
 export type Service = SubscriptionProduct;
 
-export type DashboardOrderStatus =
-  | "Menunggu pembayaran"
-  | "Dibayar"
-  | "Diproses"
-  | "Aktif"
-  | "Dibatalkan";
+export type DashboardOrderStatus = OrderStatusLabel | "Aktif";
 
 export type DashboardOrder = {
   id: string;
+  /** UUID dari API; `id` tetap nomor pesanan untuk ditampilkan. */
+  apiId?: string;
   customer: string;
   customerEmail: string;
   product: string;

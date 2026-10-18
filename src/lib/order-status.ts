@@ -16,6 +16,29 @@ export type OrderStatus =
 
 export type StepState = "complete" | "current" | "upcoming" | "cancelled";
 
+/** Label tampilan untuk setiap status backend (C-02) dan alias demo lama. */
+export const ORDER_STATUS_LABELS = {
+  pending_payment: "Menunggu pembayaran",
+  paid: "Dibayar",
+  fulfilling: "Diproses",
+  processing: "Diproses",
+  shipped: "Dikirim",
+  delivered: "Akses diterima",
+  completed: "Selesai",
+  cancelled: "Dibatalkan",
+  expired: "Kedaluwarsa",
+  refunded: "Dikembalikan",
+  confirmed: "Dibayar",
+  in_progress: "Diproses",
+} as const satisfies Record<OrderStatus, string>;
+
+export type OrderStatusLabel = (typeof ORDER_STATUS_LABELS)[OrderStatus] | "Status lainnya";
+
+/** Opsi filter/select admin, satu sumber dengan label di atas. */
+export const ORDER_STATUS_OPTIONS: readonly OrderStatusLabel[] = Array.from(
+  new Set(Object.values(ORDER_STATUS_LABELS)),
+);
+
 const standardSteps = ["Pesanan dibuat", "Pembayaran dikonfirmasi", "Sedang diproses", "Akses diterima"] as const;
 
 const terminalLabels: Partial<Record<OrderStatus, string>> = {
@@ -48,24 +71,10 @@ export function normalizeOrderStatus(status: string): OrderStatus | null {
     : null;
 }
 
-export function orderStatusLabel(status: string): string {
+export function orderStatusLabel(status: string): OrderStatusLabel {
   const normalized = normalizeOrderStatus(status);
   if (!normalized) return "Status lainnya";
-  switch (normalized) {
-    case "cancelled": return "Dibatalkan";
-    case "expired": return "Kedaluwarsa";
-    case "refunded": return "Dikembalikan";
-    case "pending_payment": return "Menunggu pembayaran";
-    case "paid":
-    case "confirmed": return "Dibayar";
-    case "fulfilling":
-    case "processing":
-    case "in_progress": return "Diproses";
-    case "shipped": return "Dikirim";
-    case "delivered": return "Akses diterima";
-    case "completed": return "Selesai";
-    default: return "Status lainnya";
-  }
+  return ORDER_STATUS_LABELS[normalized];
 }
 
 export function getOrderSteps(status: OrderStatus): { label: string; state: StepState }[] {

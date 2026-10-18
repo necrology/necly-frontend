@@ -172,6 +172,51 @@ export type CheckoutResponse = {
   checkout_url: string;
 };
 
+/**
+ * DTO C-06 dari W0. Semua field wajib angka karena backend mengembalikan nol
+ * hanya ketika query berhasil dan memang tidak ada baris. Field yang hilang
+ * berarti kontrak rusak, bukan nol.
+ */
+export type ApiDashboardStats = {
+  total_users: number;
+  total_orders: number;
+  total_revenue: number;
+  pending_orders: number;
+  active_users: number;
+  new_users_today: number;
+  orders_today: number;
+  revenue_today: number;
+  active_activations: number;
+  available_slots: number;
+};
+
+/** DTO C-07 audit log. Metadata tetap opaque dan tidak dipetakan ke UI. */
+export type ApiAuditLog = {
+  id: string;
+  actor_user_id?: string | null;
+  actor_user?: ApiUser | null;
+  action: string;
+  resource_type: string;
+  resource_id?: string | null;
+  ip_address: string;
+  metadata?: string | null;
+  created_at: string;
+};
+
+export type ApiOrderListResponse = {
+  orders: ApiOrder[];
+  page: number;
+  per_page: number;
+  total: number;
+};
+
+export type ApiAuditLogListResponse = {
+  logs: ApiAuditLog[];
+  page: number;
+  per_page: number;
+  total: number;
+};
+
 function apiBaseFromEnvironment() {
   // Server Components run inside the deployment network. They must use the
   // internal service URL when one is provided; the public edge URL may not be
@@ -589,7 +634,7 @@ export const checkoutApi = {
 };
 
 export const adminApi = {
-  dashboard: () => apiRequest<Record<string, unknown>>("/admin/dashboard"),
+  dashboard: () => apiRequest<ApiDashboardStats>("/admin/dashboard"),
   listUsers: (params?: { page?: number; per_page?: number }) =>
     apiRequest<Record<string, unknown>>(`/admin/users${toQuery(params)}`),
   getUser: (id: string) => apiRequest<ApiUser>(`/admin/users/${encodeURIComponent(id)}`),
@@ -611,7 +656,7 @@ export const adminApi = {
     apiRequest<ApiCategory>(`/admin/categories/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteCategory: (id: string) => apiRequest<void>(`/admin/categories/${encodeURIComponent(id)}`, { method: "DELETE" }),
   listOrders: (params?: { page?: number; per_page?: number; status?: string }) =>
-    apiRequest<Record<string, unknown>>(`/admin/orders${toQuery(params)}`),
+    apiRequest<ApiOrderListResponse>(`/admin/orders${toQuery(params)}`),
   getOrder: (id: string) => apiRequest<ApiOrder>(`/admin/orders/${encodeURIComponent(id)}`),
   updateOrderStatus: (id: string, status: string) =>
     apiRequest<ApiOrder>(`/admin/orders/${encodeURIComponent(id)}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
@@ -635,7 +680,7 @@ export const adminApi = {
   createInventorySlots: (data: { product_price_id: string; quantity: number }) =>
     apiRequest<{ created: number }>("/admin/inventory/slots", { method: "POST", body: JSON.stringify(data) }),
   listAuditLogs: (params?: { page?: number; per_page?: number }) =>
-    apiRequest<Record<string, unknown>>(`/admin/audit-logs${toQuery(params)}`),
+    apiRequest<ApiAuditLogListResponse>(`/admin/audit-logs${toQuery(params)}`),
 };
 
 function toQuery(params?: Record<string, string | number | boolean | undefined>) {
