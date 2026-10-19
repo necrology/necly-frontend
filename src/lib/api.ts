@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { normalizeApiBase } from "./api-base";
 
 export interface User {
   id: string;
@@ -231,8 +232,7 @@ function apiBaseFromEnvironment() {
   // internal service URL when one is provided; the public edge URL may not be
   // resolvable (or its certificate trusted) from the container itself.
   const serverInternal = typeof window === "undefined" ? process.env.INTERNAL_API_URL : undefined;
-  const configured = (serverInternal || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1").replace(/\/+$/, "");
-  return configured.endsWith("/api/v1") ? configured : `${configured}/api/v1`;
+  return normalizeApiBase(serverInternal || process.env.NEXT_PUBLIC_API_URL);
 }
 
 export const API_BASE = apiBaseFromEnvironment();

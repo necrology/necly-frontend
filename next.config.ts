@@ -1,11 +1,12 @@
 import type { NextConfig } from "next";
+import { apiOrigin } from "./src/lib/api-base";
 
 // CSP host sources with a path only match that exact path unless they end in
 // a slash. Allow the API origin so browser requests to /api/v1/* are not
-// blocked before they reach the backend.
-const apiOrigin = new URL(
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081",
-).origin;
+// blocked before they reach the backend. `apiOrigin` derives its fallback from
+// the same module as the API client (`src/lib/api-base.ts`), so `connect-src`
+// and the bundled API base can never diverge when NEXT_PUBLIC_API_URL is unset.
+const apiOriginValue = apiOrigin(process.env.NEXT_PUBLIC_API_URL);
 
 const csp = [
   "default-src 'self'",
@@ -13,7 +14,7 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  `connect-src 'self' ${apiOrigin} https://cloudflareinsights.com`,
+  `connect-src 'self' ${apiOriginValue} https://cloudflareinsights.com`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

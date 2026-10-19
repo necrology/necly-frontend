@@ -62,7 +62,7 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
           <span className="success-mark"><Check size={25} /></span>
           <span className="badge status-success">Simulasi selesai</span>
           <h1 className="h2" style={{ fontSize: 28 }}>Pembayaran demo berhasil</h1>
-          <p className="muted" style={{ maxWidth: 470, margin: 0 }}>Tidak ada dana yang diproses pada mode demo.</p>
+          <p className="muted" style={{ maxWidth: 470, margin: 0 }}>Tidak ada dana yang diproses pada mode demo. Semua pesanan Anda tersedia di <Link className="payment-orders-link" href="/orders">Pesanan saya</Link>.</p>
           <Link className="button button-primary" href={`/orders/${orderId}`}>Lihat pesanan</Link>
         </div>
       );
@@ -101,7 +101,7 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
         <span className="success-mark"><Check size={25} /></span>
         <span className="badge status-success">Pembayaran dikonfirmasi</span>
         <h1 className="h2" style={{ fontSize: 28 }}>Pembayaran berhasil</h1>
-        <p className="muted" style={{ maxWidth: 470, margin: 0 }}>Pesanan {order.number} sudah tercatat dan akan diproses.</p>
+        <p className="muted" style={{ maxWidth: 470, margin: 0 }}>Pesanan {order.number} sudah tercatat dan akan diproses. Semua pesanan Anda tersedia di <Link className="payment-orders-link" href="/orders">Pesanan saya</Link>.</p>
         <Link className="button button-primary" href={`/orders/${order.id}`}>Lihat pesanan</Link>
       </div>
     );
@@ -115,6 +115,7 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
         <h1 className="h2" style={{ fontSize: 28 }}>Pembayaran tidak dapat dilanjutkan</h1>
         <p className="muted" style={{ maxWidth: 470, margin: 0 }}>Silakan buat pesanan baru atau hubungi tim dukungan jika dana sempat terpotong.</p>
         <Link className="button button-primary" href="/checkout">Kembali ke checkout</Link>
+        <Link className="payment-orders-link" href="/orders">Pesanan saya</Link>
       </div>
     );
   }
@@ -136,6 +137,7 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
       </div>
       {checkoutURL && <a className="button button-primary" style={{ width: "100%", marginTop: 22 }} href={checkoutURL} rel="noreferrer">Lanjutkan ke Xendit <ExternalLink size={15} /></a>}
       <button className="button" style={{ width: "100%", marginTop: 10 }} type="button" disabled={loading} onClick={() => void loadOrder()}>{loading ? "Memeriksa…" : "Periksa status sekarang"}</button>
+      <Link className="payment-orders-link payment-orders-standalone" href="/orders">Lihat semua pesanan saya</Link>
       {error && <p className="field-error" role="alert">{error}</p>}
     </div>
   );

@@ -11,8 +11,9 @@ describe("security headers", () => {
   });
 
   it("allows every API path on the configured origin", () => {
-    expect(config).toContain("const apiOrigin = new URL(");
-    expect(config).toContain("`connect-src 'self' ${apiOrigin}");
+    expect(config).toContain('from "./src/lib/api-base"');
+    expect(config).toContain("apiOrigin(process.env.NEXT_PUBLIC_API_URL)");
+    expect(config).toContain("`connect-src 'self' ${apiOriginValue}");
     expect(config).not.toContain("`connect-src 'self' ${process.env.NEXT_PUBLIC_API_URL");
   });
 });

@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle2, KeyRound, Laptop, LogOut, ShieldCheck, Smartphone, TriangleAlert } from "lucide-react";
+import { CheckCircle2, KeyRound, Laptop, LogOut, ReceiptText, ShieldCheck, Smartphone, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { PasswordField } from "@/components/password-field";
@@ -159,6 +160,9 @@ export default function AccountPage() {
         <span className="eyebrow">Akun saya</span>
         <h1 className="h1">Akun &amp; keamanan</h1>
         <p className="lede">Kelola kata sandi dan perangkat yang masih masuk ke akun Anda.</p>
+        <Link className="button button-secondary button-sm account-orders-link" href="/orders">
+          <ReceiptText size={15} aria-hidden="true" /> Pesanan saya
+        </Link>
       </header>
 
       <article className="card account-card">

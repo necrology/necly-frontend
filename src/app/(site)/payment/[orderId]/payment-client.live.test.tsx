@@ -48,6 +48,57 @@ describe("halaman pembayaran (live)", () => {
     await waitFor(() => expect(screen.getByText("Menunggu pembayaran")).toBeInTheDocument());
   });
 
+  it("menampilkan tautan Pesanan saya setelah pembayaran dikonfirmasi", async () => {
+    getOrderMock.mockResolvedValue({
+      id: "ord-1",
+      number: "NCL-260906-001",
+      status: "paid",
+      subtotal: 500_000,
+      discount: 0,
+      total: 512_500,
+      currency: "IDR",
+      payment_due_at: "2026-09-07T10:00:00Z",
+      items: [],
+    });
+
+    render(<PaymentClient orderId="ord-1" />);
+
+    await waitFor(() => expect(screen.getByText("Pembayaran berhasil")).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: "Pesanan saya" })).toHaveAttribute("href", "/orders");
+    expect(screen.getByRole("link", { name: "Lihat pesanan" })).toHaveAttribute("href", "/orders/ord-1");
+  });
+
+  it.each(["expired", "cancelled", "refunded"] as const)(
+    "menawarkan tautan Pesanan saya saat pembayaran berstatus %s",
+    async (status) => {
+      getOrderMock.mockResolvedValue({
+        id: "ord-1",
+        number: "NCL-260906-001",
+        status,
+        subtotal: 500_000,
+        discount: 0,
+        total: 512_500,
+        currency: "IDR",
+        payment_due_at: "2026-09-07T10:00:00Z",
+        items: [],
+      });
+
+      render(<PaymentClient orderId="ord-1" />);
+
+      await waitFor(() =>
+        expect(screen.getByText("Pembayaran tidak dapat dilanjutkan")).toBeInTheDocument(),
+      );
+      expect(screen.getByRole("link", { name: "Pesanan saya" })).toHaveAttribute(
+        "href",
+        "/orders",
+      );
+      expect(screen.getByRole("link", { name: "Kembali ke checkout" })).toHaveAttribute(
+        "href",
+        "/checkout",
+      );
+    },
+  );
+
   it("menampilkan error saat gagal mengambil pesanan", async () => {
     getOrderMock.mockRejectedValue(new Error("Not found"));
     render(<PaymentClient orderId="ord-404" />);

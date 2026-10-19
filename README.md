@@ -136,6 +136,26 @@ Dockerfile uses multi-stage build with `output: 'standalone'`.
 - Components: React Testing Library
 - Run: `npm test` (CI) or `npm run test:watch` (dev)
 
+### Browser gate (Playwright)
+
+```bash
+npm run test:e2e
+```
+
+`npm run test:e2e` is self-contained. Playwright's `webServer` runs
+`npm run build && npm run start` with one explicit `NEXT_PUBLIC_API_URL`
+(default `http://127.0.0.1:58080/api/v1`, override with the env var of the same
+name), so the bundled API base and the CSP `connect-src` origin always match the
+browser-mocked API. No backend, database, or production credentials are needed.
+
+- Defaults and the mock origin live in `e2e/support/env.ts`.
+- `e2e/order-history.spec.ts` asserts the served CSP allows that origin and that
+  the `/auth/login` and `/orders` requests were actually intercepted by the
+  browser mock, so a broken build/CSP combination fails loudly instead of
+  silently leaking through to a real backend.
+- API URL and CSP fallbacks share a single module, `src/lib/api-base.ts`, so an
+  env-less `npm run build` still produces a consistent bundle and header.
+
 ## Deployment Notes
 
 - Set all `NEXT_PUBLIC_*` env vars at runtime

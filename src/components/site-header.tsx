@@ -97,6 +97,7 @@ export function SiteHeader() {
         {links.map((link) => <Link className={cn("commerce-mobile-nav-link", isActive(link.href) && "active")} aria-current={isActive(link.href) ? "page" : undefined} href={link.href} key={link.href} onClick={closeMobileMenu}>{link.label}</Link>)}
         {user ? (
           <>
+            <Link className="commerce-mobile-nav-link" href="/orders" onClick={closeMobileMenu}>Pesanan saya</Link>
             <Link className="commerce-mobile-login commerce-mobile-account-action" href="/akun" onClick={closeMobileMenu}>Akun &amp; keamanan</Link>
             {canUseDashboard && <Link className="commerce-mobile-login" href="/dashboard" onClick={closeMobileMenu}>Dashboard</Link>}
             <button className="commerce-mobile-login commerce-mobile-signout commerce-mobile-account-action" type="button" onClick={signOut} disabled={signingOut}>{signingOut ? "Keluar…" : `Keluar (${user.name.split(" ")[0]})`}</button>
