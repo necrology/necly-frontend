@@ -115,6 +115,7 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
         <h1 className="h2" style={{ fontSize: 28 }}>Pembayaran tidak dapat dilanjutkan</h1>
         <p className="muted" style={{ maxWidth: 470, margin: 0 }}>Silakan buat pesanan baru atau hubungi tim dukungan jika dana sempat terpotong.</p>
         <Link className="button button-primary" href="/checkout">Kembali ke checkout</Link>
+        <Link className="payment-orders-link" href="/orders">Pesanan saya</Link>
       </div>
     );
   }

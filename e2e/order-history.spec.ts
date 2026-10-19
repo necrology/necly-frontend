@@ -1,4 +1,5 @@
 import { expect, test, type Route } from "@playwright/test";
+import { E2E_API_ORIGIN } from "./support/env";
 
 function corsHeaders(route: Route) {
   return {
@@ -27,6 +28,7 @@ async function fulfillJson(route: Route, status: number, payload: unknown) {
  * sungguhan, sehingga aman dijalankan di CI tanpa database atau kredensial.
  */
 test("login lalu membuka riwayat pesanan milik pengguna", async ({ page }) => {
+  const intercepted = { login: 0, orders: 0 };
   const orderId = "0192f0b0-0000-0000-0000-000000000001";
   const user = {
     id: "usr-e2e",
@@ -42,12 +44,14 @@ test("login lalu membuka riwayat pesanan milik pengguna", async ({ page }) => {
     fulfillJson(route, 401, { error: "Sesi tidak ditemukan" }),
   );
 
-  await page.route("**/api/v1/auth/login", (route) =>
-    fulfillJson(route, 200, { user, access_token: "e2e-access-token", expires_in: 900 }),
-  );
+  await page.route("**/api/v1/auth/login", (route) => {
+    intercepted.login += 1;
+    return fulfillJson(route, 200, { user, access_token: "e2e-access-token", expires_in: 900 });
+  });
 
-  await page.route("**/api/v1/orders?*", (route) =>
-    fulfillJson(route, 200, {
+  await page.route("**/api/v1/orders?*", (route) => {
+    intercepted.orders += 1;
+    return fulfillJson(route, 200, {
       orders: [
         {
           id: orderId,
@@ -77,10 +81,21 @@ test("login lalu membuka riwayat pesanan milik pengguna", async ({ page }) => {
       page: 1,
       per_page: 10,
       total: 1,
-    }),
-  );
+    });
+  });
 
-  await page.goto("/login?redirect=%2Forders");
+  const loginResponse = await page.goto("/login?redirect=%2Forders");
+  expect(loginResponse?.status()).toBe(200);
+
+  // Diagnostik: header CSP hasil build harus mengizinkan origin API yang dimock.
+  // Jika build dan web server E2E memakai env berbeda, kegagalan ini muncul
+  // dengan pesan jelas sebelum request login diblokir tanpa terlihat.
+  const csp = loginResponse?.headers()["content-security-policy"] ?? "";
+  expect(
+    csp,
+    `CSP connect-src harus mengizinkan origin API ${E2E_API_ORIGIN}`,
+  ).toContain(E2E_API_ORIGIN);
+
   await page.getByLabel("Alamat email").fill(user.email);
   await page.locator('input[name="password"]').fill("rahasia-aman");
   await page.getByRole("button", { name: /^Masuk/ }).click();
@@ -92,4 +107,9 @@ test("login lalu membuka riwayat pesanan milik pengguna", async ({ page }) => {
     "href",
     `/orders/${orderId}`,
   );
+
+  // Assertion/diagnostic: request login dan list orders benar-benar terintersep
+  // mock browser, bukan lolos ke backend maupun diblokir CSP lebih dulu.
+  expect(intercepted.login, "request /auth/login harus terintersep mock").toBe(1);
+  expect(intercepted.orders, "request list /orders harus terintersep mock").toBeGreaterThan(0);
 });
