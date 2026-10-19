@@ -739,8 +739,6 @@ export const adminApi = {
     apiRequest<ApiInventoryAccount>("/admin/inventory", { method: "POST", body: JSON.stringify(data) }),
   updateInventoryAccount: (id: string, data: Record<string, unknown>) =>
     apiRequest<ApiInventoryAccount>(`/admin/inventory/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
-  deleteInventoryAccount: (id: string) =>
-    apiRequest<{ message?: string }>(`/admin/inventory/${encodeURIComponent(id)}`, { method: "DELETE" }),
   // Assignment read-only: order/user yang memakai tiap slot, tanpa kredensial.
   listInventorySlots: (id: string, params?: { page?: number; per_page?: number; product_price_id?: string; status?: string }) =>
     apiRequest<AdminInventorySlotListResponse>(`/admin/inventory/${encodeURIComponent(id)}/slots${toQuery(params)}`),

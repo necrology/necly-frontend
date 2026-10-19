@@ -203,13 +203,21 @@ describe("Halaman Inventaris akun", () => {
     fireEvent.change(screen.getByLabelText("Jumlah slot"), { target: { value: "2" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan slot" }));
 
+    // Simpan slot hanya meminta konfirmasi; belum ada POST.
+    expect(createSlotsMock).not.toHaveBeenCalled();
+    expect(screen.getByText(/Konfirmasi tambah slot: 2 slot pada akun "Akun utama"/)).toBeInTheDocument();
+    expect(screen.getByText(/Sisa kapasitas setelah ditambahkan: 0 slot/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan slot" }));
+
     await waitFor(() =>
-      expect(createSlotsMock).toHaveBeenCalledWith({
-        product_price_id: "price-1",
-        quantity: 2,
-        inventory_account_id: "acc-1",
-      }),
+      expect(createSlotsMock).toHaveBeenCalledTimes(1),
     );
+    expect(createSlotsMock).toHaveBeenCalledWith({
+      product_price_id: "price-1",
+      quantity: 2,
+      inventory_account_id: "acc-1",
+    });
     await screen.findByText(/2 slot ditambahkan ke akun "Akun utama"/);
   });
 
@@ -236,6 +244,8 @@ describe("Halaman Inventaris akun", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tambah slot ke Akun utama" }));
     fireEvent.change(screen.getByLabelText("Jumlah slot"), { target: { value: "2" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan slot" }));
+    expect(createSlotsMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan slot" }));
 
     await screen.findByText(/Limit sharing tercapai/);
     expect(createSlotsMock).toHaveBeenCalledTimes(1);
@@ -292,6 +302,54 @@ describe("Halaman Inventaris akun", () => {
     await waitFor(() => expect(createAccountMock).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(updateAccountMock).toHaveBeenCalledWith("acc-new", { status: "inactive" }));
     expect(createAccountMock.mock.calls[0]?.[0]).not.toHaveProperty("status");
+  });
+
+  it("menampilkan jumlah total akun dan memuat halaman akun berikutnya", async () => {
+    listAccountsMock
+      .mockResolvedValueOnce({ accounts: [ACCOUNT], page: 1, per_page: 100, total: 150 })
+      .mockResolvedValueOnce({ accounts: [SECOND_ACCOUNT], page: 2, per_page: 100, total: 150 });
+
+    render(<InventoryPage />);
+
+    await screen.findByText("Akun utama");
+    expect(screen.getByText("Menampilkan 1 dari 150 akun")).toBeInTheDocument();
+    expect(screen.queryByText("Akun cadangan")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Muat lebih banyak akun" }));
+
+    await waitFor(() =>
+      expect(listAccountsMock).toHaveBeenLastCalledWith({ page: 2, per_page: 100 }),
+    );
+    await screen.findByText("Akun cadangan");
+    expect(screen.getByText("Menampilkan 2 dari 150 akun")).toBeInTheDocument();
+  });
+
+  it("menampilkan total assignment dan memuat slot berikutnya", async () => {
+    const secondSlot = {
+      ...SLOT,
+      id: "slot-2",
+      status: "used",
+      order_number: "ORD-002",
+      reserved_name: "Sari Pelanggan",
+    };
+    listSlotsMock
+      .mockResolvedValueOnce({ slots: [SLOT], page: 1, per_page: 100, total: 2 })
+      .mockResolvedValueOnce({ slots: [secondSlot], page: 2, per_page: 100, total: 2 });
+
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Lihat assignment Akun utama" }));
+    await screen.findByText("ORD-001");
+    expect(screen.getByText("Menampilkan 1 dari 2 slot.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Muat assignment berikutnya" }));
+
+    await waitFor(() =>
+      expect(listSlotsMock).toHaveBeenLastCalledWith("acc-1", { page: 2, per_page: 100 }),
+    );
+    await screen.findByText("ORD-002");
+    expect(screen.getByText("Menampilkan 2 dari 2 slot.")).toBeInTheDocument();
   });
 
   it("menolak akses non-admin tanpa memuat data inventaris", async () => {

@@ -55,9 +55,11 @@ type AccountRow = {
 
 type AssignmentState = {
   loading: boolean;
+  loadingMore: boolean;
   error: string | null;
   rows: ApiInventorySlot[];
   total: number;
+  page: number;
 };
 
 type AccountDraft = {
@@ -86,6 +88,17 @@ type PendingStatusChange = {
   label: string;
   nextStatus: "active" | "inactive";
 };
+
+type PendingSlot = {
+  accountId: string;
+  accountLabel: string;
+  priceId: string;
+  priceLabel: string;
+  quantity: number;
+  remainingAfter: number;
+};
+
+const ACCOUNT_PAGE_SIZE = 100;
 
 const DEMO_PRODUCTS: ProductOption[] = services.map((product) => ({
   id: product.id,
@@ -186,8 +199,6 @@ function describeInventoryError(error: unknown, action: "load" | "save" | "slot"
         return "Akun yang dipilih bukan milik produk paket ini.";
       case "account_required":
         return "Belum ada akun aktif yang berkapasitas untuk produk ini. Tambahkan akun inventaris terlebih dahulu.";
-      case "inventory_account_in_use":
-        return "Akun sudah dipakai slot atau pesanan sehingga tidak dapat dihapus.";
       case "invalid_input":
         return error.message || "Data inventaris tidak valid.";
       default:
@@ -233,9 +244,13 @@ export default function InventoryPage() {
 
   const [slotForm, setSlotForm] = useState<{ accountId: string; priceId: string; quantity: string } | null>(null);
   const [slotError, setSlotError] = useState("");
+  const [pendingSlot, setPendingSlot] = useState<PendingSlot | null>(null);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<Record<string, AssignmentState>>({});
+  const [accountTotal, setAccountTotal] = useState(0);
+  const [accountPage, setAccountPage] = useState(1);
+  const [loadingMoreAccounts, setLoadingMoreAccounts] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -275,14 +290,43 @@ export default function InventoryPage() {
       }));
 
       const productsById = new Map(mappedProducts.map((product) => [product.id, product]));
+      const mappedAccounts = ((inventory.accounts ?? []) as unknown as ApiInventoryAccount[]).map((account) =>
+        mapAccount(account, productsById),
+      );
       setProducts(mappedProducts);
-      setAccounts(((inventory.accounts ?? []) as unknown as ApiInventoryAccount[]).map((account) => mapAccount(account, productsById)));
+      setAccounts(mappedAccounts);
+      setAccountTotal(typeof inventory.total === "number" ? inventory.total : mappedAccounts.length);
+      setAccountPage(1);
     } catch (error) {
       setLoadError(describeInventoryError(error, "load"));
     } finally {
       setLoading(false);
     }
   }, []);
+
+  const loadMoreAccounts = async () => {
+    if (DEMO_MODE || loadingMoreAccounts || accounts.length >= accountTotal) return;
+    setLoadingMoreAccounts(true);
+    setActionError("");
+    try {
+      const nextPage = accountPage + 1;
+      const inventory = await adminApi.listInventoryAccounts({ page: nextPage, per_page: ACCOUNT_PAGE_SIZE });
+      const productsById = new Map(products.map((product) => [product.id, product]));
+      const mapped = ((inventory.accounts ?? []) as unknown as ApiInventoryAccount[]).map((account) =>
+        mapAccount(account, productsById),
+      );
+      setAccounts((current) => {
+        const ids = new Set(current.map((account) => account.id));
+        return [...current, ...mapped.filter((account) => !ids.has(account.id))];
+      });
+      setAccountTotal(typeof inventory.total === "number" ? inventory.total : accountTotal);
+      setAccountPage(nextPage);
+    } catch (error) {
+      setActionError(describeInventoryError(error, "load"));
+    } finally {
+      setLoadingMoreAccounts(false);
+    }
+  };
 
   useEffect(() => {
     if (DEMO_MODE) return;
@@ -392,6 +436,7 @@ export default function InventoryPage() {
     setActionError("");
     setNotice("");
     setSlotError("");
+    setPendingSlot(null);
     setPendingSave(null);
     setPendingStatus(null);
 
@@ -411,11 +456,18 @@ export default function InventoryPage() {
     setSlotForm({ accountId: fallback.id, priceId, quantity: String(defaultQuantity) });
   };
 
+  const closeSlotForm = () => {
+    setSlotForm(null);
+    setSlotError("");
+    setPendingSlot(null);
+  };
+
   const handleSlotAccountChange = (accountId: string) => {
     const account = accounts.find((item) => item.id === accountId);
     const product = account ? productById.get(account.productId) : null;
     const defaultQuantity = Math.max(1, Math.min(10, account?.remainingSlots || 1));
     setSlotError("");
+    setPendingSlot(null);
     setSlotForm({
       accountId,
       priceId: product?.prices[0]?.id ?? "",
@@ -639,7 +691,29 @@ export default function InventoryPage() {
       return;
     }
 
+    const price = slotProduct?.prices.find((item) => item.id === slotForm.priceId);
+    setPendingSlot({
+      accountId: account.id,
+      accountLabel: account.label,
+      priceId: slotForm.priceId,
+      priceLabel: price ? `${slotProduct?.name ?? account.productName} · ${price.label}` : slotForm.priceId,
+      quantity,
+      remainingAfter: Math.max(account.remainingSlots - quantity, 0),
+    });
+  };
+
+  const applySlotCreation = async () => {
+    if (!pendingSlot) return;
+    const account = accounts.find((item) => item.id === pendingSlot.accountId);
+    if (!account) {
+      setSlotError("Akun inventaris tidak ditemukan. Muat ulang daftar akun.");
+      setPendingSlot(null);
+      return;
+    }
+
     setSubmitting(true);
+    setSlotError("");
+    setActionError("");
     try {
       if (DEMO_MODE) {
         setAccounts((current) =>
@@ -647,29 +721,29 @@ export default function InventoryPage() {
             item.id === account.id
               ? {
                   ...item,
-                  totalSlots: item.totalSlots + quantity,
-                  availableSlots: item.availableSlots + quantity,
-                  remainingSlots: Math.max(item.remainingSlots - quantity, 0),
+                  totalSlots: item.totalSlots + pendingSlot.quantity,
+                  availableSlots: item.availableSlots + pendingSlot.quantity,
+                  remainingSlots: Math.max(item.remainingSlots - pendingSlot.quantity, 0),
                 }
               : item,
           ),
         );
-        setNotice(`${quantity} slot demo ditambahkan ke akun "${account.label}".`);
+        setNotice(`${pendingSlot.quantity} slot demo ditambahkan ke akun "${account.label}".`);
       } else {
         const result = await adminApi.createInventorySlots({
-          product_price_id: slotForm.priceId,
-          quantity,
-          inventory_account_id: account.id,
+          product_price_id: pendingSlot.priceId,
+          quantity: pendingSlot.quantity,
+          inventory_account_id: pendingSlot.accountId,
         });
         setNotice(`${result.created} slot ditambahkan ke akun "${account.label}".`);
         await loadData();
         if (expandedId) await loadAssignments(expandedId, true);
       }
 
-      setSlotForm(null);
-      setSlotError("");
+      closeSlotForm();
     } catch (error) {
       setSlotError(describeInventoryError(error, "slot"));
+      setPendingSlot(null);
       if (!DEMO_MODE) await loadData();
     } finally {
       setSubmitting(false);
@@ -684,16 +758,18 @@ export default function InventoryPage() {
       ...state,
       [accountId]: {
         loading: true,
+        loadingMore: false,
         error: null,
         rows: force ? [] : current?.rows ?? [],
         total: force ? 0 : current?.total ?? 0,
+        page: force ? 1 : current?.page ?? 1,
       },
     }));
 
     if (DEMO_MODE) {
       setAssignments((state) => ({
         ...state,
-        [accountId]: { loading: false, error: null, rows: [], total: 0 },
+        [accountId]: { loading: false, loadingMore: false, error: null, rows: [], total: 0, page: 1 },
       }));
       return;
     }
@@ -704,9 +780,11 @@ export default function InventoryPage() {
         ...state,
         [accountId]: {
           loading: false,
+          loadingMore: false,
           error: null,
           rows: response.slots ?? [],
           total: response.total ?? 0,
+          page: response.page ?? 1,
         },
       }));
     } catch (error) {
@@ -714,13 +792,57 @@ export default function InventoryPage() {
         ...state,
         [accountId]: {
           loading: false,
+          loadingMore: false,
           error: describeInventoryError(error, "load"),
           rows: [],
           total: 0,
+          page: 1,
         },
       }));
     }
   }, [assignments]);
+
+  const loadMoreAssignments = async (accountId: string) => {
+    const current = assignments[accountId];
+    if (!current || current.loading || current.loadingMore || current.rows.length >= current.total) return;
+
+    setAssignments((state) => ({
+      ...state,
+      [accountId]: { ...current, loadingMore: true, error: null },
+    }));
+
+    try {
+      const response = await adminApi.listInventorySlots(accountId, {
+        page: (current.page ?? 1) + 1,
+        per_page: 100,
+      });
+      setAssignments((state) => {
+        const previous = state[accountId];
+        if (!previous) return state;
+        const ids = new Set(previous.rows.map((slot) => slot.id));
+        return {
+          ...state,
+          [accountId]: {
+            ...previous,
+            loadingMore: false,
+            error: null,
+            rows: [...previous.rows, ...(response.slots ?? []).filter((slot) => !ids.has(slot.id))],
+            total: response.total ?? previous.total,
+            page: response.page ?? (current.page ?? 1) + 1,
+          },
+        };
+      });
+    } catch (error) {
+      setAssignments((state) => ({
+        ...state,
+        [accountId]: {
+          ...current,
+          loadingMore: false,
+          error: describeInventoryError(error, "load"),
+        },
+      }));
+    }
+  };
 
   const toggleAssignments = async (accountId: string) => {
     if (expandedId === accountId) {
@@ -949,7 +1071,7 @@ export default function InventoryPage() {
         <form className="card panel" onSubmit={submitSlots}>
           <div className="panel-header">
             <h2 className="panel-title">Tambah slot akun</h2>
-            <button className="table-action" type="button" onClick={() => setSlotForm(null)} aria-label="Tutup formulir slot">
+            <button className="table-action" type="button" onClick={closeSlotForm} aria-label="Tutup formulir slot">
               <X size={13} />
             </button>
           </div>
@@ -976,7 +1098,10 @@ export default function InventoryPage() {
                 className="input"
                 id="inv-slot-price"
                 value={slotForm.priceId}
-                onChange={(event) => setSlotForm({ ...slotForm, priceId: event.target.value })}
+                onChange={(event) => {
+                  setSlotForm({ ...slotForm, priceId: event.target.value });
+                  setPendingSlot(null);
+                }}
                 required
               >
                 <option value="">Pilih paket</option>
@@ -997,7 +1122,10 @@ export default function InventoryPage() {
                 min="1"
                 max="100"
                 value={slotForm.quantity}
-                onChange={(event) => setSlotForm({ ...slotForm, quantity: event.target.value })}
+                onChange={(event) => {
+                  setSlotForm({ ...slotForm, quantity: event.target.value });
+                  setPendingSlot(null);
+                }}
                 required
               />
               {selectedSlotAccount && (
@@ -1027,6 +1155,23 @@ export default function InventoryPage() {
               </p>
             )}
           </div>
+
+          {pendingSlot && (
+            <div className="notice" role="alertdialog" aria-label="Konfirmasi tambah slot" style={{ margin: "0 18px 18px" }}>
+              <p style={{ margin: "0 0 12px" }}>
+                Konfirmasi tambah slot: {pendingSlot.quantity} slot pada akun {`"${pendingSlot.accountLabel}"`} untuk paket{" "}
+                {pendingSlot.priceLabel}. Sisa kapasitas setelah ditambahkan: {pendingSlot.remainingAfter} slot.
+              </p>
+              <div className="table-actions" style={{ justifyContent: "flex-start" }}>
+                <button className="button button-primary button-sm" type="button" onClick={applySlotCreation} disabled={submitting}>
+                  {submitting ? "Menyimpan…" : "Ya, tambahkan slot"}
+                </button>
+                <button className="button button-secondary button-sm" type="button" onClick={() => setPendingSlot(null)} disabled={submitting}>
+                  Batal
+                </button>
+              </div>
+            </div>
+          )}
         </form>
       )}
 
@@ -1042,6 +1187,22 @@ export default function InventoryPage() {
           />
         </div>
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
+      </div>
+
+      <div className="toolbar" style={{ justifyContent: "space-between" }}>
+        <span className="muted" style={{ fontSize: 11 }}>
+          Menampilkan {accounts.length} dari {accountTotal} akun
+        </span>
+        {accounts.length < accountTotal && (
+          <button
+            className="button button-secondary button-sm"
+            type="button"
+            onClick={loadMoreAccounts}
+            disabled={loadingMoreAccounts}
+          >
+            {loadingMoreAccounts ? "Memuat…" : "Muat lebih banyak akun"}
+          </button>
+        )}
       </div>
 
       <section className="card table-panel">
@@ -1083,6 +1244,7 @@ export default function InventoryPage() {
                       assignment={assignment}
                       priceLabelById={priceLabelById}
                       onToggleAssignments={() => toggleAssignments(account.id)}
+                      onLoadMoreAssignments={() => loadMoreAssignments(account.id)}
                       onEdit={() => openEditForm(account)}
                       onAddSlot={() => openSlotForm(account)}
                       onToggleStatus={() =>
@@ -1110,6 +1272,7 @@ function AccountRows({
   assignment,
   priceLabelById,
   onToggleAssignments,
+  onLoadMoreAssignments,
   onEdit,
   onAddSlot,
   onToggleStatus,
@@ -1119,6 +1282,7 @@ function AccountRows({
   assignment?: AssignmentState;
   priceLabelById: Map<string, string>;
   onToggleAssignments: () => void;
+  onLoadMoreAssignments: () => void;
   onEdit: () => void;
   onAddSlot: () => void;
   onToggleStatus: () => void;
@@ -1193,7 +1357,7 @@ function AccountRows({
       </tr>
       {expanded && (
         <tr>
-          <td colSpan={8} style={{ height: "auto", padding: 0, whiteSpace: "normal", background: "#f8fafb" }}>
+          <td colSpan={8} style={{ height: "auto", padding: 0, whiteSpace: "normal", background: "var(--surface-2)" }}>
             <div style={{ padding: "14px 18px" }}>
               <div className="panel-header" style={{ marginBottom: 10 }}>
                 <h3 className="panel-title">Assignment slot — {account.label}</h3>
@@ -1201,41 +1365,63 @@ function AccountRows({
               </div>
               {assignment?.loading ? (
                 <p className="muted" style={{ margin: 0, fontSize: 11 }}>Memuat assignment…</p>
-              ) : assignment?.error ? (
-                <p role="alert" style={{ margin: 0, color: "var(--danger)", fontSize: 11 }}>{assignment.error}</p>
               ) : !assignment || assignment.rows.length === 0 ? (
-                <p className="muted" style={{ margin: 0, fontSize: 11 }}>Belum ada slot atau assignment untuk akun ini.</p>
+                assignment?.error ? (
+                  <p role="alert" style={{ margin: 0, color: "var(--danger)", fontSize: 11 }}>{assignment.error}</p>
+                ) : (
+                  <p className="muted" style={{ margin: 0, fontSize: 11 }}>Belum ada slot atau assignment untuk akun ini.</p>
+                )
               ) : (
-                <div className="table-scroll">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Paket</th>
-                        <th>Status</th>
-                        <th>Order</th>
-                        <th>Pengguna</th>
-                        <th>Reservasi</th>
-                        <th>Dibuat</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {assignment.rows.map((slot) => (
-                        <tr key={slot.id}>
-                          <td>{priceLabelById.get(slot.product_price_id) ?? slot.product_price_id}</td>
-                          <td><StatusBadge status={slot.status} /></td>
-                          <td>
-                            {slot.order_id && slot.order_number ? (
-                              <a href={`/dashboard/orders/${slot.order_id}`}>{slot.order_number}</a>
-                            ) : slot.order_number ?? "—"}
-                          </td>
-                          <td>{slot.reserved_name ?? slot.reserved_email ?? "—"}</td>
-                          <td>{formatDate(slot.reserved_until)}</td>
-                          <td>{formatDate(slot.created_at)}</td>
+                <>
+                  <p className="muted" style={{ margin: "0 0 8px", fontSize: 11 }}>
+                    Menampilkan {assignment.rows.length} dari {assignment.total} slot.
+                  </p>
+                  <div className="table-scroll">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Paket</th>
+                          <th>Status</th>
+                          <th>Order</th>
+                          <th>Pengguna</th>
+                          <th>Reservasi</th>
+                          <th>Dibuat</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {assignment.rows.map((slot) => (
+                          <tr key={slot.id}>
+                            <td>{priceLabelById.get(slot.product_price_id) ?? slot.product_price_id}</td>
+                            <td><StatusBadge status={slot.status} /></td>
+                            <td>
+                              {slot.order_id && slot.order_number ? (
+                                <a href={`/dashboard/orders/${slot.order_id}`}>{slot.order_number}</a>
+                              ) : slot.order_number ?? "—"}
+                            </td>
+                            <td>{slot.reserved_name ?? slot.reserved_email ?? "—"}</td>
+                            <td>{formatDate(slot.reserved_until)}</td>
+                            <td>{formatDate(slot.created_at)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {assignment.error && (
+                    <p role="alert" style={{ margin: "8px 0 0", color: "var(--danger)", fontSize: 11 }}>{assignment.error}</p>
+                  )}
+                  {assignment.rows.length < assignment.total && (
+                    <div className="table-actions" style={{ justifyContent: "flex-start", marginTop: 10 }}>
+                      <button
+                        className="button button-secondary button-sm"
+                        type="button"
+                        onClick={onLoadMoreAssignments}
+                        disabled={assignment.loadingMore}
+                      >
+                        {assignment.loadingMore ? "Memuat…" : "Muat assignment berikutnya"}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </td>
