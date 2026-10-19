@@ -92,12 +92,10 @@ export function mapApiUserToCustomer(apiUser: ApiUser): Customer {
     admin: "Admin",
   };
 
-  const statusMap: Record<string, Customer["status"]> = {
-    active: "Aktif",
-    new: "Baru",
-    inactive: "Nonaktif",
-    suspended: "Nonaktif",
-  };
+  const verified = Boolean(apiUser.email_verified_at);
+  // Endpoint admin mengirim `active` sebagai boolean. Sebelumnya status selalu
+  // di-hard-code "Aktif" sehingga user nonaktif tampak aktif di dashboard.
+  const status: Customer["status"] = apiUser.active === false ? "Nonaktif" : verified ? "Aktif" : "Baru";
 
   return {
     id: apiUser.id,
@@ -111,9 +109,9 @@ export function mapApiUserToCustomer(apiUser: ApiUser): Customer {
       .slice(0, 2),
     orders: 0,
     spend: 0,
-    status: "Aktif",
+    status,
     role: roleMap[apiUser.role] ?? "Pelanggan",
-    verified: apiUser.email_verified_at !== null,
+    verified,
     joined: apiUser.created_at
       ? new Date(apiUser.created_at).toLocaleDateString("id-ID", {
           day: "2-digit",
