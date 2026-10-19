@@ -15,9 +15,18 @@ export interface ApiUser {
   email: string;
   name: string;
   role: User["role"];
+  // Backend admin mengirim status aktif. Opsional agar sesi lama tetap valid.
+  active?: boolean;
   email_verified_at?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface AdminUserListResponse {
+  users: ApiUser[];
+  page: number;
+  per_page: number;
+  total: number;
 }
 
 export interface AuthSessionResponse {
@@ -635,8 +644,13 @@ export const checkoutApi = {
 
 export const adminApi = {
   dashboard: () => apiRequest<ApiDashboardStats>("/admin/dashboard"),
-  listUsers: (params?: { page?: number; per_page?: number }) =>
-    apiRequest<Record<string, unknown>>(`/admin/users${toQuery(params)}`),
+  listUsers: (params?: {
+    page?: number;
+    per_page?: number;
+    role?: User["role"];
+    active?: boolean;
+    search?: string;
+  }) => apiRequest<AdminUserListResponse>(`/admin/users${toQuery(params)}`),
   getUser: (id: string) => apiRequest<ApiUser>(`/admin/users/${encodeURIComponent(id)}`),
   updateUser: (id: string, data: Record<string, unknown>) =>
     apiRequest<ApiUser>(`/admin/users/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
