@@ -57,12 +57,14 @@ function describeAccessError(error: unknown): string {
       case 400:
         return error.message || "Data perubahan tidak valid.";
       case 401:
-        return "Sesi berakhir. Silakan masuk kembali lalu coba lagi.";
+        // Samakan pola dengan 400/403/409: pesan backend dipakai apa adanya,
+        // teks tetap hanya sebagai cadangan bila backend tidak mengirim pesan.
+        return error.message || "Sesi berakhir. Silakan masuk kembali lalu coba lagi.";
       case 403:
         // Pesan backend adalah sumber kebenaran untuk self-demotion/last-admin.
         return error.message || "Anda tidak diizinkan mengubah akses pengguna ini.";
       case 404:
-        return "Pengguna tidak ditemukan. Muat ulang daftar pengguna.";
+        return error.message || "Pengguna tidak ditemukan. Muat ulang daftar pengguna.";
       case 409:
         return error.message || "Perubahan bertentangan dengan data pengguna saat ini.";
       default:

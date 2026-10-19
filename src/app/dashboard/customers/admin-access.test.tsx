@@ -178,6 +178,44 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Tidak dapat menonaktifkan akun sendiri");
   });
 
+  it("menampilkan pesan backend 401 secara apa adanya", async () => {
+    updateUserMock.mockRejectedValueOnce(
+      new ApiError("Sesi tidak valid atau telah berakhir, silakan masuk kembali", 401, {
+        error: "Sesi tidak valid atau telah berakhir, silakan masuk kembali",
+        code: "unauthorized",
+      }),
+    );
+
+    render(<CustomersPage />);
+    await screen.findByText("Budi Pelanggan");
+
+    fireEvent.click(screen.getByRole("button", { name: "Kelola akses Budi Pelanggan" }));
+    fireEvent.change(screen.getByLabelText("Peran"), { target: { value: "admin" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Sesi tidak valid atau telah berakhir, silakan masuk kembali");
+  });
+
+  it("menampilkan pesan backend 404 secara apa adanya", async () => {
+    updateUserMock.mockRejectedValueOnce(
+      new ApiError("Pengguna tidak ditemukan", 404, {
+        error: "Pengguna tidak ditemukan",
+        code: "not_found",
+      }),
+    );
+
+    render(<CustomersPage />);
+    await screen.findByText("Budi Pelanggan");
+
+    fireEvent.click(screen.getByRole("button", { name: "Kelola akses Budi Pelanggan" }));
+    fireEvent.change(screen.getByLabelText("Status akun"), { target: { value: "nonaktif" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Pengguna tidak ditemukan");
+  });
+
   it("menyaring daftar berdasarkan peran dan pencarian tanpa mengirim ulang perubahan", async () => {
     render(<CustomersPage />);
     await screen.findByText("Budi Pelanggan");
