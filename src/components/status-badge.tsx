@@ -5,6 +5,12 @@ type StatusTone = "status-success" | "status-danger" | "status-warning" | "statu
 const statusLabels: Record<string, { label: string; tone: StatusTone }> = {
   aktif: { label: "Aktif", tone: "status-success" },
   active: { label: "Aktif", tone: "status-success" },
+  tersedia: { label: "Tersedia", tone: "status-success" },
+  available: { label: "Tersedia", tone: "status-success" },
+  terpakai: { label: "Terpakai", tone: "status-info" },
+  used: { label: "Terpakai", tone: "status-info" },
+  direservasi: { label: "Direservasi", tone: "status-warning" },
+  reserved: { label: "Direservasi", tone: "status-warning" },
   berhasil: { label: "Berhasil", tone: "status-success" },
   success: { label: "Berhasil", tone: "status-success" },
   selesai: { label: "Selesai", tone: "status-success" },

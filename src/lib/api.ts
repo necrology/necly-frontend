@@ -30,6 +30,56 @@ export interface AdminUserListResponse {
   total: number;
 }
 
+export interface AdminInventoryListResponse {
+  accounts: ApiInventoryAccount[];
+  page: number;
+  per_page: number;
+  total: number;
+}
+
+export interface AdminInventorySlotListResponse {
+  slots: ApiInventorySlot[];
+  page: number;
+  per_page: number;
+  total: number;
+}
+
+/** Admin inventory account. Credentials are deliberately absent: the backend
+ * never serialises the encrypted blob, let alone the plaintext. */
+export type ApiInventoryAccount = {
+  id: string;
+  product_id: string;
+  product?: ApiProduct;
+  label: string;
+  status: string;
+  sharing_limit: number;
+  expires_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  total_slots?: number;
+  available_slots?: number;
+  used_slots?: number;
+  remaining_slots?: number;
+  sellable?: boolean;
+};
+
+/** Read-only assignment row for one sellable slot. */
+export type ApiInventorySlot = {
+  id: string;
+  inventory_account_id: string;
+  product_price_id: string;
+  status: string;
+  reserved_by?: string | null;
+  reserved_until?: string | null;
+  order_item_id?: string | null;
+  order_id?: string | null;
+  order_number?: string | null;
+  reserved_email?: string | null;
+  reserved_name?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export interface AuthSessionResponse {
   user: ApiUser;
   access_token: string;
@@ -683,16 +733,19 @@ export const adminApi = {
   deleteVoucher: (id: string) => apiRequest<void>(`/admin/vouchers/${encodeURIComponent(id)}`, { method: "DELETE" }),
   // Rutenya /admin/inventory (lihat registerAdmin): tidak ada segmen "accounts",
   // dan versi sebelumnya membuat halaman inventory dashboard selalu 404.
-  listInventoryAccounts: (params?: { page?: number; per_page?: number; product_id?: string }) =>
-    apiRequest<Record<string, unknown>>(`/admin/inventory${toQuery(params)}`),
+  listInventoryAccounts: (params?: { page?: number; per_page?: number; product_id?: string; status?: string }) =>
+    apiRequest<AdminInventoryListResponse>(`/admin/inventory${toQuery(params)}`),
   createInventoryAccount: (data: Record<string, unknown>) =>
-    apiRequest<Record<string, unknown>>("/admin/inventory", { method: "POST", body: JSON.stringify(data) }),
+    apiRequest<ApiInventoryAccount>("/admin/inventory", { method: "POST", body: JSON.stringify(data) }),
   updateInventoryAccount: (id: string, data: Record<string, unknown>) =>
-    apiRequest<Record<string, unknown>>(`/admin/inventory/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
+    apiRequest<ApiInventoryAccount>(`/admin/inventory/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
+  // Assignment read-only: order/user yang memakai tiap slot, tanpa kredensial.
+  listInventorySlots: (id: string, params?: { page?: number; per_page?: number; product_price_id?: string; status?: string }) =>
+    apiRequest<AdminInventorySlotListResponse>(`/admin/inventory/${encodeURIComponent(id)}/slots${toQuery(params)}`),
   // Kapasitas jual sebuah paket. Inilah yang membuat produk bisa dibeli: katalog
   // menghitung ketersediaan dari baris slot berstatus available.
-  createInventorySlots: (data: { product_price_id: string; quantity: number }) =>
-    apiRequest<{ created: number }>("/admin/inventory/slots", { method: "POST", body: JSON.stringify(data) }),
+  createInventorySlots: (data: { product_price_id: string; quantity: number; inventory_account_id?: string }) =>
+    apiRequest<{ created: number; inventory_account_id: string }>("/admin/inventory/slots", { method: "POST", body: JSON.stringify(data) }),
   listAuditLogs: (params?: { page?: number; per_page?: number }) =>
     apiRequest<ApiAuditLogListResponse>(`/admin/audit-logs${toQuery(params)}`),
 };

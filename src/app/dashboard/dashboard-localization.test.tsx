@@ -53,8 +53,9 @@ describe("dashboard overview localization", () => {
       expect(pageSource, page).not.toMatch(/DEMO_MODE \|\| !api[A-Za-z]+/);
     }
     expect(pageSources.pembayaran).toContain("DEMO_MODE ? payments : apiPayments ?? []");
-    // Stok diambil dari katalog API saat mode live; data contoh hanya untuk demo.
-    expect(pageSources.inventaris).toContain("catalogApi.listProducts({ per_page: 100 })");
+    // Admin memuat katalog lengkap (termasuk produk nonaktif) dan akun inventaris
+    // dari endpoint admin; data contoh hanya dipakai pada mode demo.
+    expect(pageSources.inventaris).toContain("adminApi.listProducts({ page: 1, per_page: 100 })");
   });
 
   it("menyediakan keadaan kosong berbahasa Indonesia untuk tabel operasional", () => {
@@ -63,7 +64,7 @@ describe("dashboard overview localization", () => {
       pesanan: "Belum ada pesanan.",
       pembayaran: "Belum ada pembayaran.",
       pelanggan: "Belum ada pelanggan.",
-      inventaris: "Belum ada akun atau slot langganan.",
+      inventaris: "Belum ada akun inventaris. Tambahkan akun untuk mulai menjual slot.",
       voucher: "Belum ada voucher.",
       laporan: "Belum ada data laporan.",
       audit: "Belum ada aktivitas tercatat.",
