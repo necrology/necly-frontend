@@ -1,116 +1,315 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import InventoryPage from "./page";
 
-const { listProductsMock, listAccountsMock, createSlotsMock, createAccountMock } = vi.hoisted(() => ({
+const {
+  bootstrapAuthMock,
+  listProductsMock,
+  listAccountsMock,
+  listSlotsMock,
+  createAccountMock,
+  updateAccountMock,
+  createSlotsMock,
+} = vi.hoisted(() => ({
+  bootstrapAuthMock: vi.fn(),
   listProductsMock: vi.fn(),
   listAccountsMock: vi.fn(),
-  createSlotsMock: vi.fn(),
+  listSlotsMock: vi.fn(),
   createAccountMock: vi.fn(),
+  updateAccountMock: vi.fn(),
+  createSlotsMock: vi.fn(),
 }));
 
-vi.mock("@/lib/api", () => ({
-  DEMO_MODE: false,
-  bootstrapAuth: vi.fn().mockResolvedValue({ id: "usr-1", role: "admin" }),
-  catalogApi: { listProducts: listProductsMock },
-  adminApi: {
-    listInventoryAccounts: listAccountsMock,
-    createInventoryAccount: createAccountMock,
-    createInventorySlots: createSlotsMock,
-  },
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    DEMO_MODE: false,
+    bootstrapAuth: bootstrapAuthMock,
+    adminApi: {
+      ...actual.adminApi,
+      listProducts: listProductsMock,
+      listInventoryAccounts: listAccountsMock,
+      listInventorySlots: listSlotsMock,
+      createInventoryAccount: createAccountMock,
+      updateInventoryAccount: updateAccountMock,
+      createInventorySlots: createSlotsMock,
+    },
+  };
+});
 
-// Bentuk payload katalog apa adanya: ketersediaan datang sebagai available_slots.
-const product = {
+import InventoryPage from "./page";
+import { ApiError } from "@/lib/api";
+
+const PRODUCT = {
   id: "prd-1",
   name: "Netflix Premium",
   slug: "netflix-premium",
   description: "Streaming 4K",
-  category: { id: "cat-1", name: "Streaming", slug: "streaming" },
   prices: [
-    { id: "0192f0a4-0000-0000-0000-000000000001", amount: 186_000, active: true, available_slots: 0, duration: { id: "d-1", name: "1 Bulan", days: 30 } },
-    { id: "0192f0a4-0000-0000-0000-000000000002", amount: 1_900_000, active: true, available_slots: 4, duration: { id: "d-2", name: "12 Bulan", days: 365 } },
+    { id: "price-1", amount: 186_000, active: true, duration_name: "1 Bulan", duration_days: 30 },
+    { id: "price-2", amount: 1_900_000, active: true, duration_name: "12 Bulan", duration_days: 365 },
   ],
 };
 
-describe("Halaman Inventaris", () => {
+const ACCOUNT = {
+  id: "acc-1",
+  product_id: "prd-1",
+  product: PRODUCT,
+  label: "Akun utama",
+  status: "active",
+  sharing_limit: 5,
+  expires_at: "2026-12-31T00:00:00Z",
+  total_slots: 3,
+  available_slots: 1,
+  used_slots: 2,
+  remaining_slots: 2,
+  sellable: true,
+};
+
+const SECOND_ACCOUNT = {
+  ...ACCOUNT,
+  id: "acc-2",
+  label: "Akun cadangan",
+  sharing_limit: 2,
+  total_slots: 2,
+  available_slots: 2,
+  used_slots: 0,
+  remaining_slots: 0,
+};
+
+const SLOT = {
+  id: "slot-1",
+  inventory_account_id: "acc-1",
+  product_price_id: "price-1",
+  status: "reserved",
+  order_id: "0192f0b0-0000-0000-0000-000000000001",
+  order_number: "ORD-001",
+  reserved_name: "Budi Pelanggan",
+  reserved_email: "budi@example.test",
+  reserved_until: "2026-11-01T00:00:00Z",
+  created_at: "2026-10-01T10:00:00Z",
+};
+
+function mockAccounts(accounts: unknown[] = [ACCOUNT, SECOND_ACCOUNT]) {
+  listAccountsMock.mockResolvedValue({ accounts, page: 1, per_page: 100, total: accounts.length });
+}
+
+describe("Halaman Inventaris akun", () => {
   beforeEach(() => {
-    listProductsMock.mockReset().mockResolvedValue({ products: [product], page: 1, per_page: 100, total: 1 });
-    listAccountsMock.mockReset().mockResolvedValue({ accounts: [], page: 1, per_page: 100, total: 0 });
-    createSlotsMock.mockReset().mockResolvedValue({ created: 10 });
-    createAccountMock.mockReset().mockResolvedValue({ id: "acc-1" });
+    bootstrapAuthMock.mockReset().mockResolvedValue({ id: "admin-1", role: "admin" });
+    listProductsMock.mockReset().mockResolvedValue({ products: [PRODUCT], page: 1, per_page: 100, total: 1 });
+    listAccountsMock.mockReset();
+    mockAccounts();
+    listSlotsMock.mockReset().mockResolvedValue({ slots: [SLOT], page: 1, per_page: 100, total: 1 });
+    createAccountMock.mockReset().mockResolvedValue({ ...ACCOUNT, id: "acc-new" });
+    updateAccountMock.mockReset().mockImplementation((id: string, data: Record<string, unknown>) =>
+      Promise.resolve({ ...ACCOUNT, id, ...data }),
+    );
+    createSlotsMock.mockReset().mockImplementation((data: { quantity: number; inventory_account_id: string }) =>
+      Promise.resolve({ created: data.quantity, inventory_account_id: data.inventory_account_id }),
+    );
   });
 
-  // Slot dicatat per harga paket, jadi tiap paket punya barisnya sendiri dengan
-  // angka dari available_slots — bukan satu angka untuk seluruh produk.
-  it("menampilkan satu baris per paket dengan slot dari katalog", async () => {
+  it("menampilkan akun per produk dengan status, expiry, limit sharing, dan kapasitas slot", async () => {
     render(<InventoryPage />);
 
-    await screen.findByText("1 bulan");
-    expect(screen.getByText("12 bulan")).toBeInTheDocument();
-
-    // Baris 12 bulan berisi 4 slot dari available_slots; baris 1 bulan kosong.
-    const row = screen.getByText("12 bulan").closest("tr");
+    await screen.findByText("Akun utama");
+    const row = screen.getByText("Akun utama").closest("tr");
     expect(row).not.toBeNull();
-    expect(row?.textContent).toContain("4");
-    expect(screen.getByText("1 bulan").closest("tr")?.textContent).toContain("0");
+    expect(within(row as HTMLElement).getByText("Netflix Premium")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("Aktif")).toBeInTheDocument();
+    expect(row?.textContent).toContain("2 / 3");
+    expect(row?.textContent).toContain("1 tersedia");
+    expect(row?.textContent).toContain("5");
+
+    // Akun kedua berkapasitas penuh tetap tampil; metrik total berasal dari API.
+    expect(screen.getByText("Akun cadangan")).toBeInTheDocument();
+    expect(screen.getByText("Slot tersedia").closest("article")?.textContent).toContain("3");
   });
 
-  it("mengirim jumlah slot yang diminta, dengan 10 sebagai usulan awal", async () => {
-    listAccountsMock.mockResolvedValue({ accounts: [{ id: "acc-1", product_id: "prd-1", status: "active" }], page: 1, per_page: 100, total: 1 });
-
+  it("menampilkan assignment order dan pengguna secara read-only saat diminta", async () => {
     render(<InventoryPage />);
-    await screen.findByText("1 bulan");
+    await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getAllByRole("button", { name: /Slot/ })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Lihat assignment Akun utama" }));
 
-    expect(screen.getByLabelText("Jumlah slot")).toHaveValue(10);
-    fireEvent.click(screen.getByRole("button", { name: "Tambah slot" }));
-
-    await waitFor(() => expect(createSlotsMock).toHaveBeenCalledWith({ product_price_id: "0192f0a4-0000-0000-0000-000000000001", quantity: 10 }));
-    // Akun induknya sudah ada, jadi tidak ada akun baru yang dibuat.
-    expect(createAccountMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(listSlotsMock).toHaveBeenCalledWith("acc-1", { page: 1, per_page: 100 }));
+    await screen.findByText("ORD-001");
+    expect(screen.getByText("Budi Pelanggan")).toBeInTheDocument();
+    expect(screen.getByText("Netflix Premium · 1 Bulan")).toBeInTheDocument();
+    expect(screen.getByText("Direservasi")).toBeInTheDocument();
   });
 
-  // inventory_slots.inventory_account_id NOT NULL: tanpa akun induk, barisnya
-  // tidak bisa dibuat, jadi kredensialnya diminta lebih dulu di form yang sama.
-  it("meminta kredensial akun induk bila produknya belum punya akun", async () => {
+  it("mengedit label/status/limit dengan konfirmasi dan tidak pernah menampilkan kredensial", async () => {
     render(<InventoryPage />);
-    await screen.findByText("1 bulan");
+    await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getAllByRole("button", { name: /Slot/ })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "Kelola akun Akun utama" }));
+    const credentials = screen.getByLabelText("Kredensial baru (opsional)") as HTMLTextAreaElement;
+    expect(credentials).toHaveValue("");
 
-    expect(screen.getByText(/belum punya akun induk/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun cadangan baru" } });
+    fireEvent.change(screen.getByLabelText("Status akun"), { target: { value: "inactive" } });
+    fireEvent.change(screen.getByLabelText("Limit sharing"), { target: { value: "4" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
 
-    // Tanpa kredensial tidak ada yang dikirim ke server.
-    fireEvent.click(screen.getByRole("button", { name: "Simpan akun & tambah slot" }));
-    expect(createAccountMock).not.toHaveBeenCalled();
+    // Klik pertama hanya meminta konfirmasi; belum ada PATCH.
+    expect(updateAccountMock).not.toHaveBeenCalled();
+    expect(screen.getByText(/Konfirmasi perubahan akun Akun utama/)).toBeInTheDocument();
+    expect(screen.getByText(/status Aktif → Nonaktif/)).toBeInTheDocument();
+    expect(screen.getByText(/limit sharing 5 → 4/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
+
+    await waitFor(() =>
+      expect(updateAccountMock).toHaveBeenCalledWith("acc-1", {
+        label: "Akun cadangan baru",
+        status: "inactive",
+        sharing_limit: 4,
+      }),
+    );
+    await screen.findByText(/Akun "Akun cadangan baru" diperbarui/);
+    expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("credentials");
+    expect(screen.queryByDisplayValue(/rahasia/i)).not.toBeInTheDocument();
+  });
+
+  it("mengirim kredensial baru hanya bila field diisi", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Kelola akun Akun utama" }));
+    fireEvent.change(screen.getByLabelText("Kredensial baru (opsional)"), {
+      target: { value: "email-baru@necly.id:kata-sandi-baru" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
+    expect(screen.getByText(/kredensial diganti/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
+
+    await waitFor(() =>
+      expect(updateAccountMock).toHaveBeenCalledWith("acc-1", {
+        credentials: "email-baru@necly.id:kata-sandi-baru",
+      }),
+    );
+  });
+
+  it("menambah slot pada akun yang dipilih dan meneruskan inventory_account_id", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah slot ke Akun utama" }));
+    expect(screen.getByLabelText("Akun")).toHaveValue("acc-1");
+    expect(screen.getByLabelText("Paket")).toHaveValue("price-1");
+
+    fireEvent.change(screen.getByLabelText("Jumlah slot"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan slot" }));
+
+    await waitFor(() =>
+      expect(createSlotsMock).toHaveBeenCalledWith({
+        product_price_id: "price-1",
+        quantity: 2,
+        inventory_account_id: "acc-1",
+      }),
+    );
+    await screen.findByText(/2 slot ditambahkan ke akun "Akun utama"/);
+  });
+
+  it("menolak jumlah slot yang melebihi sisa kapasitas tanpa memanggil API", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah slot ke Akun utama" }));
+    fireEvent.change(screen.getByLabelText("Jumlah slot"), { target: { value: "3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan slot" }));
+
     expect(createSlotsMock).not.toHaveBeenCalled();
-
-    fireEvent.change(screen.getByLabelText("Kredensial akun induk"), { target: { value: "induk@necly.id:rahasia" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan akun & tambah slot" }));
-
-    await waitFor(() => expect(createAccountMock).toHaveBeenCalledWith({ product_id: "prd-1", credentials: "induk@necly.id:rahasia" }));
-    await waitFor(() => expect(createSlotsMock).toHaveBeenCalledWith({ product_price_id: "0192f0a4-0000-0000-0000-000000000001", quantity: 10 }));
+    expect(screen.getByText(/Jumlah melebihi kapasitas akun\. Sisa kapasitas Akun utama: 2 slot/)).toBeInTheDocument();
   });
 
-  // Batas 1..100 dijaga di dua lapis: atribut min/max pada input menahannya di
-  // peramban, dan handler tetap memeriksanya sendiri. Yang penting, angka di
-  // luar rentang tidak pernah sampai ke server.
-  it("tidak mengirim jumlah di luar 1 sampai 100", async () => {
-    listAccountsMock.mockResolvedValue({ accounts: [{ id: "acc-1", product_id: "prd-1", status: "active" }], page: 1, per_page: 100, total: 1 });
+  it("menampilkan error 409 sharing_limit_exceeded secara jelas", async () => {
+    createSlotsMock.mockRejectedValueOnce(
+      new ApiError("kapasitas penuh", 409, { error: "akun penuh", code: "sharing_limit_exceeded" }),
+    );
 
     render(<InventoryPage />);
-    await screen.findByText("1 bulan");
+    await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getAllByRole("button", { name: /Slot/ })[0]);
-    const input = screen.getByLabelText("Jumlah slot") as HTMLInputElement;
-    expect(input).toHaveAttribute("min", "1");
-    expect(input).toHaveAttribute("max", "100");
+    fireEvent.click(screen.getByRole("button", { name: "Tambah slot ke Akun utama" }));
+    fireEvent.change(screen.getByLabelText("Jumlah slot"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan slot" }));
 
-    fireEvent.change(input, { target: { value: "500" } });
-    fireEvent.click(screen.getByRole("button", { name: "Tambah slot" }));
+    await screen.findByText(/Limit sharing tercapai/);
+    expect(createSlotsMock).toHaveBeenCalledTimes(1);
+  });
 
-    expect(createSlotsMock).not.toHaveBeenCalled();
+  it("menampilkan konfirmasi sebelum menonaktifkan akun", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Nonaktifkan akun Akun utama" }));
+    expect(screen.getByText(/Konfirmasi: nonaktifkan akun Akun utama/)).toBeInTheDocument();
+    expect(updateAccountMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ya, nonaktifkan" }));
+    await waitFor(() => expect(updateAccountMock).toHaveBeenCalledWith("acc-1", { status: "inactive" }));
+    await screen.findByText(/Akun "Akun utama" dinonaktifkan/);
+  });
+
+  it("membuat akun baru lalu mengosongkan kredensial setelah disimpan", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
+    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun baru" } });
+    fireEvent.change(screen.getByLabelText("Kredensial akun"), {
+      target: { value: "akun-baru@necly.id:kata-sandi" },
+    });
+    fireEvent.change(screen.getByLabelText("Limit sharing"), { target: { value: "8" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
+
+    await waitFor(() =>
+      expect(createAccountMock).toHaveBeenCalledWith({
+        product_id: "prd-1",
+        label: "Akun baru",
+        credentials: "akun-baru@necly.id:kata-sandi",
+        sharing_limit: 8,
+      }),
+    );
+    await screen.findByText(/Akun "Akun baru" dibuat/);
+    expect(screen.queryByLabelText("Kredensial akun")).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue("akun-baru@necly.id:kata-sandi")).not.toBeInTheDocument();
+  });
+
+  it("menerapkan status nonaktif pada akun baru lewat PATCH setelah create", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
+    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun nonaktif" } });
+    fireEvent.change(screen.getByLabelText("Kredensial akun"), { target: { value: "akun@necly.id:sandi" } });
+    fireEvent.change(screen.getByLabelText("Status akun"), { target: { value: "inactive" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
+
+    await waitFor(() => expect(createAccountMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(updateAccountMock).toHaveBeenCalledWith("acc-new", { status: "inactive" }));
+    expect(createAccountMock.mock.calls[0]?.[0]).not.toHaveProperty("status");
+  });
+
+  it("menolak akses non-admin tanpa memuat data inventaris", async () => {
+    bootstrapAuthMock.mockResolvedValueOnce({ id: "customer-1", role: "customer" });
+
+    render(<InventoryPage />);
+
+    await screen.findByText(/Akses ditolak: hanya admin/);
+    expect(listAccountsMock).not.toHaveBeenCalled();
+  });
+
+  it("menampilkan error muat dan tombol coba lagi", async () => {
+    listAccountsMock.mockRejectedValueOnce(new ApiError("server down", 500, { error: "server down" }));
+
+    render(<InventoryPage />);
+
+    await screen.findByText("Tidak dapat memuat inventaris");
+    expect(screen.getByText(/Gagal memproses inventaris \(HTTP 500\): server down/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Coba lagi" })).toBeInTheDocument();
   });
 });
