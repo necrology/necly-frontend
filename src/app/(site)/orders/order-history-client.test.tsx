@@ -129,6 +129,49 @@ describe("riwayat pesanan pelanggan", () => {
     expect(screen.getByText(/tidak sesuai kontrak/)).toBeInTheDocument();
   });
 
+  it("menolak elemen orders yang tidak sesuai kontrak tanpa RpNaN atau tautan undefined", async () => {
+    listOrdersMock.mockResolvedValue({
+      orders: [{ number: "BROKEN", status: "paid", items: [] }],
+      page: 1,
+      per_page: 10,
+      total: 1,
+    });
+
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("Tidak dapat memuat pesanan")).toBeInTheDocument());
+    expect(screen.getByText(/tidak sesuai kontrak/)).toBeInTheDocument();
+    expect(screen.queryByText("BROKEN")).not.toBeInTheDocument();
+    expect(screen.queryByText(/RpNaN/)).not.toBeInTheDocument();
+    expect(document.querySelector('a[href*="/orders/undefined"]')).toBeNull();
+  });
+
+  it("kembali ke halaman terakhir saat total menyusut di tengah pagination", async () => {
+    listOrdersMock
+      .mockResolvedValueOnce({
+        orders: Array.from({ length: 10 }, (_, index) => order(index + 1)),
+        page: 1,
+        per_page: 10,
+        total: 12,
+      })
+      .mockResolvedValueOnce({ orders: [], page: 2, per_page: 10, total: 1 })
+      .mockResolvedValueOnce({ orders: [order(11)], page: 1, per_page: 10, total: 1 });
+
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /Berikutnya/ }));
+
+    // Request page 2 mengembalikan daftar kosong tetapi total masih 1, jadi
+    // komponen harus mundur ke page 1 dan fetch ulang, bukan menampilkan
+    // empty state "Belum ada pesanan".
+    await waitFor(() => expect(listOrdersMock).toHaveBeenLastCalledWith({ page: 1, per_page: 10 }));
+    await waitFor(() => expect(screen.getByText("ORD-W12-11")).toBeInTheDocument());
+    expect(screen.queryByText("Belum ada pesanan")).not.toBeInTheDocument();
+    expect(listOrdersMock).toHaveBeenCalledTimes(3);
+    expect(screen.getByText(/Menampilkan 1–1 dari 1 pesanan/)).toBeInTheDocument();
+  });
+
   it("memuat halaman berikutnya memakai parameter pagination API", async () => {
     listOrdersMock.mockResolvedValue({
       orders: Array.from({ length: 10 }, (_, index) => order(index + 1)),

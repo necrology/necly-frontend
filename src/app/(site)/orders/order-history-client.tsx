@@ -99,6 +99,44 @@ function errorFromFailure(error: unknown): LoadError {
   };
 }
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+/**
+ * Validasi runtime satu item pesanan. TypeScript hanya memeriksa bentuk saat
+ * compile-time, sedangkan JSON dari server tidak pernah divalidasi compiler.
+ * `product_name` dipakai ringkasan daftar, jadi wajib ada agar tidak muncul
+ * baris kosong/`undefined` di UI.
+ */
+function isValidOrderItem(value: unknown): boolean {
+  if (value === null || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return isNonEmptyString(item.product_name);
+}
+
+/**
+ * Validasi runtime satu elemen `orders[]`. Payload HTTP-success bisa lolos
+ * `Array.isArray` tetapi tiap elemennya tidak sesuai kontrak; merendernya
+ * menghasilkan `RpNaN`, tautan `/orders/undefined`, tanggal kosong, dan React
+ * warning karena `key` tidak unik. Field di bawah adalah yang benar-benar
+ * dipakai render, jadi minimal itu yang harus diperiksa.
+ */
+function isValidOrder(value: unknown): value is ApiOrder {
+  if (value === null || typeof value !== "object") return false;
+  const order = value as Record<string, unknown>;
+  return (
+    isNonEmptyString(order.id) &&
+    isNonEmptyString(order.number) &&
+    isNonEmptyString(order.status) &&
+    isNonEmptyString(order.created_at) &&
+    typeof order.total === "number" &&
+    Number.isFinite(order.total) &&
+    Array.isArray(order.items) &&
+    order.items.every(isValidOrderItem)
+  );
+}
+
 export function OrderHistoryClient() {
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [page, setPage] = useState(1);
@@ -109,6 +147,10 @@ export function OrderHistoryClient() {
 
   useEffect(() => {
     let cancelled = false;
+    // Dipakai saat page saat ini sudah melewati halaman terakhir (total
+    // menyusut antar-request). Kita pindah ke page terakhir dan fetch ulang,
+    // jadi loading sengaja tetap aktif sampai fetch ulang selesai.
+    let redirectedToLastPage = false;
 
     async function loadOrders() {
       setLoading(true);
@@ -139,7 +181,7 @@ export function OrderHistoryClient() {
         const response = await checkoutApi.listOrders({ page, per_page: PER_PAGE });
         if (cancelled) return;
 
-        if (!Array.isArray(response.orders)) {
+        if (!Array.isArray(response.orders) || !response.orders.every(isValidOrder)) {
           setOrders([]);
           setTotal(0);
           setError({
@@ -149,15 +191,28 @@ export function OrderHistoryClient() {
           return;
         }
 
+        const safeTotal = Number.isFinite(response.total)
+          ? response.total
+          : response.orders.length;
+        // Total bisa menyusut di antara dua request (mis. pesanan dibatalkan
+        // di tab lain). Jangan commit daftar kosong dari page yang sudah tidak
+        // valid: turun ke halaman terakhir yang masih ada lalu fetch ulang.
+        const lastPage = Math.max(1, Math.ceil(safeTotal / PER_PAGE));
+        if (page > lastPage) {
+          redirectedToLastPage = true;
+          setPage(lastPage);
+          return;
+        }
+
         setOrders(response.orders);
-        setTotal(Number.isFinite(response.total) ? response.total : response.orders.length);
+        setTotal(safeTotal);
       } catch (failure) {
         if (cancelled) return;
         setOrders([]);
         setTotal(0);
         setError(errorFromFailure(failure));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && !redirectedToLastPage) setLoading(false);
       }
     }
 
