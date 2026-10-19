@@ -198,9 +198,12 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
   });
 
   it("menampilkan pesan backend 404 secara apa adanya", async () => {
+    // Pesan backend sengaja berbeda dari teks cadangan ("Pengguna tidak
+    // ditemukan. Muat ulang daftar pengguna.") supaya tes benar-benar gagal
+    // bila suatu saat kembali memakai teks tetap — temuan P3 review NEC-59.
     updateUserMock.mockRejectedValueOnce(
-      new ApiError("Pengguna tidak ditemukan", 404, {
-        error: "Pengguna tidak ditemukan",
+      new ApiError("Akun sudah dihapus permanen", 404, {
+        error: "Akun sudah dihapus permanen",
         code: "not_found",
       }),
     );
@@ -213,7 +216,7 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
     fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Pengguna tidak ditemukan");
+    expect(await screen.findByRole("alert")).toHaveTextContent("Akun sudah dihapus permanen");
   });
 
   it("menyaring daftar berdasarkan peran dan pencarian tanpa mengirim ulang perubahan", async () => {
