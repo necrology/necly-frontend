@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { mapApiAuditLog, mapApiDashboard, mapApiOrderToDashboardOrder } from "./admin-mappers";
+import {
+  mapApiAuditLog,
+  mapApiDashboard,
+  mapApiOrderToDashboardOrder,
+  mapApiUserToCustomer,
+} from "./admin-mappers";
 import { ORDER_STATUS_OPTIONS, orderStatusLabel } from "./order-status";
-import type { ApiOrder } from "./api";
+import type { ApiOrder, ApiUser } from "./api";
 
 const D0 = {
   total_users: 2,
@@ -181,5 +186,56 @@ describe("kontrak C-02 pesanan untuk daftar admin", () => {
     expect(mapped.customerEmail).toBe("—");
     expect(mapped.service).toBe("—");
     expect(mapped.duration).toBe("—");
+  });
+});
+
+function apiUser(overrides: Partial<ApiUser> = {}): ApiUser {
+  return {
+    id: "0192f0c0-0000-0000-0000-000000000002",
+    name: "Budi Santoso",
+    email: "budi@example.test",
+    role: "customer",
+    active: true,
+    email_verified_at: "2026-01-03T00:00:00Z",
+    created_at: "2026-01-03T00:00:00Z",
+    ...overrides,
+  };
+}
+
+// Perbaikan utama PR #6: `active:false` tidak boleh lagi tampil "Aktif" di
+// dashboard admin. Blok ini mengunci matriks status agar tidak regresi.
+describe("kontrak status akses pengguna (perbaikan PR #6)", () => {
+  it("menandai akun nonaktif sebagai Nonaktif meski email terverifikasi", () => {
+    expect(mapApiUserToCustomer(apiUser({ active: false, email_verified_at: "2026-01-03T00:00:00Z" })).status).toBe("Nonaktif");
+  });
+
+  it("menandai akun nonaktif tanpa verifikasi tetap sebagai Nonaktif", () => {
+    expect(mapApiUserToCustomer(apiUser({ active: false, email_verified_at: null })).status).toBe("Nonaktif");
+  });
+
+  it("menandai akun aktif dan terverifikasi sebagai Aktif", () => {
+    expect(mapApiUserToCustomer(apiUser({ active: true, email_verified_at: "2026-01-03T00:00:00Z" })).status).toBe("Aktif");
+  });
+
+  it("menandai akun aktif yang belum terverifikasi sebagai Baru", () => {
+    expect(mapApiUserToCustomer(apiUser({ active: true, email_verified_at: null })).status).toBe("Baru");
+  });
+
+  it("memakai Aktif/Baru saat sesi lama tidak mengirim field active", () => {
+    expect(mapApiUserToCustomer(apiUser({ active: undefined, email_verified_at: "2026-01-03T00:00:00Z" })).status).toBe("Aktif");
+    expect(mapApiUserToCustomer(apiUser({ active: undefined, email_verified_at: null })).status).toBe("Baru");
+  });
+
+  it("memetakan role mentah ke label bahasa Indonesia", () => {
+    expect(mapApiUserToCustomer(apiUser({ role: "customer" })).role).toBe("Pelanggan");
+    expect(mapApiUserToCustomer(apiUser({ role: "seller" })).role).toBe("Penjual");
+    expect(mapApiUserToCustomer(apiUser({ role: "admin" })).role).toBe("Admin");
+  });
+
+  it("menyusun inisial dari nama dan menandai status verifikasi", () => {
+    const mapped = mapApiUserToCustomer(apiUser({ name: "Budi Santoso", email_verified_at: "2026-01-03T00:00:00Z" }));
+    expect(mapped.initials).toBe("BS");
+    expect(mapped.verified).toBe(true);
+    expect(mapApiUserToCustomer(apiUser({ email_verified_at: null })).verified).toBe(false);
   });
 });
