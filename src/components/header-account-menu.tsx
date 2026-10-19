@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, ShoppingCart, UserRound } from "lucide-react";
+import { LogOut, ReceiptText, ShoppingCart, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -90,6 +90,7 @@ export function HeaderAccountMenu({ variant, className }: { variant: Variant; cl
             <>
               <p className="commerce-account-identity"><strong>{user.name}</strong><small>{user.email}</small></p>
               <Link role="menuitem" href="/akun" onClick={close}><UserRound size={15} aria-hidden="true" /> Profil</Link>
+              <Link role="menuitem" href="/orders" onClick={close}><ReceiptText size={15} aria-hidden="true" /> Pesanan saya</Link>
               <Link role="menuitem" href="/cart" onClick={close}>
                 <ShoppingCart size={15} aria-hidden="true" /> Keranjang
                 {cartCount > 0 && <span className="commerce-account-badge">{cartCount}</span>}

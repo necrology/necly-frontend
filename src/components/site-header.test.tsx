@@ -9,6 +9,7 @@ describe("site header", () => {
   it("has no header search action and centers its logo", () => {
     expect(source).not.toContain("commerce-header-search");
     expect(source).not.toContain("Search,");
+    expect(source).toContain('href="/orders"');
     expect(css).toContain(".commerce-header-logo { position: absolute; left: 50%; transform: translateX(-50%);");
     expect(css).toContain(".site-header .site-nav { min-height: 56px;");
     expect(css).toContain(".site-header .commerce-menu-trigger, .site-header .commerce-mobile-profile { width: 44px; height: 44px;");

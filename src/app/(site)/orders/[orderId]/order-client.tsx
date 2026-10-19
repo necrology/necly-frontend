@@ -177,6 +177,7 @@ function OrderClientInner({ orderId }: OrderClientProps) {
       <header className="page-hero">
         <div className="container page-hero-row">
           <div>
+            <Link className="order-back-link" href="/orders">Semua pesanan</Link>
             <span className="eyebrow">Pelacakan pesanan</span>
             <h1 className="h1" style={{ marginTop: 12 }}>Pesanan {order.number}</h1>
           </div>

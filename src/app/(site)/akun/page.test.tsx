@@ -84,6 +84,7 @@ describe("halaman akun", () => {
     expect(await screen.findByText("Budi Santoso")).toBeInTheDocument();
     expect(screen.getByText("budi@example.id")).toBeInTheDocument();
     expect(screen.getByText("Terverifikasi")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Pesanan saya" })).toHaveAttribute("href", "/orders");
 
     // Perangkat yang sedang dipakai ditandai, dan tidak bisa diakhiri dari sini.
     expect(screen.getByText("Perangkat ini")).toBeInTheDocument();
