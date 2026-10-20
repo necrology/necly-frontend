@@ -194,14 +194,58 @@ export function mapApiCategory(apiCategory: ApiCategory) {
 }
 
 export function mapApiVoucher(apiVoucher: Record<string, unknown>): Voucher {
+  const rawType = String(apiVoucher.type ?? "");
+  const endsAt = typeof apiVoucher.ends_at === "string" ? apiVoucher.ends_at : "";
+  const parsedEnd = endsAt ? new Date(endsAt) : null;
   return {
-    code: (apiVoucher.code as string) ?? "",
-    type: (apiVoucher.type as "Persen" | "Nominal") ?? "Persen",
-    value: (apiVoucher.value as number) ?? 0,
-    uses: (apiVoucher.uses as number) ?? 0,
-    limit: (apiVoucher.limit as number) ?? 0,
-    expires: (apiVoucher.expires_at as string) ?? new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
-    active: (apiVoucher.active as boolean) ?? false,
+    id: typeof apiVoucher.id === "string" ? apiVoucher.id : undefined,
+    code: String(apiVoucher.code ?? ""),
+    // Backend memakai "percentage"/"fixed"; sebelumnya nilai ini dibiarkan
+    // mentah sehingga kolom Tipe selalu jatuh ke "Persen".
+    type: rawType === "fixed" ? "Nominal" : "Persen",
+    value: typeof apiVoucher.value === "number" ? apiVoucher.value : 0,
+    // Domain voucher belum menyimpan jumlah penukaran; jangan tampilkan 0 palsu.
+    uses: typeof apiVoucher.uses === "number" ? apiVoucher.uses : null,
+    limit: typeof apiVoucher.usage_limit === "number" ? apiVoucher.usage_limit : 0,
+    expires:
+      parsedEnd && !Number.isNaN(parsedEnd.getTime())
+        ? parsedEnd.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+        : "—",
+    active: apiVoucher.active === true,
+  };
+}
+
+const paymentStatusLabels: Record<string, Payment["status"]> = {
+  paid: "Berhasil",
+  pending: "Menunggu",
+  refunded: "Dikembalikan",
+  expired: "Kedaluwarsa",
+  failed: "Gagal",
+  cancelled: "Dibatalkan",
+};
+
+/**
+ * Flatten satu payment milik pesanan admin menjadi baris tabel pembayaran.
+ * Endpoint /admin/payments mengirim pesanan+payments, bukan payment datar.
+ */
+export function mapApiOrderPayment(order: ApiOrder, payment: NonNullable<ApiOrder["payments"]>[number]): Payment {
+  const paidAt = payment.paid_at ?? payment.created_at;
+  return {
+    id: payment.id,
+    orderId: order.number,
+    customer: order.customer?.name ?? "—",
+    method: payment.provider || "—",
+    amount: payment.amount,
+    status: paymentStatusLabels[payment.status] ?? payment.status,
+    date: paidAt
+      ? new Date(paidAt).toLocaleString("id-ID", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "—",
   };
 }
 

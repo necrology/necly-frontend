@@ -1,10 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getOrderMock, bootstrapAuthMock, listOrdersMock } = vi.hoisted(() => ({
+const { getOrderMock, bootstrapAuthMock, listOrdersMock, approveDeliveryMock, retryDeliveryMock } = vi.hoisted(() => ({
   getOrderMock: vi.fn(),
   bootstrapAuthMock: vi.fn(),
   listOrdersMock: vi.fn(),
+  approveDeliveryMock: vi.fn(),
+  retryDeliveryMock: vi.fn(),
 }));
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -13,7 +15,13 @@ vi.mock("@/lib/api", async (importOriginal) => {
     ...actual,
     DEMO_MODE: false,
     bootstrapAuth: bootstrapAuthMock,
-    adminApi: { ...actual.adminApi, getOrder: getOrderMock, listOrders: listOrdersMock },
+    adminApi: {
+      ...actual.adminApi,
+      getOrder: getOrderMock,
+      listOrders: listOrdersMock,
+      approveOrderDelivery: approveDeliveryMock,
+      retryOrderDelivery: retryDeliveryMock,
+    },
   };
 });
 
@@ -65,6 +73,8 @@ describe("detail pesanan admin (C19)", () => {
   beforeEach(() => {
     getOrderMock.mockReset();
     listOrdersMock.mockReset();
+    approveDeliveryMock.mockReset();
+    retryDeliveryMock.mockReset();
     bootstrapAuthMock.mockReset();
     bootstrapAuthMock.mockResolvedValue({ id: "admin-1", role: "admin" });
     getOrderMock.mockResolvedValue(order());
@@ -118,5 +128,72 @@ describe("detail pesanan admin (C19)", () => {
     render(<AdminOrderDetail orderId={ORDER_ID} />);
 
     await waitFor(() => expect(screen.getByText(/Gagal memuat detail pesanan/)).toBeInTheDocument());
+  });
+
+  it("menyetujui dan mengirim akun setelah konfirmasi lalu menampilkan status terkirim", async () => {
+    approveDeliveryMock.mockResolvedValue(
+      order({
+        status: "processing",
+        deliveries: [{
+          id: "delivery-1",
+          order_id: ORDER_ID,
+          order_item_id: "item-1",
+          status: "sent",
+          attempts: 1,
+          sent_at: "2026-10-18T10:06:00Z",
+          created_at: "2026-10-18T10:05:00Z",
+          updated_at: "2026-10-18T10:06:00Z",
+        }],
+      }),
+    );
+    render(<AdminOrderDetail orderId={ORDER_ID} />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /Setujui & kirim akun/ }));
+    expect(screen.getByText("Kirim kredensial akun ke pembeli?")).toBeInTheDocument();
+    expect(approveDeliveryMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ya, setujui & kirim" }));
+
+    await waitFor(() => expect(approveDeliveryMock).toHaveBeenCalledWith(ORDER_ID));
+    expect(await screen.findByText("Terkirim")).toBeInTheDocument();
+    expect(screen.getByText(/1 item sudah terkirim/)).toBeInTheDocument();
+  });
+
+  it("mengulang pengiriman yang gagal tanpa menampilkan kredensial", async () => {
+    getOrderMock.mockResolvedValue(
+      order({
+        status: "processing",
+        deliveries: [{
+          id: "delivery-1",
+          order_id: ORDER_ID,
+          order_item_id: "item-1",
+          status: "failed",
+          attempts: 1,
+          error_code: "email_failed",
+          created_at: "2026-10-18T10:05:00Z",
+          updated_at: "2026-10-18T10:06:00Z",
+        }],
+      }),
+    );
+    retryDeliveryMock.mockResolvedValue({
+      delivery: {
+        id: "delivery-1",
+        order_id: ORDER_ID,
+        order_item_id: "item-1",
+        status: "sent",
+        attempts: 2,
+        sent_at: "2026-10-18T10:07:00Z",
+        created_at: "2026-10-18T10:05:00Z",
+        updated_at: "2026-10-18T10:07:00Z",
+      },
+    });
+    render(<AdminOrderDetail orderId={ORDER_ID} />);
+
+    expect(await screen.findByText("Email gagal dikirim")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Ulangi pengiriman Netflix Premium/ }));
+
+    await waitFor(() => expect(retryDeliveryMock).toHaveBeenCalledWith(ORDER_ID, "delivery-1"));
+    expect(await screen.findByText("Terkirim")).toBeInTheDocument();
+    expect(screen.queryByText(/username|password/i)).not.toBeInTheDocument();
   });
 });

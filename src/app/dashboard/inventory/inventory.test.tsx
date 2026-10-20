@@ -370,4 +370,60 @@ describe("Halaman Inventaris akun", () => {
     expect(screen.getByText(/Gagal memproses inventaris \(HTTP 500\): server down/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Coba lagi" })).toBeInTheDocument();
   });
+
+  it("mencari akun yang baru ada di halaman berikutnya dengan memuat sisa halaman", async () => {
+    listAccountsMock
+      .mockReset()
+      .mockResolvedValueOnce({ accounts: [ACCOUNT], page: 1, per_page: 100, total: 150 })
+      .mockResolvedValue({ accounts: [SECOND_ACCOUNT], page: 2, per_page: 100, total: 150 });
+
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+    expect(screen.queryByText("Akun cadangan")).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Cari inventaris"), { target: { value: "cadangan" } });
+
+    expect(await screen.findByText("Akun cadangan")).toBeInTheDocument();
+    expect(listAccountsMock).toHaveBeenLastCalledWith({ page: 2, per_page: 100 });
+  });
+
+  it("mempertahankan halaman 2 setelah mutasi dan tidak kembali ke halaman 1", async () => {
+    listAccountsMock.mockReset().mockImplementation(({ page }: { page?: number }) =>
+      Promise.resolve(
+        page === 2
+          ? { accounts: [SECOND_ACCOUNT], page: 2, per_page: 100, total: 150 }
+          : { accounts: [ACCOUNT], page: 1, per_page: 100, total: 150 },
+      ),
+    );
+
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+    fireEvent.click(screen.getByRole("button", { name: "Muat lebih banyak akun" }));
+    await screen.findByText("Akun cadangan");
+
+    fireEvent.click(screen.getByRole("button", { name: "Nonaktifkan akun Akun cadangan" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, nonaktifkan" }));
+
+    await waitFor(() => expect(updateAccountMock).toHaveBeenCalledWith("acc-2", { status: "inactive" }));
+    await waitFor(() => {
+      const pageTwoCalls = listAccountsMock.mock.calls.filter(([params]) => params?.page === 2);
+      expect(pageTwoCalls.length).toBeGreaterThanOrEqual(2);
+    });
+    expect(screen.getByText("Akun cadangan")).toBeInTheDocument();
+  });
+
+  it("menampilkan total server pada kartu akun inventaris dan label termuat", async () => {
+    listAccountsMock.mockReset().mockResolvedValue({
+      accounts: [ACCOUNT],
+      page: 1,
+      per_page: 100,
+      total: 150,
+    });
+
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    expect(screen.getByText("150")).toBeInTheDocument();
+    expect(screen.getByText("1 termuat · 1 produk (dari halaman termuat)")).toBeInTheDocument();
+  });
 });

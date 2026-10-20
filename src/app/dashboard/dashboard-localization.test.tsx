@@ -52,7 +52,7 @@ describe("dashboard overview localization", () => {
     for (const [page, pageSource] of Object.entries(pageSources)) {
       expect(pageSource, page).not.toMatch(/DEMO_MODE \|\| !api[A-Za-z]+/);
     }
-    expect(pageSources.pembayaran).toContain("DEMO_MODE ? payments : apiPayments ?? []");
+    expect(pageSources.pembayaran).toContain("DEMO_MODE ? seedPayments : apiPayments ?? []");
     // Admin memuat katalog lengkap (termasuk produk nonaktif) dan akun inventaris
     // dari endpoint admin; data contoh hanya dipakai pada mode demo.
     expect(pageSources.inventaris).toContain("adminApi.listProducts({ page: 1, per_page: 100 })");

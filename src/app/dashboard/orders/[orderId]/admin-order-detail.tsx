@@ -1,11 +1,11 @@
 "use client";
 
-import { ArrowLeft, CreditCard, PackageCheck, RefreshCw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CreditCard, MailCheck, PackageCheck, RefreshCw, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
-import { ApiError, adminApi, bootstrapAuth, DEMO_MODE, type ApiOrder } from "@/lib/api";
+import { ApiError, adminApi, bootstrapAuth, DEMO_MODE, type ApiOrder, type ApiOrderDelivery } from "@/lib/api";
 import { formatDateTimeWIB, formatIDR } from "@/lib/money";
 import { orderStatusLabel } from "@/lib/order-status";
 import { dashboardOrders } from "@/data/seed";
@@ -25,6 +25,43 @@ const paymentStatuses: Record<string, string> = {
   failed: "Gagal",
   refunded: "Dikembalikan",
 };
+
+const deliveryStatusLabels: Record<ApiOrderDelivery["status"], string> = {
+  pending: "Menunggu",
+  sending: "Sedang dikirim",
+  sent: "Terkirim",
+  failed: "Gagal",
+};
+
+const deliveryStatusTone: Record<ApiOrderDelivery["status"], string> = {
+  pending: "status-warning",
+  sending: "status-info",
+  sent: "status-success",
+  failed: "status-danger",
+};
+
+const deliveryErrorLabels: Record<string, string> = {
+  buyer_email_unverified: "Email pembeli belum terverifikasi",
+  buyer_unavailable: "Pembeli tidak tersedia",
+  mailer_disabled: "Pengiriman email belum dikonfigurasi",
+  credential_cipher_unavailable: "Kunci kredensial tidak tersedia",
+  inventory_unavailable: "Inventaris tidak tersedia",
+  inventory_account_unavailable: "Akun inventaris tidak tersedia",
+  credential_invalid: "Format kredensial inventaris tidak valid",
+  email_failed: "Email gagal dikirim",
+  persistence_failed: "Gagal menyimpan status pengiriman",
+};
+
+function describeDeliveryError(error: unknown) {
+  if (error instanceof ApiError) {
+    if (error.status === 503) return "Fitur pengiriman akun belum dikonfigurasi di server.";
+    if (error.status === 409) return error.message || "Pesanan belum berada pada status yang dapat dikirim.";
+    if (error.status === 403) return "Hanya admin yang dapat mengirim akun.";
+    if (error.status === 404) return error.message || "Pesanan atau pengiriman tidak ditemukan.";
+    return `Gagal mengirim akun (HTTP ${error.status}): ${error.message}`;
+  }
+  return "Gagal mengirim akun. Silakan coba lagi.";
+}
 
 function demoOrder(orderId: string): ApiOrder {
   const demo = dashboardOrders.find((item) => item.id === orderId) ?? dashboardOrders[0];
@@ -67,6 +104,11 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
   const [error, setError] = useState<LoadError | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
+  const [confirmingSend, setConfirmingSend] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState("");
+  const [actionError, setActionError] = useState("");
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
@@ -169,6 +211,61 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
 
   const payments = order.payments ?? [];
   const items = order.items ?? [];
+  const deliveries = order.deliveries ?? [];
+  const itemNameById = new Map(items.map((item) => [item.id, item.product_name]));
+  const approvable = order.status === "paid" || order.status === "fulfilling";
+  const alreadyApproved = ["processing", "shipped", "delivered", "completed"].includes(order.status);
+  const hasUnsent = deliveries.length === 0 || deliveries.some((delivery) => delivery.status !== "sent");
+  const canSend = !DEMO_MODE && (approvable || (alreadyApproved && hasUnsent));
+  const sendLabel = approvable ? "Setujui & kirim akun" : "Kirim akun";
+
+  const approveAndSend = async () => {
+    setSending(true);
+    setActionError("");
+    setActionNotice("");
+    try {
+      const updated = await adminApi.approveOrderDelivery(order.id);
+      setOrder(updated);
+      setConfirmingSend(false);
+      const sent = (updated.deliveries ?? []).filter((delivery) => delivery.status === "sent").length;
+      setActionNotice(
+        sent > 0
+          ? `Pengiriman diproses. ${sent} item sudah terkirim ke email pembeli terverifikasi.`
+          : "Persetujuan tersimpan, tetapi belum ada item yang berhasil dikirim. Periksa status di bawah.",
+      );
+    } catch (failure) {
+      setActionError(describeDeliveryError(failure));
+      setConfirmingSend(false);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const retryDelivery = async (delivery: ApiOrderDelivery) => {
+    setRetryingId(delivery.id);
+    setActionError("");
+    setActionNotice("");
+    try {
+      const result = await adminApi.retryOrderDelivery(order.id, delivery.id);
+      setOrder((current) =>
+        current
+          ? {
+              ...current,
+              deliveries: (current.deliveries ?? []).map((row) => (row.id === result.delivery.id ? result.delivery : row)),
+            }
+          : current,
+      );
+      setActionNotice(
+        result.delivery.status === "sent"
+          ? "Pengiriman berhasil diulang. Email tidak dikirim dua kali bila status sudah sent."
+          : "Pengiriman diulang, tetapi masih gagal. Periksa kode kesalahan di bawah.",
+      );
+    } catch (failure) {
+      setActionError(describeDeliveryError(failure));
+    } finally {
+      setRetryingId(null);
+    }
+  };
 
   return (
     <div className="dashboard-page">
@@ -176,14 +273,44 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
         title={`Pesanan ${order.number}`}
         description={`Status ${orderStatusLabel(order.status)} · dibuat ${order.created_at ? formatDateTimeWIB(order.created_at) : "—"} WIB`}
         actions={
-          <Link className="button button-secondary button-sm" href="/dashboard/orders">
-            <ArrowLeft size={13} /> Kembali
-          </Link>
+          <>
+            {canSend && (
+              <button className="button button-primary button-sm" type="button" onClick={() => setConfirmingSend(true)} disabled={sending}>
+                <MailCheck size={13} /> {sendLabel}
+              </button>
+            )}
+            <Link className="button button-secondary button-sm" href="/dashboard/orders">
+              <ArrowLeft size={13} /> Kembali
+            </Link>
+          </>
         }
       />
 
       {DEMO_MODE && (
         <div className="demo-banner"><PackageCheck size={15} /><span>Pesanan sandbox. Tidak ada layanan yang dibeli dan tidak ada pembayaran nyata.</span></div>
+      )}
+
+      {actionNotice && <div className="notice success" role="status">{actionNotice}</div>}
+      {actionError && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{actionError}</div>}
+
+      {confirmingSend && (
+        <div className="card panel" role="alertdialog" aria-label="Konfirmasi pengiriman akun">
+          <div className="panel-header">
+            <h2 className="panel-title">Kirim kredensial akun ke pembeli?</h2>
+          </div>
+          <p className="muted" style={{ margin: "0 0 14px", fontSize: 11 }}>
+            Email berisi username, password, dan instruksi penggunaan akan dikirim ke <strong>{order.customer?.email ?? "email pembeli"}</strong>.
+            Pengiriman hanya berhasil bila email pembeli sudah terverifikasi. Aksi ini idempoten per item pesanan.
+          </p>
+          <div className="table-actions" style={{ justifyContent: "flex-start" }}>
+            <button className="button button-primary button-sm" type="button" onClick={() => void approveAndSend()} disabled={sending}>
+              {sending ? "Mengirim…" : "Ya, setujui & kirim"}
+            </button>
+            <button className="button button-secondary button-sm" type="button" onClick={() => setConfirmingSend(false)} disabled={sending}>
+              Batal
+            </button>
+          </div>
+        </div>
       )}
 
       <section className="metric-grid" aria-label="Ringkasan pesanan">
@@ -277,6 +404,75 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
             Status pembayaran ditampilkan apa adanya dari API. Tidak ada metode atau nominal yang ditambahkan di UI.
           </p>
         </article>
+      </section>
+
+      <section className="card" style={{ padding: 22 }} aria-label="Status pengiriman akun">
+        <div className="panel-header" style={{ padding: 0 }}>
+          <div>
+            <h2 className="panel-title">Pengiriman akun</h2>
+            <span className="muted" style={{ fontSize: 9 }}>
+              Kredensial hanya dikirim ke email pembeli terverifikasi setelah persetujuan admin.
+            </span>
+          </div>
+        </div>
+        {deliveries.length === 0 ? (
+          <p className="muted small" style={{ margin: "12px 0 0" }} role="status">
+            Belum ada baris pengiriman. Baris dibuat saat pesanan disetujui untuk dikirim.
+          </p>
+        ) : (
+          <div className="table-scroll" style={{ marginTop: 12 }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Status</th>
+                  <th>Percobaan</th>
+                  <th>Terakhir dicoba</th>
+                  <th>Dikirim</th>
+                  <th aria-label="Aksi" />
+                </tr>
+              </thead>
+              <tbody>
+                {deliveries.map((delivery) => (
+                  <tr key={delivery.id}>
+                    <td className="table-primary">{itemNameById.get(delivery.order_item_id) ?? "Item pesanan"}</td>
+                    <td>
+                      <span className={`badge ${deliveryStatusTone[delivery.status] ?? "status-info"}`}>
+                        {deliveryStatusLabels[delivery.status] ?? delivery.status}
+                      </span>
+                      {delivery.error_code && (
+                        <div className="muted" style={{ fontSize: 9, marginTop: 4 }}>
+                          {deliveryErrorLabels[delivery.error_code] ?? delivery.error_code}
+                        </div>
+                      )}
+                    </td>
+                    <td className="tabular">{delivery.attempts}</td>
+                    <td>{delivery.last_attempt_at ? `${formatDateTimeWIB(delivery.last_attempt_at)} WIB` : "—"}</td>
+                    <td>{delivery.sent_at ? `${formatDateTimeWIB(delivery.sent_at)} WIB` : "—"}</td>
+                    <td>
+                      {delivery.status === "failed" && (
+                        <button
+                          className="table-action"
+                          type="button"
+                          aria-label={`Ulangi pengiriman ${itemNameById.get(delivery.order_item_id) ?? delivery.id}`}
+                          onClick={() => void retryDelivery(delivery)}
+                          disabled={retryingId === delivery.id}
+                        >
+                          <RotateCw size={13} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {deliveries.some((delivery) => delivery.status === "failed") && (
+          <p className="muted small" style={{ margin: "12px 0 0", display: "flex", alignItems: "center", gap: 6 }}>
+            <AlertTriangle size={13} /> Kegagalan tidak mengubah status pesanan; perbaiki penyebab lalu ulangi pengiriman.
+          </p>
+        )}
       </section>
 
       <section className="card" style={{ padding: 22 }}>

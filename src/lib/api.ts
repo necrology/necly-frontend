@@ -155,6 +155,20 @@ export type ApiCartItem = {
   quantity: number;
 };
 
+/** Satu baris buku pengiriman W17. Tidak pernah berisi kredensial. */
+export type ApiOrderDelivery = {
+  id: string;
+  order_id: string;
+  order_item_id: string;
+  status: "pending" | "sending" | "sent" | "failed";
+  attempts: number;
+  error_code?: string | null;
+  sent_at?: string | null;
+  last_attempt_at?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ApiOrder = {
   id: string;
   number: string;
@@ -194,6 +208,8 @@ export type ApiOrder = {
   // Present on the admin order list and dashboard, which preload it. The
   // storefront's own order endpoints do not, so it stays optional.
   customer?: { id: string; name: string; email: string } | null;
+  /** Hanya diisi endpoint admin; pembeli tidak menerima baris internal ini. */
+  deliveries?: ApiOrderDelivery[];
   created_at: string;
   updated_at: string;
 };
@@ -265,6 +281,26 @@ export type ApiAuditLog = {
 
 export type ApiOrderListResponse = {
   orders: ApiOrder[];
+  page: number;
+  per_page: number;
+  total: number;
+};
+
+/**
+ * Backend W8 mengembalikan daftar pesanan (lengkap dengan payments) untuk
+ * halaman pembayaran, bukan baris payment datar. Frontend memetakan tiap
+ * payment dari pesanan tersebut.
+ */
+export type ApiAdminPaymentListResponse = {
+  payments: ApiOrder[];
+  page: number;
+  per_page: number;
+  total: number;
+};
+
+/** Notifikasi admin adalah proyeksi audit log; tidak ada status baca. */
+export type ApiAdminNotificationListResponse = {
+  notifications: ApiAuditLog[];
   page: number;
   per_page: number;
   total: number;
@@ -724,6 +760,19 @@ export const adminApi = {
   getOrder: (id: string) => apiRequest<ApiOrder>(`/admin/orders/${encodeURIComponent(id)}`),
   updateOrderStatus: (id: string, status: string) =>
     apiRequest<ApiOrder>(`/admin/orders/${encodeURIComponent(id)}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  approveOrderDelivery: (id: string) =>
+    apiRequest<ApiOrder>(`/admin/orders/${encodeURIComponent(id)}/approve-delivery`, { method: "POST" }),
+  listOrderDeliveries: (id: string) =>
+    apiRequest<{ deliveries: ApiOrderDelivery[] }>(`/admin/orders/${encodeURIComponent(id)}/deliveries`),
+  retryOrderDelivery: (id: string, deliveryId: string) =>
+    apiRequest<{ delivery: ApiOrderDelivery }>(
+      `/admin/orders/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}/retry`,
+      { method: "POST" },
+    ),
+  listPayments: (params?: { page?: number; per_page?: number; status?: string; search?: string }) =>
+    apiRequest<ApiAdminPaymentListResponse>(`/admin/payments${toQuery(params)}`),
+  listNotifications: (params?: { page?: number; per_page?: number }) =>
+    apiRequest<ApiAdminNotificationListResponse>(`/admin/notifications${toQuery(params)}`),
   listVouchers: (params?: { page?: number; per_page?: number }) =>
     apiRequest<Record<string, unknown>>(`/admin/vouchers${toQuery(params)}`),
   createVoucher: (data: Record<string, unknown>) =>
