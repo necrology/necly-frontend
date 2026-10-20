@@ -251,6 +251,7 @@ export default function InventoryPage() {
   const [accountTotal, setAccountTotal] = useState(0);
   const [accountPage, setAccountPage] = useState(1);
   const [loadingMoreAccounts, setLoadingMoreAccounts] = useState(false);
+  const [loadingAllAccounts, setLoadingAllAccounts] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -303,6 +304,70 @@ export default function InventoryPage() {
       setLoading(false);
     }
   }, []);
+
+  /**
+   * Muat ulang seluruh halaman yang sedang terlihat. Ini menjaga pengguna yang
+   * sudah berada di halaman 2+ agar tidak kehilangan baris setelah mutasi.
+   */
+  const refreshAccounts = useCallback(async () => {
+    if (DEMO_MODE) return;
+    const pages = Math.max(accountPage, 1);
+    const productsById = new Map(products.map((product) => [product.id, product]));
+    try {
+      const responses = await Promise.all(
+        Array.from({ length: pages }, (_, index) =>
+          adminApi.listInventoryAccounts({ page: index + 1, per_page: ACCOUNT_PAGE_SIZE }),
+        ),
+      );
+      const merged = responses.flatMap((response) =>
+        ((response.accounts ?? []) as unknown as ApiInventoryAccount[]).map((account) =>
+          mapAccount(account, productsById),
+        ),
+      );
+      const last = responses[responses.length - 1];
+      setAccounts(merged);
+      if (last && typeof last.total === "number") setAccountTotal(last.total);
+    } catch (error) {
+      setActionError(describeInventoryError(error, "load"));
+    }
+  }, [accountPage, products]);
+
+  /**
+   * Pencarian harus mencakup semua akun, bukan hanya halaman yang sudah dimuat.
+   * Saat pengguna mengetik, muat sisa halaman sekali (dibatasi) lalu filter
+   * seluruh baris di klien.
+   */
+  const searchAllAccounts = useCallback(async () => {
+    if (DEMO_MODE || loadingAllAccounts || accounts.length >= accountTotal) return;
+    setLoadingAllAccounts(true);
+    setActionError("");
+    const productsById = new Map(products.map((product) => [product.id, product]));
+    try {
+      let page = accountPage;
+      let total = accountTotal;
+      const extra: AccountRow[] = [];
+      while (page * ACCOUNT_PAGE_SIZE < total && page < 50) {
+        page += 1;
+        const response = await adminApi.listInventoryAccounts({ page, per_page: ACCOUNT_PAGE_SIZE });
+        if (typeof response.total === "number") total = response.total;
+        extra.push(
+          ...((response.accounts ?? []) as unknown as ApiInventoryAccount[]).map((account) =>
+            mapAccount(account, productsById),
+          ),
+        );
+      }
+      setAccounts((current) => {
+        const seen = new Set(current.map((account) => account.id));
+        return [...current, ...extra.filter((account) => !seen.has(account.id))];
+      });
+      setAccountTotal(total);
+      setAccountPage(page);
+    } catch (error) {
+      setActionError(describeInventoryError(error, "load"));
+    } finally {
+      setLoadingAllAccounts(false);
+    }
+  }, [accountPage, accountTotal, accounts.length, loadingAllAccounts, products]);
 
   const loadMoreAccounts = async () => {
     if (DEMO_MODE || loadingMoreAccounts || accounts.length >= accountTotal) return;
@@ -544,7 +609,7 @@ export default function InventoryPage() {
               await adminApi.updateInventoryAccount(created.id, { status: accountForm.status });
             } catch (error) {
               closeAccountForm();
-              await loadData();
+              await refreshAccounts();
               setActionError(
                 `Akun "${label}" dibuat sebagai aktif, tetapi status ${statusLabel(accountForm.status)} gagal diterapkan: ${describeInventoryError(error, "save")}`,
               );
@@ -555,7 +620,7 @@ export default function InventoryPage() {
 
         setNotice(`Akun "${label}" dibuat. Kredensial disimpan terenkripsi dan tidak ditampilkan kembali.`);
         closeAccountForm();
-        if (!DEMO_MODE) await loadData();
+        if (!DEMO_MODE) await refreshAccounts();
       } catch (error) {
         setFormError(describeInventoryError(error, "save"));
       } finally {
@@ -619,7 +684,7 @@ export default function InventoryPage() {
       setNotice(`Akun "${label}" diperbarui. Kredensial tidak pernah ditampilkan kembali.`);
       setPendingSave(null);
       closeAccountForm();
-      if (!DEMO_MODE) await loadData();
+      if (!DEMO_MODE) await refreshAccounts();
     } catch (error) {
       setFormError(describeInventoryError(error, "save"));
       setPendingSave(null);
@@ -649,7 +714,7 @@ export default function InventoryPage() {
         `Akun "${pendingStatus.label}" ${pendingStatus.nextStatus === "active" ? "diaktifkan" : "dinonaktifkan"}.`,
       );
       setPendingStatus(null);
-      if (!DEMO_MODE) await loadData();
+      if (!DEMO_MODE) await refreshAccounts();
     } catch (error) {
       setActionError(describeInventoryError(error, "save"));
       setPendingStatus(null);
@@ -736,7 +801,7 @@ export default function InventoryPage() {
           inventory_account_id: pendingSlot.accountId,
         });
         setNotice(`${result.created} slot ditambahkan ke akun "${account.label}".`);
-        await loadData();
+        await refreshAccounts();
         if (expandedId) await loadAssignments(expandedId, true);
       }
 
@@ -744,7 +809,7 @@ export default function InventoryPage() {
     } catch (error) {
       setSlotError(describeInventoryError(error, "slot"));
       setPendingSlot(null);
-      if (!DEMO_MODE) await loadData();
+      if (!DEMO_MODE) await refreshAccounts();
     } finally {
       setSubmitting(false);
     }
@@ -893,8 +958,12 @@ export default function InventoryPage() {
       <section className="metric-grid">
         <MetricCard
           label="Akun inventaris"
-          value={String(accounts.length)}
-          change={`${metrics.productCount} produk memiliki akun`}
+          value={DEMO_MODE ? String(accounts.length) : String(accountTotal)}
+          change={
+            DEMO_MODE
+              ? `${metrics.productCount} produk memiliki akun`
+              : `${accounts.length} termuat · ${metrics.productCount} produk (dari halaman termuat)`
+          }
           icon={<Boxes size={14} />}
         />
         <MetricCard
@@ -1181,11 +1250,18 @@ export default function InventoryPage() {
           <input
             className="input"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              const value = event.target.value;
+              setQuery(value);
+              if (value.trim().length >= 2) void searchAllAccounts();
+            }}
             placeholder="Cari produk, label akun, atau status…"
             aria-label="Cari inventaris"
           />
         </div>
+        {loadingAllAccounts && (
+          <span className="muted" style={{ fontSize: 9 }} role="status">Mencari di semua akun…</span>
+        )}
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>
 

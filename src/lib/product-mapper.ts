@@ -22,9 +22,18 @@ const categoryAliases: Record<string, ProductCategory> = {
   keamanan: "Keamanan",
 };
 
-function mapCategory(product: ApiProduct): ProductCategory {
-  const category = typeof product.category === "string" ? product.category : product.category?.name;
+function productCategoryName(product: ApiProduct) {
+  return typeof product.category === "string" ? product.category : product.category?.name;
+}
+
+export function mapProductCategory(product: ApiProduct): ProductCategory {
+  const category = productCategoryName(product);
   return categoryAliases[(category ?? "").toLocaleLowerCase("id-ID")] ?? "Produktivitas";
+}
+
+function productCategoryId(product: ApiProduct) {
+  if (product.category_id) return product.category_id;
+  return typeof product.category === "object" ? product.category?.id : undefined;
 }
 
 function durationLabel(days: number) {
@@ -65,7 +74,7 @@ export function mapApiProduct(product: ApiProduct): SubscriptionProduct {
     .map(mapPriceOption)
     .sort((left, right) => left.days - right.days || left.price - right.price);
   const primaryPrice = priceOptions[0];
-  const category = mapCategory(product);
+  const category = mapProductCategory(product);
   // Ketersediaan tingkat produk adalah gabungan seluruh paketnya, karena stok
   // dicatat per harga. Sebelumnya nilai ini selalu 0 (lihat priceStock),
   // sehingga kartu katalog menulis "Stok Terbatas" untuk semua produk.
@@ -77,6 +86,7 @@ export function mapApiProduct(product: ApiProduct): SubscriptionProduct {
     name: product.name,
     eyebrow: "Akun sharing hemat",
     category,
+    categoryId: productCategoryId(product),
     price: primaryPrice?.price ?? 0,
     stock,
     duration: primaryPrice?.duration ?? "Belum tersedia",

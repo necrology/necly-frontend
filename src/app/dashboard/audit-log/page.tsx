@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { auditRecords } from "@/data/seed";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
+import { downloadCsv } from "@/lib/csv";
 import { mapApiAuditLog } from "@/lib/admin-mappers";
 import type { AuditRecord } from "@/lib/types";
 import { formatDateTimeWIB } from "@/lib/money";
@@ -12,7 +13,6 @@ import { formatDateTimeWIB } from "@/lib/money";
 export default function AuditLogPage() {
   const [query, setQuery] = useState("");
   const [actor, setActor] = useState("Semua");
-  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [apiAuditRecords, setApiAuditRecords] = useState<AuditRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,9 +70,12 @@ export default function AuditLogPage() {
     [query, actor, sourceRecords],
   );
 
-  const unavailable = (action: string) => {
-    setNotice(`${action} belum tersedia. Hubungkan ke API admin untuk mengaktifkan.`);
-    window.setTimeout(() => setNotice(""), 3000);
+  const exportCsv = () => {
+    downloadCsv(
+      `necly-audit-log-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["Peristiwa", "Pelaku", "Aksi", "Sumber daya", "IP", "Waktu"],
+      rows.map((record) => [record.id, record.actor, record.action, record.resource, record.ip, record.time]),
+    );
   };
 
   if (error && !DEMO_MODE) {
@@ -100,10 +103,9 @@ export default function AuditLogPage() {
       <PageHeader
         title="Log audit"
         description="Periksa perubahan operasional material dan pelaku di balik masing-masing."
-        actions={<button className="button button-secondary button-sm" onClick={() => unavailable("Ekspor CSV")}><Download size={13} /> Ekspor CSV</button>}
+        actions={<button className="button button-secondary button-sm" onClick={exportCsv} disabled={rows.length === 0}><Download size={13} /> Ekspor CSV</button>}
       />
       <div className="demo-banner"><ShieldCheck size={15} /><span>Log ini didemonstrasikan untuk traceability. Audit log produksi seharusnya immutable, berizin, dan disimpan sesuai kebijakan.</span></div>
-      {notice && <div className="notice success" role="status">{notice}</div>}
       <div className="toolbar">
         <div className="input-wrap"><Search size={14} /><input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari pelaku, aksi, sumber daya, atau IP…" /></div>
         <select className="select" style={{ width: 155 }} value={actor} onChange={(e) => setActor(e.target.value)}>

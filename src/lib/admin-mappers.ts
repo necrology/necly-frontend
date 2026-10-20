@@ -1,4 +1,5 @@
 import type { ApiOrder, ApiUser, ApiProduct, ApiCategory, ApiProductPrice } from "./api";
+import { mapProductCategory } from "./product-mapper";
 import type {
   DashboardOrder,
   Customer,
@@ -123,14 +124,6 @@ export function mapApiUserToCustomer(apiUser: ApiUser): Customer {
 }
 
 export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): SubscriptionProduct {
-  const categoryMap: Record<string, SubscriptionProduct["category"]> = {
-    Streaming: "Streaming",
-    Productivity: "Produktivitas",
-    Creative: "Kreatif",
-    Education: "Edukasi",
-    Security: "Keamanan",
-  };
-
   const primaryPrice = apiProduct.prices?.[0];
   const priceOptions = (apiProduct.prices ?? [])
     .filter((p) => p.active !== false)
@@ -146,8 +139,10 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
     }))
     .sort((a, b) => a.days - b.days || a.price - b.price);
 
-  const category = typeof apiProduct.category === "string" ? apiProduct.category : apiProduct.category?.name ?? "Produktivitas";
-  const mappedCategory = categoryMap[category] ?? "Produktivitas";
+  const mappedCategory = mapProductCategory(apiProduct);
+  const categoryId =
+    apiProduct.category_id ??
+    (typeof apiProduct.category === "object" ? apiProduct.category?.id : undefined);
 
   return {
     id: apiProduct.id,
@@ -155,6 +150,7 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
     name: apiProduct.name,
     eyebrow: "Akun sharing hemat",
     category: mappedCategory,
+    categoryId,
     price: primaryPrice?.amount ?? 0,
     stock: apiProduct.stock ?? priceOptions.reduce((sum, option) => sum + (option.stock ?? 0), 0),
     duration: primaryPrice?.duration_name ?? "Belum tersedia",
@@ -194,14 +190,58 @@ export function mapApiCategory(apiCategory: ApiCategory) {
 }
 
 export function mapApiVoucher(apiVoucher: Record<string, unknown>): Voucher {
+  const rawType = String(apiVoucher.type ?? "");
+  const endsAt = typeof apiVoucher.ends_at === "string" ? apiVoucher.ends_at : "";
+  const parsedEnd = endsAt ? new Date(endsAt) : null;
   return {
-    code: (apiVoucher.code as string) ?? "",
-    type: (apiVoucher.type as "Persen" | "Nominal") ?? "Persen",
-    value: (apiVoucher.value as number) ?? 0,
-    uses: (apiVoucher.uses as number) ?? 0,
-    limit: (apiVoucher.limit as number) ?? 0,
-    expires: (apiVoucher.expires_at as string) ?? new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }),
-    active: (apiVoucher.active as boolean) ?? false,
+    id: typeof apiVoucher.id === "string" ? apiVoucher.id : undefined,
+    code: String(apiVoucher.code ?? ""),
+    // Backend memakai "percentage"/"fixed"; sebelumnya nilai ini dibiarkan
+    // mentah sehingga kolom Tipe selalu jatuh ke "Persen".
+    type: rawType === "fixed" ? "Nominal" : "Persen",
+    value: typeof apiVoucher.value === "number" ? apiVoucher.value : 0,
+    // Domain voucher belum menyimpan jumlah penukaran; jangan tampilkan 0 palsu.
+    uses: typeof apiVoucher.uses === "number" ? apiVoucher.uses : null,
+    limit: typeof apiVoucher.usage_limit === "number" ? apiVoucher.usage_limit : 0,
+    expires:
+      parsedEnd && !Number.isNaN(parsedEnd.getTime())
+        ? parsedEnd.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+        : "—",
+    active: apiVoucher.active === true,
+  };
+}
+
+const paymentStatusLabels: Record<string, Payment["status"]> = {
+  paid: "Berhasil",
+  pending: "Menunggu",
+  refunded: "Dikembalikan",
+  expired: "Kedaluwarsa",
+  failed: "Gagal",
+  cancelled: "Dibatalkan",
+};
+
+/**
+ * Flatten satu payment milik pesanan admin menjadi baris tabel pembayaran.
+ * Endpoint /admin/payments mengirim pesanan+payments, bukan payment datar.
+ */
+export function mapApiOrderPayment(order: ApiOrder, payment: NonNullable<ApiOrder["payments"]>[number]): Payment {
+  const paidAt = payment.paid_at ?? payment.created_at;
+  return {
+    id: payment.id,
+    orderId: order.number,
+    customer: order.customer?.name ?? "—",
+    method: payment.provider || "—",
+    amount: payment.amount,
+    status: paymentStatusLabels[payment.status] ?? payment.status,
+    date: paidAt
+      ? new Date(paidAt).toLocaleString("id-ID", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "—",
   };
 }
 

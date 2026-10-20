@@ -82,7 +82,7 @@ describe("daftar pesanan admin — seluruh status backend", () => {
     for (const label of ORDER_STATUS_OPTIONS) {
       expect(optionLabels).toContain(label);
     }
-    expect(optionLabels).toContain("Aktif");
+    expect(optionLabels).not.toContain("Aktif");
     expect(listOrdersMock).toHaveBeenCalledWith({ page: 1, per_page: 50 });
   });
 });

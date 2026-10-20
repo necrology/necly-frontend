@@ -22,6 +22,8 @@ export type SubscriptionProduct = {
   name: string;
   eyebrow: string;
   category: ProductCategory;
+  /** ID kategori asli dari API, dipakai form admin agar edit tidak memindahkan kategori. */
+  categoryId?: string;
   price: number;
   stock: number;
   duration: string;
@@ -78,17 +80,21 @@ export type Payment = {
   id: string;
   orderId: string;
   customer: string;
-  method: "Virtual account" | "QRIS" | "Kartu" | "Dompet digital";
+  /** Nama penyedia/kanal apa adanya dari API (mis. "xendit"). */
+  method: string;
   amount: number;
-  status: "Berhasil" | "Menunggu" | "Dikembalikan";
+  status: "Berhasil" | "Menunggu" | "Dikembalikan" | string;
   date: string;
 };
 
 export type Voucher = {
+  /** ID server; seed demo tidak memilikinya. */
+  id?: string;
   code: string;
   type: "Persen" | "Nominal";
   value: number;
-  uses: number;
+  /** null berarti API tidak mengirim jumlah penukaran. */
+  uses: number | null;
   limit: number;
   expires: string;
   active: boolean;

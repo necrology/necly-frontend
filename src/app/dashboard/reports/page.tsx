@@ -12,7 +12,6 @@ export default function ReportsPage() {
   const categoriesPerformanceData = DEMO_MODE ? categoryPerformance : [];
   const [period, setPeriod] = useState("7 hari terakhir");
   const [metric, setMetric] = useState("Pendapatan");
-  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,8 +19,8 @@ export default function ReportsPage() {
     if (!DEMO_MODE) {
       bootstrapAuth().then((user) => {
         if (user?.role === "admin") {
-          // No backend endpoint for admin reports yet
-          setError("Endpoint laporan admin belum tersedia di backend");
+          // Belum ada endpoint laporan. Jangan set error: halaman menampilkan
+          // keadaan kosong eksplisit, bukan data demo atau angka nol palsu.
           setLoading(false);
         } else {
           setError("Akses ditolak: hanya admin yang dapat melihat laporan");
@@ -30,11 +29,6 @@ export default function ReportsPage() {
       });
     }
   }, []);
-
-  const unavailable = (action: string) => {
-    setNotice(`${action} belum tersedia. Hubungkan ke API admin untuk mengaktifkan.`);
-    window.setTimeout(() => setNotice(""), 3000);
-  };
 
   if (error && !DEMO_MODE) {
     return (
@@ -61,42 +55,82 @@ export default function ReportsPage() {
       <PageHeader
         title="Laporan"
         description="Bandingkan permintaan, pendapatan, dan kinerja kategori."
-        actions={<button className="button button-primary button-sm" onClick={() => unavailable("Ekspor laporan")}><Download size={13} /> Ekspor laporan</button>}
+        actions={
+          <button
+            className="button button-primary button-sm"
+            disabled
+            title="Endpoint laporan belum tersedia di backend"
+          >
+            <Download size={13} /> Ekspor laporan (belum tersedia)
+          </button>
+        }
       />
-      {notice && <div className="notice success" role="status">{notice}</div>}
+      {!DEMO_MODE && (
+        <div className="notice" role="status">
+          Endpoint laporan admin belum tersedia. Nilai dan grafik tidak dikarang; halaman ini menampilkan keadaan kosong sampai backend menyediakan data.
+        </div>
+      )}
       <div className="toolbar">
-        <select className="select" style={{ width: 170 }} value={period} onChange={(e) => setPeriod(e.target.value)}>
+        <select
+          className="select"
+          style={{ width: 170 }}
+          value={period}
+          onChange={(event) => setPeriod(event.target.value)}
+          disabled={!DEMO_MODE}
+          title={DEMO_MODE ? undefined : "Filter periode belum tersedia dari API"}
+        >
           <option>7 hari terakhir</option>
           <option>30 hari terakhir</option>
           <option>Kuartal ini</option>
         </select>
-        <select className="select" style={{ width: 150 }} value={metric} onChange={(e) => setMetric(e.target.value)}>
+        <select
+          className="select"
+          style={{ width: 150 }}
+          value={metric}
+          onChange={(event) => setMetric(event.target.value)}
+          disabled={!DEMO_MODE}
+          title={DEMO_MODE ? undefined : "Pilihan metrik belum tersedia dari API"}
+        >
           <option>Pendapatan</option>
           <option>Pesanan</option>
           <option>Konversi</option>
         </select>
-        <span className="muted" style={{ fontSize: 9 }}>Melihat {metric.toLowerCase()} · {period.toLowerCase()}</span>
+        <span className="muted" style={{ fontSize: 9 }}>
+          {DEMO_MODE ? `Melihat ${metric.toLowerCase()} · ${period.toLowerCase()}` : "Data laporan belum tersedia"}
+        </span>
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>
       <section className="metric-grid">
-        <MetricCard label="Pendapatan laporan" value={DEMO_MODE ? "Rp83,6jt" : "Rp0"} change={DEMO_MODE ? "↑ 12,4% vs periode sebelumnya" : "Menunggu data"} />
-        <MetricCard label="Pesanan" value={DEMO_MODE ? "83" : "0"} change={DEMO_MODE ? "↑ 10,7% vs periode sebelumnya" : "Menunggu data"} />
-        <MetricCard label="Konversi" value={DEMO_MODE ? "6,5%" : "0%"} change={DEMO_MODE ? "↑ 0,6 poin persen" : "Menunggu data"} />
-        <MetricCard label="Rata-rata pesanan" value={DEMO_MODE ? "Rp1,01jt" : "Rp0"} change={DEMO_MODE ? "↑ 1,8% vs periode sebelumnya" : "Menunggu data"} />
+        <MetricCard label="Pendapatan laporan" value={DEMO_MODE ? "Rp83,6jt" : "—"} change={DEMO_MODE ? "↑ 12,4% vs periode sebelumnya" : "Endpoint laporan belum tersedia"} />
+        <MetricCard label="Pesanan" value={DEMO_MODE ? "83" : "—"} change={DEMO_MODE ? "↑ 10,7% vs periode sebelumnya" : "Endpoint laporan belum tersedia"} />
+        <MetricCard label="Konversi" value={DEMO_MODE ? "6,5%" : "—"} change={DEMO_MODE ? "↑ 0,6 poin persen" : "Endpoint laporan belum tersedia"} />
+        <MetricCard label="Rata-rata pesanan" value={DEMO_MODE ? "Rp1,01jt" : "—"} change={DEMO_MODE ? "↑ 1,8% vs periode sebelumnya" : "Endpoint laporan belum tersedia"} />
       </section>
       <section className="dashboard-grid">
         <article className="card panel">
           <div className="panel-header">
             <h2 className="panel-title">Pesanan per hari</h2>
-            <span className="badge status-info">{period}</span>
+            <span className="badge status-info">{DEMO_MODE ? period : "Tidak tersedia"}</span>
           </div>
-          <OrdersChart />
+          {DEMO_MODE ? (
+            <OrdersChart />
+          ) : (
+            <p className="muted small" style={{ margin: 0, padding: "16px 0" }} role="status">
+              Grafik pesanan belum tersedia dari API.
+            </p>
+          )}
         </article>
         <article className="card panel">
           <div className="panel-header">
             <h2 className="panel-title">Pendapatan per kategori</h2>
           </div>
-          <CategoryChart />
+          {DEMO_MODE ? (
+            <CategoryChart />
+          ) : (
+            <p className="muted small" style={{ margin: 0, padding: "16px 0" }} role="status">
+              Grafik pendapatan kategori belum tersedia dari API.
+            </p>
+          )}
         </article>
       </section>
       <section className="card table-panel">

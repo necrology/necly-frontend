@@ -189,9 +189,9 @@ export default function DashboardPage() {
         description="Pantau penjualan akun langganan sharing, pembayaran, aktivasi slot anggota, dan ketersediaan agar pelanggan berlangganan lebih hemat."
         actions={
           <>
-            <button className="button button-secondary button-sm" type="button">
-              {DEMO_MODE ? "31 Agu–6 Sep (simulasi)" : "Pilih rentang waktu"}
-            </button>
+            <span className="badge status-info" title="Endpoint metrik belum menerima parameter rentang waktu">
+              {DEMO_MODE ? "31 Agu–6 Sep (simulasi)" : "Ringkasan server"}
+            </span>
             <Link className="button button-primary button-sm" href="/dashboard/orders">
               Buka pesanan <ArrowRight size={13} />
             </Link>

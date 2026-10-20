@@ -2,25 +2,28 @@
 
 import { Download, Eye, Search } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
+import { StatusBadge } from "@/components/status-badge";
 import { dashboardOrders } from "@/data/seed";
 import { formatIDR, formatDateID } from "@/lib/money";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { mapApiOrderToDashboardOrder } from "@/lib/admin-mappers";
+import { downloadCsv } from "@/lib/csv";
 import type { DashboardOrder } from "@/lib/types";
 import { ORDER_STATUS_OPTIONS } from "@/lib/order-status";
 
-const statuses = ["Semua", ...ORDER_STATUS_OPTIONS, "Aktif"] as const;
+const statuses = ["Semua", ...ORDER_STATUS_OPTIONS] as const;
 type StatusType = (typeof statuses)[number];
 
 export default function OrdersAdminPage() {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<StatusType>("Semua");
-  const [overrides, setOverrides] = useState<Record<string, string>>({});
-  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(!DEMO_MODE);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [apiOrders, setApiOrders] = useState<DashboardOrder[] | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -51,6 +54,8 @@ export default function OrdersAdminPage() {
           return;
         }
         setApiOrders(response.orders.map(mapApiOrderToDashboardOrder));
+        setPage(typeof response.page === "number" ? response.page : 1);
+        setTotal(typeof response.total === "number" ? response.total : response.orders.length);
       } catch {
         if (!cancelled) setError("Gagal memuat pesanan dari server");
       } finally {
@@ -69,15 +74,51 @@ export default function OrdersAdminPage() {
   const rows = useMemo(
     () =>
       sourceOrders.filter((order: DashboardOrder) => {
-        const s = overrides[order.id] ?? order.status;
-        return (status === "Semua" || s === status) && (order.id + order.customer + order.service).toLowerCase().includes(query.toLowerCase());
+        return (status === "Semua" || order.status === status) &&
+          (order.id + order.customer + order.service).toLowerCase().includes(query.toLowerCase());
       }),
-    [query, status, overrides, sourceOrders],
+    [query, status, sourceOrders],
   );
 
-  const unavailable = (action: string) => {
-    setNotice(`${action} belum tersedia. Hubungkan ke API admin untuk mengaktifkan.`);
-    window.setTimeout(() => setNotice(""), 3000);
+  const loadMore = useCallback(async () => {
+    if (DEMO_MODE || loadingMore || sourceOrders.length >= total) return;
+    setLoadingMore(true);
+    try {
+      const response = await adminApi.listOrders({ page: page + 1, per_page: 50 });
+      if (!Array.isArray(response.orders)) {
+        setError("Respons pesanan dari server tidak sesuai kontrak");
+        return;
+      }
+      const next = response.orders.map(mapApiOrderToDashboardOrder);
+      setApiOrders((current) => {
+        const seen = new Set((current ?? []).map((order) => order.id));
+        return [...(current ?? []), ...next.filter((order) => !seen.has(order.id))];
+      });
+      setPage(typeof response.page === "number" ? response.page : page + 1);
+      setTotal(typeof response.total === "number" ? response.total : total);
+    } catch {
+      setError("Gagal memuat pesanan berikutnya dari server");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, page, sourceOrders.length, total]);
+
+  const exportRows = () => {
+    downloadCsv(
+      `necly-pesanan-${new Date().toISOString().slice(0, 10)}.csv`,
+      ["Pesanan", "Pelanggan", "Email", "Produk", "Durasi", "Jumlah", "Status", "Dibuat", "Jatuh tempo"],
+      rows.map((order) => [
+        order.id,
+        order.customer,
+        order.customerEmail,
+        order.service,
+        order.duration,
+        order.amount,
+        order.status,
+        order.date,
+        order.due,
+      ]),
+    );
   };
 
   if (error && !DEMO_MODE) {
@@ -105,15 +146,19 @@ export default function OrdersAdminPage() {
       <PageHeader
         title="Pesanan akun sharing"
         description="Kelola pesanan akun langganan sharing, terima pembayaran, dan koordinasikan aktivasi slot anggota ke pelanggan."
-        actions={<button className="button button-secondary button-sm" onClick={() => unavailable("Ekspor pesanan")}><Download size={13} /> Ekspor pesanan</button>}
+        actions={<button className="button button-secondary button-sm" onClick={exportRows} disabled={rows.length === 0}><Download size={13} /> Ekspor pesanan</button>}
       />
-      {notice && <div className="notice success" role="status">{notice}</div>}
       <div className="toolbar">
         <div className="input-wrap"><Search size={14} /><input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari pesanan, pelanggan, atau produk…" /></div>
         <select className="select" style={{ width: 170 }} value={status} onChange={(e) => setStatus(e.target.value as StatusType)}>
           {statuses.map((item) => <option key={item}>{item}</option>)}
         </select>
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} pesanan</span>
+        {!DEMO_MODE && sourceOrders.length > 0 && (
+          <span className="muted" style={{ fontSize: 9 }}>
+            {sourceOrders.length} dari {total} dimuat
+          </span>
+        )}
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>
       <section className="card table-panel">
@@ -136,7 +181,6 @@ export default function OrdersAdminPage() {
               {rows.length === 0 && !loading ? (
                 <tr><td colSpan={10} className="muted" style={{ textAlign: "center" }}>Belum ada pesanan.</td></tr>
               ) : rows.map((order) => {
-                const current = overrides[order.id] ?? order.status;
                 return (
                   <tr key={order.id}>
                     <td className="table-primary">{order.id}</td>
@@ -149,16 +193,7 @@ export default function OrdersAdminPage() {
                     <td>{order.duration}</td>
                     <td className="tabular">{formatIDR(order.amount)}</td>
                     <td>
-                      <select
-                        className="select"
-                        aria-label={`Status untuk ${order.id}`}
-                        style={{ minHeight: 32, padding: "4px 7px", fontSize: 9, width: 140 }}
-                        value={current}
-                        onChange={(e) => setOverrides((prev) => ({ ...prev, [order.id]: e.target.value }))}
-                        disabled={!DEMO_MODE}
-                      >
-                        {statuses.slice(1).map((item) => <option key={item}>{item}</option>)}
-                      </select>
+                      <StatusBadge status={order.status} />
                     </td>
                     <td>{formatDateID(order.date)}</td>
                     <td>{order.due}</td>
@@ -174,6 +209,13 @@ export default function OrdersAdminPage() {
           </table>
         </div>
       </section>
+      {!DEMO_MODE && sourceOrders.length < total && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
+          <button className="button button-secondary button-sm" type="button" onClick={() => void loadMore()} disabled={loadingMore}>
+            {loadingMore ? "Memuat…" : "Muat lebih banyak pesanan"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
