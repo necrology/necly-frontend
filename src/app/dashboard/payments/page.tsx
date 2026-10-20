@@ -6,12 +6,19 @@ import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { payments as seedPayments, formatIDR } from "@/data/seed";
-import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
+import { adminApi, bootstrapAuth, DEMO_MODE, type ApiOrder } from "@/lib/api";
 import { mapApiOrderPayment } from "@/lib/admin-mappers";
 import { downloadCsv } from "@/lib/csv";
 import type { Payment } from "@/lib/types";
 
 const STATUS_FILTERS = ["Semua", "Berhasil", "Menunggu", "Dikembalikan", "Kedaluwarsa", "Gagal"] as const;
+const PAYMENT_PAGE_SIZE = 100;
+
+function flattenPayments(orders: ApiOrder[]): Payment[] {
+  return orders.flatMap((order) =>
+    (order.payments ?? []).map((payment) => mapApiOrderPayment(order, payment)),
+  );
+}
 
 export default function PaymentsPage() {
   const [query, setQuery] = useState("");
@@ -19,6 +26,11 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [apiPayments, setApiPayments] = useState<Payment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [loadedOrders, setLoadedOrders] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState("");
 
   const loadPayments = useCallback(async () => {
     setLoading(true);
@@ -34,7 +46,7 @@ export default function PaymentsPage() {
         return;
       }
 
-      const response = await adminApi.listPayments({ page: 1, per_page: 50 });
+      const response = await adminApi.listPayments({ page: 1, per_page: PAYMENT_PAGE_SIZE });
       if (!Array.isArray(response.payments)) {
         setError("Respons pembayaran dari server tidak sesuai kontrak");
         return;
@@ -42,11 +54,10 @@ export default function PaymentsPage() {
 
       // Endpoint mengirim pesanan beserta payments; ratakan ke baris payment
       // tanpa mengarang metode atau nominal.
-      setApiPayments(
-        response.payments.flatMap((order) =>
-          (order.payments ?? []).map((payment) => mapApiOrderPayment(order, payment)),
-        ),
-      );
+      setApiPayments(flattenPayments(response.payments));
+      setPage(typeof response.page === "number" ? response.page : 1);
+      setLoadedOrders(response.payments.length);
+      setTotalOrders(typeof response.total === "number" ? response.total : response.payments.length);
     } catch {
       setError("Gagal memuat pembayaran dari server");
     } finally {
@@ -61,6 +72,31 @@ export default function PaymentsPage() {
     }
     void Promise.resolve().then(() => loadPayments());
   }, [loadPayments]);
+
+  const loadMorePayments = useCallback(async () => {
+    if (DEMO_MODE || loadingMore || loadedOrders >= totalOrders) return;
+    setLoadingMore(true);
+    setLoadMoreError("");
+    try {
+      const response = await adminApi.listPayments({ page: page + 1, per_page: PAYMENT_PAGE_SIZE });
+      if (!Array.isArray(response.payments)) {
+        setLoadMoreError("Respons pembayaran berikutnya tidak sesuai kontrak.");
+        return;
+      }
+      const next = flattenPayments(response.payments);
+      setApiPayments((current) => {
+        const seen = new Set((current ?? []).map((payment) => payment.id));
+        return [...(current ?? []), ...next.filter((payment) => !seen.has(payment.id))];
+      });
+      setPage(typeof response.page === "number" ? response.page : page + 1);
+      setLoadedOrders((current) => current + response.payments.length);
+      setTotalOrders(typeof response.total === "number" ? response.total : totalOrders);
+    } catch {
+      setLoadMoreError("Gagal memuat pesanan pembayaran berikutnya.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadedOrders, loadingMore, page, totalOrders]);
 
   const sourcePayments = useMemo(() => (DEMO_MODE ? seedPayments : apiPayments ?? []), [apiPayments]);
 
@@ -142,7 +178,7 @@ export default function PaymentsPage() {
         <MetricCard
           label="Volume berhasil"
           value={formatIDR(metrics.settled)}
-          change={`${metrics.settledCount} pembayaran berhasil`}
+          change={`${metrics.settledCount} pembayaran berhasil (pesanan termuat)`}
         />
         <MetricCard
           label="Menunggu"
@@ -157,7 +193,7 @@ export default function PaymentsPage() {
         <MetricCard
           label="Tingkat settlement"
           value={metrics.totalCount === 0 ? "—" : `${Math.round((metrics.settledCount / metrics.totalCount) * 100)}%`}
-          change={`${metrics.settledCount} dari ${metrics.totalCount} pembayaran`}
+          change={`${metrics.settledCount} dari ${metrics.totalCount} pembayaran pada pesanan termuat`}
         />
       </section>
       <div className="toolbar">
@@ -179,6 +215,11 @@ export default function PaymentsPage() {
           {STATUS_FILTERS.map((value) => <option key={value}>{value}</option>)}
         </select>
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} pembayaran</span>
+        {!DEMO_MODE && totalOrders > 0 && (
+          <span className="muted" style={{ fontSize: 9 }}>
+            {loadedOrders} dari {totalOrders} pesanan dimuat
+          </span>
+        )}
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>
       <section className="card table-panel">
@@ -213,6 +254,14 @@ export default function PaymentsPage() {
           </table>
         </div>
       </section>
+      {loadMoreError && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{loadMoreError}</div>}
+      {!DEMO_MODE && loadedOrders < totalOrders && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
+          <button className="button button-secondary button-sm" type="button" onClick={() => void loadMorePayments()} disabled={loadingMore}>
+            {loadingMore ? "Memuat…" : "Muat lebih banyak pesanan"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -123,7 +123,7 @@ export default function DashboardProductsPage() {
       mode: "create",
       name: "",
       slug: "",
-      categoryId: categoryOptions[0]?.id ?? "",
+      categoryId: "",
       description: "",
     });
   };
@@ -136,7 +136,7 @@ export default function DashboardProductsPage() {
       id: product.id,
       name: product.name,
       slug: product.slug,
-      categoryId: categoryOptions.find((item) => item.name === product.category)?.id ?? categoryOptions[0]?.id ?? "",
+      categoryId: product.categoryId ?? "",
       description: product.description,
     });
   };
@@ -153,6 +153,12 @@ export default function DashboardProductsPage() {
     }
     if (!form.categoryId) {
       setFormError("Pilih kategori produk terlebih dahulu.");
+      return;
+    }
+    if (form.mode === "edit" && !form.description.trim()) {
+      // Backend mempertahankan deskripsi lama saat menerima string kosong;
+      // hentikan di UI agar operator tidak mengira deskripsi sudah dihapus.
+      setFormError("Deskripsi tidak dapat dikosongkan saat edit. Isi deskripsi baru atau batalkan perubahan.");
       return;
     }
 
@@ -251,7 +257,6 @@ export default function DashboardProductsPage() {
                 id="p-category"
                 value={form.categoryId}
                 onChange={(event) => setForm({ ...form, categoryId: event.target.value })}
-                required
               >
                 <option value="">Pilih kategori</option>
                 {categoryOptions.map((option) => (

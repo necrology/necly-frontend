@@ -83,4 +83,17 @@ describe("voucher admin (W18)", () => {
       active: true,
     });
   });
+
+  it("menolak batas penggunaan kosong agar tidak menjadi voucher tanpa batas", async () => {
+    render(<VouchersPage />);
+    await screen.findByText("HEMAT20K");
+
+    fireEvent.click(screen.getByRole("button", { name: /Buat voucher/ }));
+    fireEvent.change(screen.getByLabelText("Kode"), { target: { value: "TANPABATAS" } });
+    fireEvent.change(screen.getByLabelText("Nilai"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan voucher" }));
+
+    expect(await screen.findByText(/Batas penggunaan wajib diisi minimal 1/)).toBeInTheDocument();
+    expect(createVoucherMock).not.toHaveBeenCalled();
+  });
 });

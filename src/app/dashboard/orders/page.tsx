@@ -13,7 +13,7 @@ import { downloadCsv } from "@/lib/csv";
 import type { DashboardOrder } from "@/lib/types";
 import { ORDER_STATUS_OPTIONS } from "@/lib/order-status";
 
-const statuses = ["Semua", ...ORDER_STATUS_OPTIONS, "Aktif"] as const;
+const statuses = ["Semua", ...ORDER_STATUS_OPTIONS] as const;
 type StatusType = (typeof statuses)[number];
 
 export default function OrdersAdminPage() {

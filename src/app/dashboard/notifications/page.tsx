@@ -8,6 +8,8 @@ import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { downloadCsv } from "@/lib/csv";
 import { formatDateID } from "@/lib/money";
 
+const NOTIFICATION_PAGE_SIZE = 50;
+
 const typeLabels: Record<string, string> = {
   order: "Pesanan",
   inventory: "Inventaris",
@@ -28,6 +30,11 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [apiNotifications, setApiNotifications] = useState<NotificationItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [loaded, setLoaded] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState("");
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -43,7 +50,7 @@ export default function NotificationsPage() {
         return;
       }
 
-      const response = await adminApi.listNotifications({ page: 1, per_page: 50 });
+      const response = await adminApi.listNotifications({ page: 1, per_page: NOTIFICATION_PAGE_SIZE });
       if (!Array.isArray(response.notifications)) {
         setError("Respons notifikasi dari server tidak sesuai kontrak");
         return;
@@ -51,6 +58,9 @@ export default function NotificationsPage() {
 
       // Backend memproyeksikan audit log sebagai notifikasi. Tidak ada status
       // baca di domain, jadi UI tidak mengarang tombol "tandai dibaca".
+      setPage(typeof response.page === "number" ? response.page : 1);
+      setLoaded(response.notifications.length);
+      setTotal(typeof response.total === "number" ? response.total : response.notifications.length);
       setApiNotifications(
         response.notifications.map((log) => {
           const resource = log.resource_id ? `${log.resource_type} · ${log.resource_id}` : log.resource_type;
@@ -78,6 +88,41 @@ export default function NotificationsPage() {
     }
     void Promise.resolve().then(() => loadNotifications());
   }, [loadNotifications]);
+
+  const loadMoreNotifications = useCallback(async () => {
+    if (DEMO_MODE || loadingMore || loaded >= total) return;
+    setLoadingMore(true);
+    setLoadMoreError("");
+    try {
+      const response = await adminApi.listNotifications({ page: page + 1, per_page: NOTIFICATION_PAGE_SIZE });
+      if (!Array.isArray(response.notifications)) {
+        setLoadMoreError("Respons notifikasi berikutnya tidak sesuai kontrak.");
+        return;
+      }
+      const next = response.notifications.map((log) => {
+        const resource = log.resource_id ? `${log.resource_type} · ${log.resource_id}` : log.resource_type;
+        return {
+          id: log.id,
+          title: log.action,
+          detail: resource,
+          type: notificationType(log.action),
+          time: log.created_at,
+          read: true,
+        };
+      });
+      setApiNotifications((current) => {
+        const seen = new Set((current ?? []).map((notification) => notification.id));
+        return [...(current ?? []), ...next.filter((notification) => !seen.has(notification.id))];
+      });
+      setPage(typeof response.page === "number" ? response.page : page + 1);
+      setLoaded((current) => current + response.notifications.length);
+      setTotal(typeof response.total === "number" ? response.total : total);
+    } catch {
+      setLoadMoreError("Gagal memuat notifikasi berikutnya.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loaded, loadingMore, page, total]);
 
   const sourceNotifications = useMemo(
     () => (DEMO_MODE ? seedNotifications : apiNotifications ?? []),
@@ -154,6 +199,11 @@ export default function NotificationsPage() {
           ))}
         </select>
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} aktivitas</span>
+        {!DEMO_MODE && total > 0 && (
+          <span className="muted" style={{ fontSize: 9 }}>
+            {loaded} dari {total} aktivitas dimuat
+          </span>
+        )}
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>
       <section className="card table-panel">
@@ -184,6 +234,14 @@ export default function NotificationsPage() {
           </table>
         </div>
       </section>
+      {loadMoreError && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{loadMoreError}</div>}
+      {!DEMO_MODE && loaded < total && (
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 12 }}>
+          <button className="button button-secondary button-sm" type="button" onClick={() => void loadMoreNotifications()} disabled={loadingMore}>
+            {loadingMore ? "Memuat…" : "Muat lebih banyak notifikasi"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

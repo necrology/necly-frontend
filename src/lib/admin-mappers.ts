@@ -1,4 +1,5 @@
 import type { ApiOrder, ApiUser, ApiProduct, ApiCategory, ApiProductPrice } from "./api";
+import { mapProductCategory } from "./product-mapper";
 import type {
   DashboardOrder,
   Customer,
@@ -123,14 +124,6 @@ export function mapApiUserToCustomer(apiUser: ApiUser): Customer {
 }
 
 export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): SubscriptionProduct {
-  const categoryMap: Record<string, SubscriptionProduct["category"]> = {
-    Streaming: "Streaming",
-    Productivity: "Produktivitas",
-    Creative: "Kreatif",
-    Education: "Edukasi",
-    Security: "Keamanan",
-  };
-
   const primaryPrice = apiProduct.prices?.[0];
   const priceOptions = (apiProduct.prices ?? [])
     .filter((p) => p.active !== false)
@@ -146,8 +139,10 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
     }))
     .sort((a, b) => a.days - b.days || a.price - b.price);
 
-  const category = typeof apiProduct.category === "string" ? apiProduct.category : apiProduct.category?.name ?? "Produktivitas";
-  const mappedCategory = categoryMap[category] ?? "Produktivitas";
+  const mappedCategory = mapProductCategory(apiProduct);
+  const categoryId =
+    apiProduct.category_id ??
+    (typeof apiProduct.category === "object" ? apiProduct.category?.id : undefined);
 
   return {
     id: apiProduct.id,
@@ -155,6 +150,7 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
     name: apiProduct.name,
     eyebrow: "Akun sharing hemat",
     category: mappedCategory,
+    categoryId,
     price: primaryPrice?.amount ?? 0,
     stock: apiProduct.stock ?? priceOptions.reduce((sum, option) => sum + (option.stock ?? 0), 0),
     duration: primaryPrice?.duration_name ?? "Belum tersedia",

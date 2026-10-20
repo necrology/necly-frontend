@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { listPaymentsMock, bootstrapAuthMock } = vi.hoisted(() => ({
@@ -44,6 +44,13 @@ const ORDER = {
   }],
 };
 
+const SECOND_ORDER = {
+  ...ORDER,
+  id: "0192f0b0-0000-0000-0000-000000000002",
+  number: "ORD-W18-2",
+  payments: [{ ...ORDER.payments[0], id: "pay-2", order_id: "0192f0b0-0000-0000-0000-000000000002" }],
+};
+
 describe("pembayaran admin (W18)", () => {
   beforeEach(() => {
     listPaymentsMock.mockReset();
@@ -59,8 +66,25 @@ describe("pembayaran admin (W18)", () => {
     expect(screen.getByText("Fixture Customer")).toBeInTheDocument();
     expect(screen.getByText("xendit")).toBeInTheDocument();
     expect(screen.getAllByText("Berhasil").length).toBeGreaterThan(0);
-    expect(listPaymentsMock).toHaveBeenCalledWith({ page: 1, per_page: 50 });
+    expect(listPaymentsMock).toHaveBeenCalledWith({ page: 1, per_page: 100 });
     expect(screen.queryByText(/belum tersedia/i)).not.toBeInTheDocument();
+  });
+
+  it("memuat pesanan pembayaran berikutnya dan menampilkan cakupan data termuat", async () => {
+    listPaymentsMock
+      .mockReset()
+      .mockResolvedValueOnce({ payments: [ORDER], page: 1, per_page: 100, total: 150 })
+      .mockResolvedValue({ payments: [SECOND_ORDER], page: 2, per_page: 100, total: 150 });
+    render(<PaymentsPage />);
+
+    expect(await screen.findByText("pay-1")).toBeInTheDocument();
+    expect(screen.getByText("1 dari 150 pesanan dimuat")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Muat lebih banyak pesanan" }));
+
+    expect(await screen.findByText("pay-2")).toBeInTheDocument();
+    expect(listPaymentsMock).toHaveBeenLastCalledWith({ page: 2, per_page: 100 });
+    expect(screen.getByText("2 dari 150 pesanan dimuat")).toBeInTheDocument();
   });
 
   it("menampilkan keadaan kosong tanpa error ketika tidak ada pembayaran", async () => {

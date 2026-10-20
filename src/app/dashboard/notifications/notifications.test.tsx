@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { listNotificationsMock, bootstrapAuthMock } = vi.hoisted(() => ({
@@ -30,6 +30,14 @@ const LOG = {
   created_at: "2026-10-18T09:00:00Z",
 };
 
+const SECOND_LOG = {
+  ...LOG,
+  id: "0192f0d0-0000-0000-0000-000000000002",
+  action: "admin.inventory.updated",
+  resource_type: "inventory_account",
+  resource_id: "0192f0f0-0000-0000-0000-000000000001",
+};
+
 describe("notifikasi admin (W18)", () => {
   beforeEach(() => {
     listNotificationsMock.mockReset();
@@ -45,6 +53,23 @@ describe("notifikasi admin (W18)", () => {
     expect(screen.getByText("Tercatat")).toBeInTheDocument();
     expect(listNotificationsMock).toHaveBeenCalledWith({ page: 1, per_page: 50 });
     expect(screen.queryByText(/tandai semua dibaca/i)).not.toBeInTheDocument();
+  });
+
+  it("memuat aktivitas berikutnya dan menampilkan jumlah termuat dari total", async () => {
+    listNotificationsMock
+      .mockReset()
+      .mockResolvedValueOnce({ notifications: [LOG], page: 1, per_page: 50, total: 120 })
+      .mockResolvedValue({ notifications: [SECOND_LOG], page: 2, per_page: 50, total: 120 });
+    render(<NotificationsPage />);
+
+    expect(await screen.findByText("admin.order.delivery_sent")).toBeInTheDocument();
+    expect(screen.getByText("1 dari 120 aktivitas dimuat")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Muat lebih banyak notifikasi" }));
+
+    expect(await screen.findByText("admin.inventory.updated")).toBeInTheDocument();
+    expect(listNotificationsMock).toHaveBeenLastCalledWith({ page: 2, per_page: 50 });
+    expect(screen.getByText("2 dari 120 aktivitas dimuat")).toBeInTheDocument();
   });
 
   it("menampilkan keadaan kosong yang sah", async () => {

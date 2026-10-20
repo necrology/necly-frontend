@@ -22,6 +22,8 @@ export type SubscriptionProduct = {
   name: string;
   eyebrow: string;
   category: ProductCategory;
+  /** ID kategori asli dari API, dipakai form admin agar edit tidak memindahkan kategori. */
+  categoryId?: string;
   price: number;
   stock: number;
   duration: string;

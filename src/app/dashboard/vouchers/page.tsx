@@ -119,6 +119,11 @@ export default function VouchersPage() {
       setSubmitting(false);
       return;
     }
+    if (!Number.isInteger(limit) || limit < 1) {
+      setActionError("Batas penggunaan wajib diisi minimal 1; nilai 0 berarti tanpa batas di backend.");
+      setSubmitting(false);
+      return;
+    }
     if (type === "Persen" && (value < 1 || value > 100)) {
       setActionError("Nilai voucher persen harus antara 1 dan 100.");
       setSubmitting(false);

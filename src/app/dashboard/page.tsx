@@ -190,7 +190,7 @@ export default function DashboardPage() {
         actions={
           <>
             <span className="badge status-info" title="Endpoint metrik belum menerima parameter rentang waktu">
-              {DEMO_MODE ? "31 Agu–6 Sep (simulasi)" : "7 hari terakhir"}
+              {DEMO_MODE ? "31 Agu–6 Sep (simulasi)" : "Ringkasan server"}
             </span>
             <Link className="button button-primary button-sm" href="/dashboard/orders">
               Buka pesanan <ArrowRight size={13} />
