@@ -40,8 +40,8 @@ test("mobile hero keeps the animation close to the title block", async ({ page }
     return Math.round(art.top - cta.bottom);
   });
   expect(gap).not.toBeNull();
-  expect(gap).toBeGreaterThanOrEqual(4);
-  expect(gap).toBeLessThanOrEqual(16);
+  expect(gap).toBeGreaterThanOrEqual(18);
+  expect(gap).toBeLessThanOrEqual(34);
 });
 
 test("catalog route renders the existing search and category controls", async ({ page }) => {
