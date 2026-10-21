@@ -22,6 +22,26 @@ function LoginContent() {
   const [unverifiedEmail, setUnverifiedEmail] = useState("");
   const [resendNotice, setResendNotice] = useState("");
   const [resending, setResending] = useState(false);
+  // QA baris 84: "Ingat saya" menyimpan email agar tidak perlu diketik ulang.
+  // Kata sandi tidak pernah disimpan di localStorage; biarkan password manager
+  // browser yang menanganinya.
+  const [remember, setRemember] = useState(false);
+  const [emailValue, setEmailValue] = useState("");
+  const expired = searchParams.get("expired") === "1";
+  const passwordChanged = searchParams.get("passwordChanged") === "1";
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("necly-remember-email");
+    if (!saved) return;
+    // Tunda satu tick agar hidrasi server dan klien tidak berbeda, sekaligus
+    // menghindari setState sinkron di dalam effect.
+    const timer = window.setTimeout(() => {
+      setEmailValue(saved);
+      setRemember(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // Pengunjung yang sesinya masih berlaku tidak perlu disuguhi formulir masuk.
   // Sebelumnya halaman ini selalu menampilkan formulir, sehingga tautan mana pun
@@ -68,6 +88,8 @@ function LoginContent() {
     setUnverifiedEmail("");
     setResendNotice("");
     if (Object.keys(next).length) return;
+    if (remember) window.localStorage.setItem("necly-remember-email", email);
+    else window.localStorage.removeItem("necly-remember-email");
 
     if (DEMO_MODE) {
       setSubmitted(true);
@@ -106,15 +128,17 @@ function LoginContent() {
         <p className="muted auth-login-subtitle">{DEMO_MODE ? "Mode demo aktif. Data login tidak akan dikirim." : "Kelola pesanan dan akses langganan Anda."}</p>
       </div>
       {submitted && <div className="demo-banner" role="status"><LockKeyhole size={15} /><span>Validasi demo berhasil. Tidak ada sesi atau akun yang dibuat.</span></div>}
+      {expired && <div className="notice" role="status">Sesi Anda sudah berakhir. Silakan masuk kembali.</div>}
+      {passwordChanged && <div className="notice success" role="status">Kata sandi berhasil diubah. Silakan masuk kembali.</div>}
       <form onSubmit={submit} style={{ display: "grid", gap: 18 }} noValidate>
         <div className="field">
           <label className="label" htmlFor="login-email">Alamat email</label>
-          <input className="input" id="login-email" name="email" type="email" autoComplete="email" placeholder="anda@contoh.id" aria-invalid={Boolean(errors.email)} />
+          <input className="input" id="login-email" name="email" type="email" autoComplete="username" placeholder="anda@contoh.id" value={emailValue} onChange={(event) => setEmailValue(event.target.value)} aria-invalid={Boolean(errors.email)} />
           {errors.email && <span className="field-error" role="alert">{errors.email}</span>}
         </div>
         <PasswordField id="login-password" name="password" label="Kata sandi" autoComplete="current-password" placeholder="10–72 byte" error={errors.password} />
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14 }}>
-          <label className="check-row"><input type="checkbox" /><span>Ingat saya</span></label>
+          <label className="check-row"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>Ingat saya</span></label>
           {/* Baris 65: tautan lupa kata sandi diberi warna aksen biru supaya jelas
               bisa diklik dan mengantar ke halaman atur ulang kata sandi. */}
           <Link className="button button-ghost button-sm auth-forgot-link" href="/forgot-password">Lupa kata sandi?</Link>

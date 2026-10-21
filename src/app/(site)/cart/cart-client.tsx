@@ -21,7 +21,7 @@ const lineKey = (item: Pick<CartItem, "id" | "product_price_id">) => item.produc
 /** Ringkasan pilihan yang tersimpan saat produk ditambahkan dari katalog. */
 function lineDetail(item: CartItem) {
   const parts = [item.selectedDuration, item.selectedDevice ? `${item.selectedDevice} perangkat` : null].filter(Boolean);
-  return parts.length ? parts.join(" · ") : "Slot akun langganan bersama";
+  return parts.length ? parts.join(" · ") : "Akun langganan bersama";
 }
 
 function initials(name: string) {

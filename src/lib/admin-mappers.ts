@@ -1,5 +1,5 @@
 import type { ApiOrder, ApiUser, ApiProduct, ApiCategory, ApiProductPrice } from "./api";
-import { mapProductCategory } from "./product-mapper";
+import { cleanProductName, mapProductCategory } from "./product-mapper";
 import type {
   DashboardOrder,
   Customer,
@@ -147,7 +147,7 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
   return {
     id: apiProduct.id,
     slug: apiProduct.slug,
-    name: apiProduct.name,
+    name: cleanProductName(apiProduct.name),
     eyebrow: "Akun sharing hemat",
     category: mappedCategory,
     categoryId,
@@ -158,7 +158,7 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
     description: apiProduct.description,
     accessType: mappedCategory === "Streaming" ? "Undangan anggota" : "Kursi tim",
     benefits: [
-      "Slot akun langganan untuk dipakai bersama",
+      "Akun langganan tersedia untuk dipakai bersama",
       "Biaya lebih hemat dibanding membeli paket penuh sendiri",
       "Masa akses tercatat di pesanan",
     ],

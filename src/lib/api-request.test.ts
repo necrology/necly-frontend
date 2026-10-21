@@ -47,16 +47,19 @@ describe("apiRequest", () => {
           expires_in: 900,
         }),
       )
+      .mockResolvedValueOnce(jsonResponse({ sessions: [{ id: "sesi-1", current: true, expires_at: "2099-01-01T00:00:00Z" }] }))
       .mockResolvedValueOnce(jsonResponse({ items: [], total: 0 }));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(apiRequest<{ items: unknown[]; total: number }>("/cart")).resolves.toEqual({ items: [], total: 0 });
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(4));
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ credentials: "include" });
     expect(new Headers(fetchMock.mock.calls[0]?.[1]?.headers).get("Authorization")).toBe("Bearer token-lama");
     expect(fetchMock.mock.calls[1]?.[0]).toContain("/auth/refresh");
-    expect(new Headers(fetchMock.mock.calls[2]?.[1]?.headers).get("Authorization")).toBe("Bearer token-baru");
+    expect(fetchMock.mock.calls[2]?.[0]).toContain("/auth/sessions");
+    expect(new Headers(fetchMock.mock.calls[3]?.[1]?.headers).get("Authorization")).toBe("Bearer token-baru");
+    await vi.waitFor(() => expect(useAuthStore.getState().expiresAt).toBe(new Date("2099-01-01T00:00:00Z").getTime()));
   });
 
   it("mengirim permintaan lupa kata sandi melalui endpoint same-origin", async () => {

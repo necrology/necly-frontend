@@ -3,7 +3,7 @@
 import { CheckCircle2, KeyRound, Laptop, LogOut, ReceiptText, ShieldCheck, Smartphone, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { PasswordField } from "@/components/password-field";
 import { ApiError, authApi, bootstrapAuth, type ApiSession, type User } from "@/lib/api";
 import { passwordError } from "@/lib/auth-validation";
@@ -44,6 +44,11 @@ export default function AccountPage() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [busySession, setBusySession] = useState("");
   const [signingOut, setSigningOut] = useState(false);
+  const logoutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (logoutTimer.current) clearTimeout(logoutTimer.current);
+  }, []);
 
   const loadSessions = useCallback(async () => {
     try {
@@ -97,6 +102,16 @@ export default function AccountPage() {
       setNotice(response.message);
       form.reset();
       await loadSessions();
+      // QA baris 78: setelah kata sandi berubah, sesi ini juga harus berakhir.
+      // Beri waktu singkat agar pesan sukses terbaca, lalu logout dan ke login.
+      if (logoutTimer.current) clearTimeout(logoutTimer.current);
+      logoutTimer.current = setTimeout(async () => {
+        try {
+          await authApi.logout();
+        } finally {
+          router.replace("/login?passwordChanged=1");
+        }
+      }, 2500);
     } catch (error) {
       setErrors({ submit: error instanceof ApiError ? error.message : "Kata sandi gagal diubah. Coba lagi." });
     } finally {
@@ -192,9 +207,10 @@ export default function AccountPage() {
         {notice && <div className="notice success" role="status">{notice}</div>}
         {errors.submit && <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>{errors.submit}</div>}
         <form onSubmit={submitPassword} noValidate>
-          <PasswordField id="account-current" name="current" label="Kata sandi saat ini" autoComplete="current-password" placeholder="Kata sandi sekarang" error={errors.current} />
-          <PasswordField id="account-new" name="password" label="Kata sandi baru" autoComplete="new-password" placeholder="10–72 byte" error={errors.password} />
-          <PasswordField id="account-confirm" name="confirm" label="Konfirmasi kata sandi baru" autoComplete="new-password" placeholder="Ulangi kata sandi baru" error={errors.confirm} />
+          <PasswordField id="account-current" name="current" label="Kata sandi saat ini" autoComplete="current-password" placeholder="Kata sandi sekarang" error={errors.current} required />
+          <Link className="button button-ghost button-sm auth-forgot-link account-forgot-link" href="/forgot-password">Lupa sandi saat ini?</Link>
+          <PasswordField id="account-new" name="password" label="Kata sandi baru" autoComplete="new-password" placeholder="10–72 byte" error={errors.password} required />
+          <PasswordField id="account-confirm" name="confirm" label="Konfirmasi kata sandi baru" autoComplete="new-password" placeholder="Ulangi kata sandi baru" error={errors.confirm} required />
           <button className="button button-primary" type="submit" disabled={savingPassword}>
             {savingPassword ? "Menyimpan…" : "Simpan kata sandi baru"}
           </button>

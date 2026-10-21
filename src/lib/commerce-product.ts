@@ -20,9 +20,9 @@ const brandRules: Array<{ pattern: RegExp; tone: BrandTone; brand: (name: string
   { pattern: /spotify/i, tone: "spotify", brand: () => "Spotify" },
   { pattern: /youtube/i, tone: "youtube", brand: () => "YouTube Premium" },
   { pattern: /microsoft|office|365/i, tone: "microsoft", brand: () => "Microsoft 365" },
-  { pattern: /canva/i, tone: "generic", brand: () => "Canva Teams" },
-  { pattern: /google one/i, tone: "generic", brand: () => "Google One 2 TB" },
-  { pattern: /dropbox/i, tone: "generic", brand: () => "Dropbox Family" },
+  { pattern: /canva/i, tone: "canva", brand: () => "Canva Teams" },
+  { pattern: /google one/i, tone: "googleone", brand: () => "Google One 2 TB" },
+  { pattern: /dropbox/i, tone: "dropbox", brand: () => "Dropbox Family" },
 ];
 
 export function brandForProduct(name: string): { brand: string; logoTone: BrandTone } {

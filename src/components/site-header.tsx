@@ -103,7 +103,7 @@ export function SiteHeader() {
             <button className="commerce-mobile-login commerce-mobile-signout commerce-mobile-account-action" type="button" onClick={signOut} disabled={signingOut}>{signingOut ? "Keluar…" : `Keluar (${user.name.split(" ")[0]})`}</button>
           </>
         ) : (
-          <Link className="commerce-mobile-login" href="/login" onClick={closeMobileMenu}>Log In</Link>
+          <Link className="commerce-mobile-login commerce-mobile-login-action" href="/login" onClick={closeMobileMenu}>Log In</Link>
         )}
       </nav>
     </header>

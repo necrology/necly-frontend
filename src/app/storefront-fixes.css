@@ -47,6 +47,9 @@ img, svg { max-width: 100%; }
 .figma-desktop-product-assets.asset-netflix > img { max-width: 82px; }
 .figma-desktop-product-assets.asset-nord > img { max-width: 118px; }
 .figma-desktop-product-assets.asset-youtube > img { width: auto; max-width: 76px; height: 31px; }
+.figma-desktop-product-assets.asset-canva > img { max-width: 104px; }
+.figma-desktop-product-assets.asset-googleone > img { max-width: 128px; }
+.figma-desktop-product-assets.asset-dropbox > img { max-width: 112px; }
 .youtube-premium-label { color: #2b2b38; font-size: 11px; font-weight: 700; letter-spacing: -.02em; }
 .spotify-asset-crop { position: relative; width: 112px; height: 32px; display: block; overflow: hidden; }
 .spotify-asset-crop img { position: absolute; top: -40px; left: 0; width: 112px; max-width: none; height: 112px; }
@@ -370,6 +373,9 @@ img, svg { max-width: 100%; }
   .figma-desktop-product-assets.asset-netflix > img { max-width: 112px; }
   .figma-desktop-product-assets.asset-nord > img { max-width: 150px; }
   .figma-desktop-product-assets.asset-youtube > img { width: 108px; height: 45px; }
+  .figma-desktop-product-assets.asset-canva > img { max-width: 150px; }
+  .figma-desktop-product-assets.asset-googleone > img { max-width: 172px; }
+  .figma-desktop-product-assets.asset-dropbox > img { max-width: 156px; }
   .spotify-asset-crop { position: relative; width: 158px; height: 46px; display: block; overflow: hidden; }
   .spotify-asset-crop img { position: absolute; top: -57px; left: 0; width: 158px; max-width: none; height: 158px; }
   .product-brand.compact .figma-desktop-product-assets { height: 42px; }
