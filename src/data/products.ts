@@ -4,7 +4,7 @@ export type CommerceProduct = SubscriptionProduct & {
   brand: string;
   packageName: string;
   badge?: "Populer" | "Best Seller" | "Trending" | "Baru" | "Preorder";
-  logoTone: "disney" | "apple" | "viu" | "nord" | "netflix" | "spotify" | "youtube" | "microsoft" | "generic";
+  logoTone: "disney" | "apple" | "viu" | "nord" | "netflix" | "spotify" | "youtube" | "microsoft" | "canva" | "googleone" | "dropbox" | "generic";
   providerPrice: number;
   groupMembers: number;
   discount: number;

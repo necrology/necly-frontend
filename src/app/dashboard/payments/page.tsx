@@ -162,7 +162,7 @@ export default function PaymentsPage() {
     <div className="dashboard-page">
       <PageHeader
         title="Pembayaran akun sharing"
-        description="Rekonsiliasi pembayaran pelanggan terhadap pesanan akun langganan sharing agar aktivasi slot anggota bisa dilanjutkan."
+        description="Rekonsiliasi pembayaran pelanggan terhadap pesanan akun langganan sharing agar aktivasi akses anggota bisa dilanjutkan."
         actions={
           <button className="button button-secondary button-sm" onClick={exportRows} disabled={rows.length === 0}>
             <Download size={13} /> Ekspor buku besar

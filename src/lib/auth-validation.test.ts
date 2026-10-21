@@ -3,10 +3,10 @@ import { passwordError, safeRedirectPath } from "./auth-validation";
 
 describe("validasi autentikasi", () => {
   it("mengukur batas kata sandi 10–72 berdasarkan byte UTF-8", () => {
-    expect(passwordError("123456789")).toBe("Kata sandi harus terdiri dari 10–72 byte.");
+    expect(passwordError("123456789")).toBe("Kata sandi minimal 10 karakter.");
     expect(passwordError("1234567890")).toBeUndefined();
     expect(passwordError("😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀")).toBeUndefined();
-    expect(passwordError("😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a")).toBe("Kata sandi harus terdiri dari 10–72 byte.");
+    expect(passwordError("😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀a")).toBe("Kata sandi terlalu panjang. Gunakan maksimal 72 karakter.");
   });
 
   it("menghormati tujuan lokal setelah login dan menolak pengalihan eksternal", () => {

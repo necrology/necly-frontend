@@ -15,6 +15,21 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [verificationToken, setVerificationToken] = useState<string>();
   const [submitting, setSubmitting] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendNotice, setResendNotice] = useState("");
+
+  const resendVerification = async () => {
+    setResending(true);
+    setResendNotice("");
+    try {
+      if (!DEMO_MODE) await authApi.resendVerification(email);
+      setResendNotice("Email verifikasi baru sudah dikirim. Periksa kotak masuk dan folder spam.");
+    } catch {
+      setResendNotice("Gagal mengirim ulang email verifikasi. Coba lagi beberapa saat lagi atau hubungi admin.");
+    } finally {
+      setResending(false);
+    }
+  };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -61,6 +76,10 @@ export default function RegisterPage() {
         <span className="eyebrow">{DEMO_MODE ? "Pendaftaran demo selesai" : "Akun berhasil dibuat"}</span>
         <h1 className="h2">Periksa email Anda.</h1>
         <p className="muted">{DEMO_MODE ? "Tidak ada akun atau email yang benar-benar dibuat. Lanjutkan untuk melihat pengalaman verifikasi demo." : <>Kami menyiapkan verifikasi untuk <strong>{email}</strong>. Buka tautan verifikasi agar akun dapat digunakan.</>}</p>
+        <p className="muted small" style={{ margin: 0 }}>Tidak menerima email? Periksa folder spam, atau kirim ulang tautan verifikasi di bawah ini.</p>
+        <button className="button button-secondary" type="button" onClick={resendVerification} disabled={resending}>{resending ? "Mengirim…" : "Kirim ulang email verifikasi"}</button>
+        {resendNotice && <p className="muted small" role="status">{resendNotice}</p>}
+        <p className="muted small" style={{ margin: 0 }}>Masih terkendala? <a href="mailto:necly.services@gmail.com">Hubungi admin via email</a>.</p>
         <Link className="button button-primary" href={`/verify-email?${query.toString()}`}>Lanjut ke verifikasi <ArrowRight size={14} /></Link>
       </div>
     );
@@ -77,7 +96,7 @@ export default function RegisterPage() {
       <form onSubmit={submit} style={{ display: "grid", gap: 16 }} noValidate>
         <div className="field"><label className="label" htmlFor="name">Nama lengkap</label><input className="input" id="name" name="name" autoComplete="name" placeholder="Nama Anda" aria-invalid={Boolean(errors.name)} />{errors.name && <span className="field-error" role="alert">{errors.name}</span>}</div>
         <div className="field"><label className="label" htmlFor="register-email">Alamat email</label><input className="input" id="register-email" name="email" type="email" autoComplete="email" placeholder="anda@contoh.id" aria-invalid={Boolean(errors.email)} />{errors.email && <span className="field-error" role="alert">{errors.email}</span>}</div>
-        <PasswordField id="register-password" name="password" label="Kata sandi" autoComplete="new-password" placeholder="10–72 byte" error={errors.password} />
+        <PasswordField id="register-password" name="password" label="Kata sandi" autoComplete="new-password" placeholder="Minimal 10 karakter" error={errors.password} />
         <PasswordField id="confirm-password" name="confirm" label="Konfirmasi kata sandi" autoComplete="new-password" placeholder="Ulangi kata sandi" error={errors.confirm} />
         <label className="check-row"><input name="terms" type="checkbox" /><span>{DEMO_MODE ? "Saya memahami bahwa mode demo tidak membuat akun nyata." : <>Saya menyetujui <Link href="/syarat-ketentuan" target="_blank" rel="noreferrer">syarat dan ketentuan</Link> serta <Link href="/kebijakan-privasi" target="_blank" rel="noreferrer">kebijakan privasi</Link> Necly Services.</>}</span></label>
         {errors.terms && <span className="field-error" role="alert">{errors.terms}</span>}

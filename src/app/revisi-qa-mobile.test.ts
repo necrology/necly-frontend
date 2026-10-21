@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -19,6 +19,23 @@ const reportButton = read("src", "components", "report-issue-button.tsx");
 const cartStore = read("src", "stores", "cart-store.ts");
 const about = read("src", "app", "(site)", "about", "page.tsx");
 const header = read("src", "components", "site-header.tsx");
+const account = read("src", "app", "(site)", "akun", "page.tsx");
+const passwordField = read("src", "components", "password-field.tsx");
+const sessionGuard = read("src", "components", "session-expiry-guard.tsx");
+const rootLayout = read("src", "app", "layout.tsx");
+const apiSource = read("src", "lib", "api.ts");
+const productMapper = read("src", "lib", "product-mapper.ts");
+const productBrand = read("src", "components", "product-brand.tsx");
+const brandSource = read("src", "lib", "commerce-product.ts");
+const authValidation = read("src", "lib", "auth-validation.ts");
+const registerPage = read("src", "app", "(auth)", "register", "page.tsx");
+const cartPage = read("src", "app", "(site)", "cart", "page.tsx");
+const cartClient = read("src", "app", "(site)", "cart", "cart-client.tsx");
+const authLayout = read("src", "app", "(auth)", "layout.tsx");
+const terms = read("src", "app", "(site)", "syarat-ketentuan", "page.tsx");
+const serviceVisual = read("src", "components", "service-visual.tsx");
+const seed = read("src", "data", "seed.ts");
+const inventoryPage = read("src", "app", "dashboard", "inventory", "page.tsx");
 
 describe("revisi QA putaran kedua", () => {
   it("baris 9: ikon panah dihapus, teks CTA putih, badge 'Lebih Hemat' dihapus", () => {
@@ -154,5 +171,95 @@ describe("revisi QA putaran kedua", () => {
     expect(forgot).toContain("if (error.status === 429)");
     expect(forgot).toContain("await authApi.forgotPassword(nextEmail)");
     expect(forgot).not.toContain("sendResetLink");
+  });
+
+  it("baris 75-78: ubah kata sandi punya bintang wajib, tautan lupa sandi, dan logout setelah berhasil", () => {
+    expect(passwordField).toContain('className="field-required"');
+    expect(passwordField).toContain("aria-required");
+    expect(account.match(/required \/>/g)).toHaveLength(3);
+    expect(account).toContain("Lupa sandi saat ini?");
+    expect(account).toContain("authApi.logout()");
+    expect(account).toContain('router.replace("/login?passwordChanged=1")');
+    expect(account).toContain("Masukkan kata sandi Anda saat ini untuk mengonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.");
+  });
+
+  it("baris 81-82: sesi kedaluwarsa diakhiri saat navigasi dan tidak dipulihkan", () => {
+    expect(apiSource).toContain("isSessionExpired");
+    expect(apiSource).toContain("necly-auth-expires-at");
+    expect(apiSource).toContain("sessionExpiryFrom");
+    expect(apiSource).toContain('apiRequest<{ message: string }>("/auth/logout"');
+    expect(sessionGuard).toContain("usePathname");
+    expect(sessionGuard).toContain('router.replace("/login?expired=1")');
+    expect(rootLayout).toContain("<SessionExpiryGuard />");
+  });
+
+  it("baris 83: tombol Pesanan saya berwarna kuning seperti Lapor Kendala", () => {
+    expect(css).toContain(".account-orders-link { width: fit-content; color: #2a2140; background: #fcbd50;");
+  });
+
+  it("baris 84: Ingat saya menyimpan email dan memakai autocomplete username", () => {
+    expect(login).toContain('autoComplete="username"');
+    expect(login).toContain("necly-remember-email");
+    expect(login).toContain("checked={remember}");
+  });
+
+  it("baris 86: tombol Log In di menu mobile berwarna putih", () => {
+    expect(header).toContain("commerce-mobile-login commerce-mobile-login-action");
+    expect(css).toContain(".commerce-mobile-login-action { color: #fff; }");
+  });
+
+  it("baris 87: jarak animasi hero mobile dirapatkan", () => {
+    expect(css).toContain(".commerce-home-hero-inner { grid-template-columns: 1fr; gap: 12px; text-align: center; }");
+    expect(css).toContain(".commerce-home-hero-art { max-width: 400px; margin-inline: auto; margin-top: -4px; }");
+  });
+
+  it("baris 88-89: label slot internal dibersihkan dari judul dan deskripsi", () => {
+    expect(productMapper).toContain("cleanProductName");
+    expect(productMapper).toContain("Akun langganan tersedia untuk dipakai bersama");
+    expect(productMapper).not.toContain("Slot akun langganan untuk dipakai bersama");
+    expect(brandSource).toContain('tone: "canva"');
+    expect(brandSource).toContain('tone: "googleone"');
+    expect(brandSource).toContain('tone: "dropbox"');
+  });
+
+  it("baris 90: logo Canva, Google One, dan Dropbox tersedia", () => {
+    expect(productBrand).toContain("/design-assets/logo-canva.svg");
+    expect(productBrand).toContain("/design-assets/logo-google-one.svg");
+    expect(productBrand).toContain("/design-assets/logo-dropbox.svg");
+    for (const logo of ["logo-canva.svg", "logo-google-one.svg", "logo-dropbox.svg"]) {
+      expect(existsSync(join(process.cwd(), "public", "design-assets", logo))).toBe(true);
+    }
+  });
+
+  it("placeholder dan pesan kata sandi tidak lagi memakai istilah byte", () => {
+    expect(authValidation).toContain("Kata sandi minimal 10 karakter");
+    expect(authValidation).not.toContain("10–72 byte");
+    expect(passwordField).toContain("Minimal 10 karakter");
+    for (const source of [login, registerPage, account]) {
+      expect(source).not.toContain("10–72 byte");
+    }
+  });
+
+  it("kata slot sudah hilang dari halaman pelanggan dan label dashboard utama", () => {
+    expect(cartPage).not.toMatch(/slot/i);
+    expect(cartClient).not.toMatch(/slot/i);
+    expect(authLayout).not.toMatch(/slot/i);
+    expect(terms).not.toMatch(/slot/i);
+    expect(serviceVisual).not.toMatch(/slot/i);
+    expect(productMapper).toContain("jumlah akses yang tersedia");
+    expect(seed).not.toContain("StreamFlix Slot Keluarga");
+    expect(seed).not.toContain("MusicFlow Slot Keluarga");
+    expect(seed).not.toContain("Readly Slot Keluarga");
+    expect(inventoryPage).toContain('label="Akses tersedia"');
+    expect(inventoryPage).toContain("Tambah akses akun");
+    expect(inventoryPage).not.toContain("Konfirmasi tambah slot");
+  });
+
+  it("email punya jalur kirim ulang dan kontak admin saat gagal", () => {
+    expect(forgot).toContain("mailto:necly.services@gmail.com");
+    expect(registerPage).toContain("resendVerification");
+    expect(registerPage).toContain("mailto:necly.services@gmail.com");
+    expect(issue).toContain("mailto:necly.services@gmail.com");
+    expect(login).toContain("mailto:necly.services@gmail.com");
   });
 });

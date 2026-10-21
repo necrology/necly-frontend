@@ -8,7 +8,7 @@ export function ServiceVisual({ service, compact = false }: { service: Subscript
     <div className={cn("service-visual", `accent-${service.accent}`)} style={compact ? { height: 110 } : undefined} aria-hidden="true">
       <Image className="service-art" src={illustration} alt="" fill sizes="(max-width: 580px) 100vw, (max-width: 1024px) 50vw, 33vw" />
       <span className="service-type">{service.category}</span>
-      <span className="service-stock">{service.stock > 0 ? `${service.stock} slot` : "Preorder"}</span>
+      <span className="service-stock">{service.stock > 0 ? `${service.stock} akses` : "Preorder"}</span>
     </div>
   );
 }

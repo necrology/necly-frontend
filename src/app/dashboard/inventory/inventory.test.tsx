@@ -110,7 +110,7 @@ describe("Halaman Inventaris akun", () => {
     );
   });
 
-  it("menampilkan akun per produk dengan status, expiry, limit sharing, dan kapasitas slot", async () => {
+  it("menampilkan akun per produk dengan status, expiry, limit sharing, dan kapasitas akses", async () => {
     render(<InventoryPage />);
 
     await screen.findByText("Akun utama");
@@ -124,7 +124,7 @@ describe("Halaman Inventaris akun", () => {
 
     // Akun kedua berkapasitas penuh tetap tampil; metrik total berasal dari API.
     expect(screen.getByText("Akun cadangan")).toBeInTheDocument();
-    expect(screen.getByText("Slot tersedia").closest("article")?.textContent).toContain("3");
+    expect(screen.getByText("Akses tersedia").closest("article")?.textContent).toContain("3");
   });
 
   it("menampilkan assignment order dan pengguna secara read-only saat diminta", async () => {
@@ -192,23 +192,23 @@ describe("Halaman Inventaris akun", () => {
     );
   });
 
-  it("menambah slot pada akun yang dipilih dan meneruskan inventory_account_id", async () => {
+  it("menambah akses pada akun yang dipilih dan meneruskan inventory_account_id", async () => {
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getByRole("button", { name: "Tambah slot ke Akun utama" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akses ke Akun utama" }));
     expect(screen.getByLabelText("Akun")).toHaveValue("acc-1");
     expect(screen.getByLabelText("Paket")).toHaveValue("price-1");
 
-    fireEvent.change(screen.getByLabelText("Jumlah slot"), { target: { value: "2" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan slot" }));
+    fireEvent.change(screen.getByLabelText("Jumlah akses"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akses" }));
 
-    // Simpan slot hanya meminta konfirmasi; belum ada POST.
+    // Simpan akses hanya meminta konfirmasi; belum ada POST.
     expect(createSlotsMock).not.toHaveBeenCalled();
-    expect(screen.getByText(/Konfirmasi tambah slot: 2 slot pada akun "Akun utama"/)).toBeInTheDocument();
-    expect(screen.getByText(/Sisa kapasitas setelah ditambahkan: 0 slot/)).toBeInTheDocument();
+    expect(screen.getByText(/Konfirmasi tambah akses: 2 akses pada akun "Akun utama"/)).toBeInTheDocument();
+    expect(screen.getByText(/Sisa kapasitas setelah ditambahkan: 0 akses/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan slot" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan akses" }));
 
     await waitFor(() =>
       expect(createSlotsMock).toHaveBeenCalledTimes(1),
@@ -218,19 +218,19 @@ describe("Halaman Inventaris akun", () => {
       quantity: 2,
       inventory_account_id: "acc-1",
     });
-    await screen.findByText(/2 slot ditambahkan ke akun "Akun utama"/);
+    await screen.findByText(/2 akses ditambahkan ke akun "Akun utama"/);
   });
 
-  it("menolak jumlah slot yang melebihi sisa kapasitas tanpa memanggil API", async () => {
+  it("menolak jumlah akses yang melebihi sisa kapasitas tanpa memanggil API", async () => {
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getByRole("button", { name: "Tambah slot ke Akun utama" }));
-    fireEvent.change(screen.getByLabelText("Jumlah slot"), { target: { value: "3" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan slot" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akses ke Akun utama" }));
+    fireEvent.change(screen.getByLabelText("Jumlah akses"), { target: { value: "3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akses" }));
 
     expect(createSlotsMock).not.toHaveBeenCalled();
-    expect(screen.getByText(/Jumlah melebihi kapasitas akun\. Sisa kapasitas Akun utama: 2 slot/)).toBeInTheDocument();
+    expect(screen.getByText(/Jumlah melebihi kapasitas akun\. Sisa kapasitas Akun utama: 2 akses/)).toBeInTheDocument();
   });
 
   it("menampilkan error 409 sharing_limit_exceeded secara jelas", async () => {
@@ -241,11 +241,11 @@ describe("Halaman Inventaris akun", () => {
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getByRole("button", { name: "Tambah slot ke Akun utama" }));
-    fireEvent.change(screen.getByLabelText("Jumlah slot"), { target: { value: "2" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan slot" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akses ke Akun utama" }));
+    fireEvent.change(screen.getByLabelText("Jumlah akses"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akses" }));
     expect(createSlotsMock).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan slot" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan akses" }));
 
     await screen.findByText(/Limit sharing tercapai/);
     expect(createSlotsMock).toHaveBeenCalledTimes(1);
@@ -341,7 +341,7 @@ describe("Halaman Inventaris akun", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Lihat assignment Akun utama" }));
     await screen.findByText("ORD-001");
-    expect(screen.getByText("Menampilkan 1 dari 2 slot.")).toBeInTheDocument();
+    expect(screen.getByText("Menampilkan 1 dari 2 akses.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Muat assignment berikutnya" }));
 
@@ -349,7 +349,7 @@ describe("Halaman Inventaris akun", () => {
       expect(listSlotsMock).toHaveBeenLastCalledWith("acc-1", { page: 2, per_page: 100 }),
     );
     await screen.findByText("ORD-002");
-    expect(screen.getByText("Menampilkan 2 dari 2 slot.")).toBeInTheDocument();
+    expect(screen.getByText("Menampilkan 2 dari 2 akses.")).toBeInTheDocument();
   });
 
   it("menolak akses non-admin tanpa memuat data inventaris", async () => {

@@ -51,7 +51,7 @@ export default function TermsOfServicePage() {
           <li>Pesanan diproses setelah pembayaran terkonfirmasi. Pembayaran diproses melalui penyedia pembayaran pihak ketiga (Xendit); kami tidak menyimpan data kartu atau perbankan Anda.</li>
           <li>Harga, durasi, dan ketersediaan stok ditampilkan pada halaman produk dan dapat berubah sewaktu-waktu sebelum pesanan dibuat.</li>
           <li>Nominal akhir dapat mencakup kode unik sebagai penanda pembayaran. Kode voucher yang tidak dikenali tidak memberikan potongan.</li>
-          <li>Pesanan yang belum dibayar sampai batas waktu yang tertera akan kedaluwarsa dengan sendirinya, dan slot yang sempat ditahan akan dilepas.</li>
+          <li>Pesanan yang belum dibayar sampai batas waktu yang tertera akan kedaluwarsa dengan sendirinya, dan akses yang sempat ditahan akan dilepas.</li>
         </ul>
 
         <h2>4. Masa aktif dan perpanjangan</h2>

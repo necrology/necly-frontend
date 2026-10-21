@@ -192,7 +192,7 @@ function describeInventoryError(error: unknown, action: "load" | "save" | "slot"
     const code = apiErrorCode(error);
     switch (code) {
       case "sharing_limit_exceeded":
-        return "Limit sharing tercapai: jumlah slot melebihi kapasitas akun. Kurangi jumlah slot atau naikkan limit akun.";
+        return "Limit sharing tercapai: jumlah akses melebihi kapasitas akun. Kurangi jumlah akses atau naikkan limit akun.";
       case "inventory_account_unavailable":
         return "Akun inventaris tidak aktif atau sudah kedaluwarsa. Pilih akun lain atau aktifkan akun tersebut.";
       case "inventory_account_mismatch":
@@ -736,13 +736,13 @@ export default function InventoryPage() {
       return;
     }
     if (!slotForm.priceId) {
-      setSlotError("Pilih paket durasi untuk slot ini.");
+      setSlotError("Pilih paket durasi untuk akses ini.");
       return;
     }
 
     const quantity = Number(slotForm.quantity);
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
-      setSlotError("Jumlah slot harus berupa angka antara 1 dan 100.");
+      setSlotError("Jumlah akses harus berupa angka antara 1 dan 100.");
       return;
     }
     if (!account.sellable) {
@@ -751,7 +751,7 @@ export default function InventoryPage() {
     }
     if (quantity > account.remainingSlots) {
       setSlotError(
-        `Jumlah melebihi kapasitas akun. Sisa kapasitas ${account.label}: ${account.remainingSlots} slot (limit ${account.sharingLimit}).`,
+        `Jumlah melebihi kapasitas akun. Sisa kapasitas ${account.label}: ${account.remainingSlots} akses (limit ${account.sharingLimit}).`,
       );
       return;
     }
@@ -793,14 +793,14 @@ export default function InventoryPage() {
               : item,
           ),
         );
-        setNotice(`${pendingSlot.quantity} slot demo ditambahkan ke akun "${account.label}".`);
+        setNotice(`${pendingSlot.quantity} akses demo ditambahkan ke akun "${account.label}".`);
       } else {
         const result = await adminApi.createInventorySlots({
           product_price_id: pendingSlot.priceId,
           quantity: pendingSlot.quantity,
           inventory_account_id: pendingSlot.accountId,
         });
-        setNotice(`${result.created} slot ditambahkan ke akun "${account.label}".`);
+        setNotice(`${result.created} akses ditambahkan ke akun "${account.label}".`);
         await refreshAccounts();
         if (expandedId) await loadAssignments(expandedId, true);
       }
@@ -942,11 +942,11 @@ export default function InventoryPage() {
     <div className="dashboard-page">
       <PageHeader
         title="Inventaris akun"
-        description="Kelola akun langganan yang dijual, batas sharing, kapasitas slot, dan assignment pesanan."
+        description="Kelola akun langganan yang dijual, batas sharing, kapasitas akses, dan assignment pesanan."
         actions={
           <>
             <button className="button button-secondary button-sm" type="button" onClick={() => openSlotForm()} disabled={accounts.length === 0}>
-              <Boxes size={13} /> Tambah slot
+              <Boxes size={13} /> Tambah akses
             </button>
             <button className="button button-primary button-sm" type="button" onClick={openCreateForm}>
               <Plus size={13} /> Tambah akun
@@ -967,12 +967,12 @@ export default function InventoryPage() {
           icon={<Boxes size={14} />}
         />
         <MetricCard
-          label="Slot tersedia"
+          label="Akses tersedia"
           value={String(metrics.available)}
-          change={`Dari ${metrics.provisioned} slot terprovisi`}
+          change={`Dari ${metrics.provisioned} akses terprovisi`}
         />
         <MetricCard
-          label="Slot terpakai"
+          label="Akses terpakai"
           value={String(metrics.used)}
           change="Assignment pesanan aktif"
         />
@@ -996,7 +996,7 @@ export default function InventoryPage() {
           </div>
           <p className="muted" style={{ margin: "0 0 14px", fontSize: 11 }}>
             {pendingStatus.nextStatus === "active"
-              ? "Akun akan bisa dipakai kembali untuk slot baru."
+              ? "Akun akan bisa dipakai kembali untuk akses baru."
               : "Slot yang sudah ada tetap terpakai, tetapi akun tidak akan dipilih untuk kapasitas baru."}
           </p>
           <div className="table-actions" style={{ justifyContent: "flex-start" }}>
@@ -1093,7 +1093,7 @@ export default function InventoryPage() {
                 onChange={(event) => setAccountForm({ ...accountForm, sharingLimit: event.target.value })}
                 required
               />
-              <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>1 sampai 1000 slot per akun.</p>
+              <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>1 sampai 1000 akses per akun.</p>
             </div>
             <div className="field">
               <label className="label" htmlFor="inv-expiry">Kedaluwarsa</label>
@@ -1139,8 +1139,8 @@ export default function InventoryPage() {
       {slotForm && (
         <form className="card panel" onSubmit={submitSlots}>
           <div className="panel-header">
-            <h2 className="panel-title">Tambah slot akun</h2>
-            <button className="table-action" type="button" onClick={closeSlotForm} aria-label="Tutup formulir slot">
+            <h2 className="panel-title">Tambah akses akun</h2>
+            <button className="table-action" type="button" onClick={closeSlotForm} aria-label="Tutup formulir akses">
               <X size={13} />
             </button>
           </div>
@@ -1183,7 +1183,7 @@ export default function InventoryPage() {
               )}
             </div>
             <div className="field">
-              <label className="label" htmlFor="inv-slot-quantity">Jumlah slot</label>
+              <label className="label" htmlFor="inv-slot-quantity">Jumlah akses</label>
               <input
                 className="input"
                 id="inv-slot-quantity"
@@ -1215,7 +1215,7 @@ export default function InventoryPage() {
                 type="submit"
                 disabled={submitting || !selectedSlotAccount || selectedSlotAccount.remainingSlots === 0}
               >
-                {submitting ? "Menyimpan…" : "Simpan slot"}
+                {submitting ? "Menyimpan…" : "Simpan akses"}
               </button>
             </div>
             {slotError && (
@@ -1226,14 +1226,14 @@ export default function InventoryPage() {
           </div>
 
           {pendingSlot && (
-            <div className="notice" role="alertdialog" aria-label="Konfirmasi tambah slot" style={{ margin: "0 18px 18px" }}>
+            <div className="notice" role="alertdialog" aria-label="Konfirmasi tambah akses" style={{ margin: "0 18px 18px" }}>
               <p style={{ margin: "0 0 12px" }}>
-                Konfirmasi tambah slot: {pendingSlot.quantity} slot pada akun {`"${pendingSlot.accountLabel}"`} untuk paket{" "}
-                {pendingSlot.priceLabel}. Sisa kapasitas setelah ditambahkan: {pendingSlot.remainingAfter} slot.
+                Konfirmasi tambah akses: {pendingSlot.quantity} akses pada akun {`"${pendingSlot.accountLabel}"`} untuk paket{" "}
+                {pendingSlot.priceLabel}. Sisa kapasitas setelah ditambahkan: {pendingSlot.remainingAfter} akses.
               </p>
               <div className="table-actions" style={{ justifyContent: "flex-start" }}>
                 <button className="button button-primary button-sm" type="button" onClick={applySlotCreation} disabled={submitting}>
-                  {submitting ? "Menyimpan…" : "Ya, tambahkan slot"}
+                  {submitting ? "Menyimpan…" : "Ya, tambahkan akses"}
                 </button>
                 <button className="button button-secondary button-sm" type="button" onClick={() => setPendingSlot(null)} disabled={submitting}>
                   Batal
@@ -1305,7 +1305,7 @@ export default function InventoryPage() {
                 <tr>
                   <td colSpan={8} className="muted" style={{ textAlign: "center" }}>
                     {accounts.length === 0
-                      ? "Belum ada akun inventaris. Tambahkan akun untuk mulai menjual slot."
+                      ? "Belum ada akun inventaris. Tambahkan akun untuk mulai menjual akses."
                       : "Tidak ada akun yang cocok dengan pencarian."}
                   </td>
                 </tr>
@@ -1379,7 +1379,7 @@ function AccountRows({
           <div
             className="inventory-bar"
             role="progressbar"
-            aria-label={`${account.usedSlots} dari ${account.sharingLimit} slot terpakai`}
+            aria-label={`${account.usedSlots} dari ${account.sharingLimit} akses terpakai`}
             aria-valuenow={account.usedSlots}
             aria-valuemin={0}
             aria-valuemax={account.sharingLimit}
@@ -1414,8 +1414,8 @@ function AccountRows({
               className="table-action"
               type="button"
               onClick={onAddSlot}
-              title="Tambah slot"
-              aria-label={`Tambah slot ke ${account.label}`}
+              title="Tambah akses"
+              aria-label={`Tambah akses ke ${account.label}`}
             >
               <Plus size={13} />
             </button>
@@ -1436,7 +1436,7 @@ function AccountRows({
           <td colSpan={8} style={{ height: "auto", padding: 0, whiteSpace: "normal", background: "var(--surface-2)" }}>
             <div style={{ padding: "14px 18px" }}>
               <div className="panel-header" style={{ marginBottom: 10 }}>
-                <h3 className="panel-title">Assignment slot — {account.label}</h3>
+                <h3 className="panel-title">Assignment akses — {account.label}</h3>
                 <span className="muted" style={{ fontSize: 10 }}>Hanya baca. Kredensial tidak ditampilkan.</span>
               </div>
               {assignment?.loading ? (
@@ -1445,12 +1445,12 @@ function AccountRows({
                 assignment?.error ? (
                   <p role="alert" style={{ margin: 0, color: "var(--danger)", fontSize: 11 }}>{assignment.error}</p>
                 ) : (
-                  <p className="muted" style={{ margin: 0, fontSize: 11 }}>Belum ada slot atau assignment untuk akun ini.</p>
+                  <p className="muted" style={{ margin: 0, fontSize: 11 }}>Belum ada akses atau assignment untuk akun ini.</p>
                 )
               ) : (
                 <>
                   <p className="muted" style={{ margin: "0 0 8px", fontSize: 11 }}>
-                    Menampilkan {assignment.rows.length} dari {assignment.total} slot.
+                    Menampilkan {assignment.rows.length} dari {assignment.total} akses.
                   </p>
                   <div className="table-scroll">
                     <table className="data-table">

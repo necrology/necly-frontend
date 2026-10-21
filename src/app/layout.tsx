@@ -7,16 +7,17 @@ import "@fontsource/nunito-sans/600.css";
 import "@fontsource/nunito-sans/700.css";
 import "./globals.css";
 import "./storefront-fixes.css";
+import { SessionExpiryGuard } from "@/components/session-expiry-guard";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-const siteDescription = "Solusi hemat berlangganan akun premium, aman dan terpercaya. Bandingkan harga, durasi, stok slot, dan aktivasi resmi.";
+const siteDescription = "Solusi hemat berlangganan akun premium, aman dan terpercaya. Bandingkan harga, durasi, stok akses, dan aktivasi resmi.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: { default: "Necly Services — Langganan premium aman dan hemat", template: "%s | Necly Services" },
   description: siteDescription,
   applicationName: "Necly Services",
-  keywords: ["langganan premium", "akun premium", "slot akun", "produk digital", "Indonesia"],
+  keywords: ["langganan premium", "akun premium", "akses akun", "produk digital", "Indonesia"],
   authors: [{ name: "Necly Services" }],
   creator: "Necly Services",
   icons: { icon: "/brand/necly-services-logo-icon-only.svg", apple: "/brand/necly-services-logo.svg" },
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="id">
       <body>
+        <SessionExpiryGuard />
         <a className="skip-link" href="#main-content">Lewati ke konten utama</a>
         {children}
       </body>

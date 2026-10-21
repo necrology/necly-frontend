@@ -36,6 +36,27 @@ function productCategoryId(product: ApiProduct) {
   return typeof product.category === "object" ? product.category?.id : undefined;
 }
 
+/**
+ * QA baris 88: nama paket dari katalog masih membawa label internal
+ * "Slot Anggota Rumah Tangga" / "Slot Anggota". Label itu tidak boleh tampil
+ * sebagai judul layanan di storefront.
+ */
+export function cleanProductName(name: string) {
+  const cleaned = name
+    .replace(/\s*[-–—]?\s*slot anggota rumah tangga\s*/gi, " ")
+    .replace(/\s*[-–—]?\s*slot anggota\s*/gi, " ")
+    .replace(/\bslots?\b\s*/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .replace(/^[\s\-–—]+|[\s\-–—]+$/g, "")
+    .trim();
+  return cleaned || name.trim();
+}
+
+/** Ganti istilah internal "slot" pada teks bebas dari katalog. */
+export function cleanSlotCopy(text: string) {
+  return text.replace(/\bslots?\b/gi, (match) => match[0] === match[0].toUpperCase() ? "Akses" : "akses");
+}
+
 function durationLabel(days: number) {
   if (days === 30) return "1 bulan";
   if (days === 90) return "3 bulan";
@@ -83,23 +104,23 @@ export function mapApiProduct(product: ApiProduct): SubscriptionProduct {
   return {
     id: product.id,
     slug: product.slug,
-    name: product.name,
+    name: cleanProductName(product.name),
     eyebrow: "Akun sharing hemat",
     category,
     categoryId: productCategoryId(product),
     price: primaryPrice?.price ?? 0,
     stock,
     duration: primaryPrice?.duration ?? "Belum tersedia",
-    summary: product.description,
-    description: product.description,
+    summary: cleanSlotCopy(product.description),
+    description: cleanSlotCopy(product.description),
     accessType: category === "Streaming" ? "Undangan anggota" : "Kursi tim",
     benefits: [
-      "Slot akun langganan untuk dipakai bersama",
+      "Akun langganan tersedia untuk dipakai bersama",
       "Biaya lebih hemat dibanding membeli paket penuh sendiri",
       "Masa akses tercatat di pesanan",
     ],
     activationSteps: [
-      { title: "Pilih paket", description: "Pilih durasi dan jumlah slot yang tersedia." },
+      { title: "Pilih paket", description: "Pilih durasi dan jumlah akses yang tersedia." },
       { title: "Selesaikan pembayaran", description: "Bayar melalui kanal pembayaran yang tersedia." },
       { title: "Terima akses", description: "Tim Necly mengirim undangan anggota atau kursi tim ke akun Anda." },
     ],

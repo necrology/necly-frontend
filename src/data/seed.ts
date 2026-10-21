@@ -31,18 +31,18 @@ export const services: SubscriptionProduct[] = [
   {
     id: "prd-streamflix",
     slug: "streamflix-family-slot",
-    name: "StreamFlix Slot Keluarga",
+    name: "StreamFlix Keluarga",
     eyebrow: "Tontonan tanpa berbagi kata sandi",
     category: "Streaming",
     price: 39_000,
     stock: 7,
     duration: "30 hari",
-    summary: "Slot anggota pada paket keluarga fiktif StreamFlix, dibagikan lewat undangan anggota ke email Anda.",
-    description: "Gunakan satu slot akun langganan bersama agar biaya menonton lebih hemat, dengan profil anggota Anda sendiri. Tim Necly mengirim undangan resmi setelah pembayaran terverifikasi dan membantu bila undangan belum masuk.",
+    summary: "Akses anggota pada paket keluarga fiktif StreamFlix, dibagikan lewat undangan anggota ke email Anda.",
+    description: "Gunakan satu akun langganan bersama agar biaya menonton lebih hemat, dengan profil anggota Anda sendiri. Tim Necly mengirim undangan resmi setelah pembayaran terverifikasi dan membantu bila undangan belum masuk.",
     accessType: "Undangan anggota",
     benefits: ["Profil anggota terpisah", "Undangan ke email pribadi", "Bantuan akses selama masa langganan", "Pengingat sebelum masa akses berakhir"],
     activationSteps: [
-      { title: "Pilih durasi", description: "Tentukan masa akses dan pastikan slot masih tersedia." },
+      { title: "Pilih durasi", description: "Tentukan masa akses dan pastikan akses masih tersedia." },
       { title: "Terima undangan", description: "Undangan anggota dikirim ke email pesanan, tanpa pertukaran kata sandi." },
       { title: "Aktifkan profil", description: "Terima undangan lalu gunakan akun pribadi Anda selama masa akses." },
     ],
@@ -70,7 +70,7 @@ export const services: SubscriptionProduct[] = [
     accessType: "Undangan anggota",
     benefits: ["Undangan melalui email", "Profil dan daftar tontonan pribadi", "Bantuan penggantian undangan", "Masa akses tercatat di pesanan"],
     activationSteps: [
-      { title: "Pesan slot", description: "Pilih durasi sesuai kebutuhan." },
+      { title: "Pesan akses", description: "Pilih durasi sesuai kebutuhan." },
       { title: "Cek email", description: "Operator mengirim undangan anggota resmi." },
       { title: "Mulai menonton", description: "Masuk dengan akun pribadi dan terima undangan." },
     ],
@@ -86,13 +86,13 @@ export const services: SubscriptionProduct[] = [
   {
     id: "prd-musicflow",
     slug: "musicflow-family-slot",
-    name: "MusicFlow Slot Keluarga",
+    name: "MusicFlow Keluarga",
     eyebrow: "Musik di akun pribadi",
     category: "Streaming",
     price: 24_000,
     stock: 9,
     duration: "30 hari",
-    summary: "Slot anggota paket musik keluarga dengan playlist dan riwayat dengar yang tetap pribadi.",
+    summary: "Akses anggota paket musik keluarga dengan playlist dan riwayat dengar yang tetap pribadi.",
     description: "Akses sharing dikirim sebagai undangan anggota agar biaya berlangganan lebih hemat. Anda menggunakan akun sendiri sehingga playlist, rekomendasi, dan perangkat tidak tercampur.",
     accessType: "Undangan anggota",
     benefits: ["Playlist tetap pribadi", "Tanpa berbagi kredensial", "Akses melalui akun pribadi", "Pengingat perpanjangan"],
@@ -172,10 +172,10 @@ export const services: SubscriptionProduct[] = [
     price: 79_000,
     stock: 0,
     duration: "30 hari",
-    summary: "Kursi tim aplikasi AI generatif fiktif, dibagikan sebagai kursi tim saat slot tersedia.",
+    summary: "Kursi tim aplikasi AI generatif fiktif, dibagikan sebagai kursi tim saat akses tersedia.",
     description: "Kursi tim dipakai bersama agar biaya akses AI lebih hemat, dengan batas penggunaan sesuai paket penyedia. Jangan mengirim data sensitif, rahasia perusahaan, atau materi tanpa hak penggunaan.",
     accessType: "Kursi tim",
-    benefits: ["Akun pengguna terpisah", "Batas penggunaan transparan", "Status slot tersedia", "Bantuan akses"],
+    benefits: ["Akun pengguna terpisah", "Batas penggunaan transparan", "Status akses tersedia", "Bantuan akses"],
     activationSteps: [
       { title: "Masuk daftar tunggu", description: "Stok baru diumumkan pada halaman pesanan." },
       { title: "Terima undangan", description: "Kursi ditautkan ke email Anda saat tersedia." },
@@ -241,13 +241,13 @@ export const services: SubscriptionProduct[] = [
   {
     id: "prd-readly",
     slug: "readly-family-slot",
-    name: "Readly Slot Keluarga",
+    name: "Readly Keluarga",
     eyebrow: "Bacaan digital di profil Anda",
     category: "Edukasi",
     price: 21_000,
     stock: 11,
     duration: "30 hari",
-    summary: "Slot anggota perpustakaan digital fiktif dengan rak bacaan dan penanda pribadi.",
+    summary: "Akses anggota perpustakaan digital fiktif dengan rak bacaan dan penanda pribadi.",
     description: "Akses dibagikan melalui undangan resmi paket keluarga agar biaya membaca lebih hemat. Hak cipta dan batas unduhan mengikuti aturan penyedia.",
     accessType: "Undangan anggota",
     benefits: ["Rak bacaan pribadi", "Sinkronisasi penanda", "Undangan email", "Pengingat akhir akses"],
@@ -269,7 +269,7 @@ export const services: SubscriptionProduct[] = [
 export const categories = ["Semua", "Streaming", "Produktivitas", "Kreatif", "Edukasi", "Keamanan"] as const;
 
 export const dashboardOrders: DashboardOrder[] = [
-  { id: "NCL-260906-091", customer: "Nabila Rahma", customerEmail: "nabila@example.id", product: "StreamFlix Slot Keluarga", service: "StreamFlix Slot Keluarga", duration: "3 bulan", amount: 109_000, status: "Diproses", date: "06 Sep 2026", due: "06 Sep · 10:20" },
+  { id: "NCL-260906-091", customer: "Nabila Rahma", customerEmail: "nabila@example.id", product: "StreamFlix Keluarga", service: "StreamFlix Keluarga", duration: "3 bulan", amount: 109_000, status: "Diproses", date: "06 Sep 2026", due: "06 Sep · 10:20" },
   { id: "NCL-260906-090", customer: "Rafi Akbar", customerEmail: "rafi@example.id", product: "CineMax Anggota Keluarga", service: "CineMax Anggota Keluarga", duration: "1 bulan", amount: 32_000, status: "Dibayar", date: "06 Sep 2026", due: "06 Sep · 10:35" },
   { id: "NCL-260905-089", customer: "Andra Kurnia", customerEmail: "andra@example.id", product: "OfficeCloud Kursi Keluarga", service: "OfficeCloud Kursi Keluarga", duration: "12 bulan", amount: 499_000, status: "Aktif", date: "05 Sep 2026", due: "05 Sep · 16:08" },
   { id: "NCL-260905-088", customer: "Tio Hadi", customerEmail: "tio@example.id", product: "AI Studio Kursi Tim", service: "AI Studio Kursi Tim", duration: "1 bulan", amount: 79_000, status: "Menunggu pembayaran", date: "05 Sep 2026", due: "—" },
@@ -303,8 +303,8 @@ export const vouchers: Voucher[] = [
 ];
 
 export const inventoryAccounts: InventoryAccount[] = [
-  { id: "INV-001", product: "StreamFlix Slot Keluarga", reference: "SF-FAM-•••91", totalSlots: 6, usedSlots: 5, status: "Hampir penuh", expires: "31 Des 2026" },
-  { id: "INV-002", product: "StreamFlix Slot Keluarga", reference: "SF-FAM-•••42", totalSlots: 6, usedSlots: 4, status: "Aktif", expires: "31 Jan 2027" },
+  { id: "INV-001", product: "StreamFlix Keluarga", reference: "SF-FAM-•••91", totalSlots: 6, usedSlots: 5, status: "Hampir penuh", expires: "31 Des 2026" },
+  { id: "INV-002", product: "StreamFlix Keluarga", reference: "SF-FAM-•••42", totalSlots: 6, usedSlots: 4, status: "Aktif", expires: "31 Jan 2027" },
   { id: "INV-003", product: "OfficeCloud Kursi Keluarga", reference: "OC-FAM-•••07", totalSlots: 6, usedSlots: 2, status: "Aktif", expires: "18 Mar 2027" },
   { id: "INV-004", product: "DesignPro Kursi Tim", reference: "DP-TEAM-•••66", totalSlots: 5, usedSlots: 4, status: "Hampir penuh", expires: "11 Nov 2026" },
   { id: "INV-005", product: "VaultPass Anggota Keluarga", reference: "VP-FAM-•••18", totalSlots: 6, usedSlots: 3, status: "Aktif", expires: "07 Feb 2027" },
@@ -319,17 +319,17 @@ export const assets: AssetRecord[] = [
 ];
 
 export const initialNotifications: NotificationItem[] = [
-  { id: "not-1", title: "Pesanan NCL-260906-091 masuk", detail: "StreamFlix Slot Keluarga dibayar melalui QRIS.", type: "order", time: "8 menit lalu", read: false },
-  { id: "not-2", title: "Slot perlu perhatian", detail: "DesignPro Kursi Tim tersisa 2 slot.", type: "inventory", time: "34 menit lalu", read: false },
+  { id: "not-1", title: "Pesanan NCL-260906-091 masuk", detail: "StreamFlix Keluarga dibayar melalui QRIS.", type: "order", time: "8 menit lalu", read: false },
+  { id: "not-2", title: "Akses perlu perhatian", detail: "DesignPro Kursi Tim tersisa 2 akses.", type: "inventory", time: "34 menit lalu", read: false },
   { id: "not-3", title: "Pembayaran direkonsiliasi", detail: "PAY-88319 sesuai dengan pencairan rekening virtual.", type: "payment", time: "1 jam lalu", read: false },
   { id: "not-4", title: "Laporan mingguan siap", detail: "Ringkasan operasi 31 Agu–6 Sep tersedia.", type: "system", time: "3 jam lalu", read: true },
-  { id: "not-5", title: "Slot pelanggan aktif", detail: "OfficeCloud Kursi Keluarga milik Andra telah aktif.", type: "order", time: "Kemarin", read: true },
+  { id: "not-5", title: "Akses pelanggan aktif", detail: "OfficeCloud Kursi Keluarga milik Andra telah aktif.", type: "order", time: "Kemarin", read: true },
 ];
 
 export const auditRecords: AuditRecord[] = [
   { id: "AUD-9021", actor: "Ayu Admin", action: "Mengubah status", resource: "Pesanan NCL-260906-091 → Diproses", ip: "103.87.44.18", time: "06 Sep, 10:04" },
   { id: "AUD-9020", actor: "Sistem", action: "Rekonsiliasi pembayaran", resource: "Pembayaran PAY-88320", ip: "Internal", time: "06 Sep, 09:43" },
-  { id: "AUD-9019", actor: "Tim Streaming Necly", action: "Mengubah slot", resource: "DesignPro Kursi Tim: 3 → 2", ip: "103.87.44.18", time: "06 Sep, 09:15" },
+  { id: "AUD-9019", actor: "Tim Streaming Necly", action: "Mengubah akses", resource: "DesignPro Kursi Tim: 3 → 2", ip: "103.87.44.18", time: "06 Sep, 09:15" },
   { id: "AUD-9018", actor: "Rafi Ops", action: "Membuat voucher", resource: "Voucher HEMAT20K", ip: "36.72.190.11", time: "05 Sep, 17:40" },
   { id: "AUD-9017", actor: "Sistem", action: "Mengirim notifikasi", resource: "Pesanan NCL-260905-089 aktif", ip: "Internal", time: "05 Sep, 16:24" },
   { id: "AUD-9016", actor: "Ayu Admin", action: "Mengubah produk", resource: "VaultPass Anggota Keluarga", ip: "103.87.44.18", time: "05 Sep, 14:08" },
@@ -357,7 +357,7 @@ export const categoryPerformance = [
 export const activity = [
   { title: "NCL-260906-091 diproses", detail: "Undangan disiapkan oleh Tim Akses", time: "10:04" },
   { title: "PAY-88320 berhasil", detail: "QRIS · Rp109.000", time: "09:43" },
-  { title: "Stok slot diperbarui", detail: "DesignPro Kursi Tim · 2 slot", time: "09:15" },
+  { title: "Stok akses diperbarui", detail: "DesignPro Kursi Tim · 2 akses", time: "09:15" },
   { title: "NCL-260906-090 dibayar", detail: "Menunggu undangan CineMax", time: "08:22" },
 ];
 

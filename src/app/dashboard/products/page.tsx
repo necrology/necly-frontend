@@ -172,7 +172,7 @@ export default function DashboardProductsPage() {
       };
       if (form.mode === "create") {
         await adminApi.createProduct(payload);
-        setNotice(`Produk ${name} dibuat. Tambahkan harga dan slot lewat halaman inventaris.`);
+        setNotice(`Produk ${name} dibuat. Tambahkan harga dan akses lewat halaman inventaris.`);
       } else if (form.id) {
         await adminApi.updateProduct(form.id, payload);
         setNotice(`Produk ${name} diperbarui.`);
@@ -208,7 +208,7 @@ export default function DashboardProductsPage() {
     <div className="dashboard-page">
       <PageHeader
         title="Produk akun sharing"
-        description="Kelola paket akun langganan sharing, harga, dan ketersediaan slot anggota agar pelanggan bisa berlangganan lebih hemat."
+        description="Kelola paket akun langganan sharing, harga, dan ketersediaan akses anggota agar pelanggan bisa berlangganan lebih hemat."
         actions={
           <button
             className="button button-primary button-sm"
@@ -302,7 +302,7 @@ export default function DashboardProductsPage() {
                 <th>Produk</th>
                 <th>Kategori</th>
                 <th>Harga awal</th>
-                <th>Ketersediaan slot</th>
+                <th>Ketersediaan akses</th>
                 <th>Pengelola akun</th>
                 <th aria-label="Aksi" />
               </tr>
@@ -321,7 +321,7 @@ export default function DashboardProductsPage() {
                   <td className="tabular">{formatIDR(product.price)}</td>
                   <td>
                     <StatusBadge status={product.stock > 0 ? "Aktif" : "Daftar tunggu"} />
-                    <span className="table-secondary" style={{ marginLeft: 7 }}>{product.stock} slot</span>
+                    <span className="table-secondary" style={{ marginLeft: 7 }}>{product.stock} akses</span>
                   </td>
                   <td>{product.operator.name}</td>
                   <td>

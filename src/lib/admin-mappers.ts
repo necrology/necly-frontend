@@ -1,5 +1,5 @@
 import type { ApiOrder, ApiUser, ApiProduct, ApiCategory, ApiProductPrice } from "./api";
-import { mapProductCategory } from "./product-mapper";
+import { cleanProductName, cleanSlotCopy, mapProductCategory } from "./product-mapper";
 import type {
   DashboardOrder,
   Customer,
@@ -147,23 +147,23 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
   return {
     id: apiProduct.id,
     slug: apiProduct.slug,
-    name: apiProduct.name,
+    name: cleanProductName(apiProduct.name),
     eyebrow: "Akun sharing hemat",
     category: mappedCategory,
     categoryId,
     price: primaryPrice?.amount ?? 0,
     stock: apiProduct.stock ?? priceOptions.reduce((sum, option) => sum + (option.stock ?? 0), 0),
     duration: primaryPrice?.duration_name ?? "Belum tersedia",
-    summary: apiProduct.description,
-    description: apiProduct.description,
+    summary: cleanSlotCopy(apiProduct.description),
+    description: cleanSlotCopy(apiProduct.description),
     accessType: mappedCategory === "Streaming" ? "Undangan anggota" : "Kursi tim",
     benefits: [
-      "Slot akun langganan untuk dipakai bersama",
+      "Akun langganan tersedia untuk dipakai bersama",
       "Biaya lebih hemat dibanding membeli paket penuh sendiri",
       "Masa akses tercatat di pesanan",
     ],
     activationSteps: [
-      { title: "Pilih paket", description: "Pilih durasi dan jumlah slot yang tersedia." },
+      { title: "Pilih paket", description: "Pilih durasi dan jumlah akses yang tersedia." },
       { title: "Selesaikan pembayaran", description: "Bayar melalui kanal pembayaran yang tersedia." },
       { title: "Terima akses", description: "Tim Necly mengirim undangan anggota atau kursi tim ke akun Anda." },
     ],

@@ -8,7 +8,9 @@ describe("brandForProduct", () => {
     expect(brandForProduct("Disney+ Standard")).toEqual({ brand: "Disney+ Hotstar", logoTone: "disney" });
     expect(brandForProduct("Apple Music Family")).toEqual({ brand: " Apple One", logoTone: "apple" });
     expect(brandForProduct("Microsoft 365 Family")).toEqual({ brand: "Microsoft 365", logoTone: "microsoft" });
-    expect(brandForProduct("Canva Teams")).toEqual({ brand: "Canva Teams", logoTone: "generic" });
+    expect(brandForProduct("Canva Teams")).toEqual({ brand: "Canva Teams", logoTone: "canva" });
+    expect(brandForProduct("Google One 2TB")).toEqual({ brand: "Google One 2 TB", logoTone: "googleone" });
+    expect(brandForProduct("Dropbox Family")).toEqual({ brand: "Dropbox Family", logoTone: "dropbox" });
   });
 
   it("memakai nama produk sebagai fallback netral, bukan logo vendor lain", () => {

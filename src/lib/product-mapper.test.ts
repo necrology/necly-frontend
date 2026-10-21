@@ -74,6 +74,29 @@ describe("mapApiProduct", () => {
   // Katalog tidak pernah mengirim `stock`; membaca field itu membuat seluruh
   // etalase tampil "Stok habis" walaupun slotnya tersedia, dan keranjang
   // mengunci jumlah di angka yang salah.
+  it("membersihkan label slot internal dari judul layanan (QA baris 88-89)", () => {
+    const product = mapApiProduct({
+      ...apiProduct,
+      name: "Netflix Premium - Slot Anggota Rumah Tangga",
+    });
+
+    expect(product.name).toBe("Netflix Premium");
+    expect(product.benefits.join(" ")).toContain("Akun langganan tersedia untuk dipakai bersama");
+    expect(product.benefits.join(" ")).not.toMatch(/slot/i);
+  });
+
+  it("menghapus kata slot dari nama dan deskripsi produk", () => {
+    const product = mapApiProduct({
+      ...apiProduct,
+      name: "StreamFlix Slot Keluarga",
+      description: "Slot akun langganan untuk dipakai bersama.",
+    });
+
+    expect(product.name).toBe("StreamFlix Keluarga");
+    expect(product.summary).toBe("Akses akun langganan untuk dipakai bersama.");
+    expect(product.description).not.toMatch(/slot/i);
+  });
+
   it("membaca ketersediaan dari available_slots, bukan stock", () => {
     const product = mapApiProduct(apiProduct);
 

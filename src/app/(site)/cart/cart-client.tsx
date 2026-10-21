@@ -21,7 +21,7 @@ const lineKey = (item: Pick<CartItem, "id" | "product_price_id">) => item.produc
 /** Ringkasan pilihan yang tersimpan saat produk ditambahkan dari katalog. */
 function lineDetail(item: CartItem) {
   const parts = [item.selectedDuration, item.selectedDevice ? `${item.selectedDevice} perangkat` : null].filter(Boolean);
-  return parts.length ? parts.join(" · ") : "Slot akun langganan bersama";
+  return parts.length ? parts.join(" · ") : "Akun langganan bersama";
 }
 
 function initials(name: string) {
@@ -69,7 +69,7 @@ export function CartClient() {
   if (!hydrated) return <div className="empty-state"><span className="skeleton" style={{ width: 180, height: 18 }} /></div>;
 
   if (!items.length) return (
-    <div className="empty-state"><ShoppingBag size={30} className="muted" /><h2 className="h2" style={{ fontSize: 28 }}>Keranjang belanja Anda masih kosong.</h2><p className="muted" style={{ margin: 0 }}>Temukan slot langganan akun bersama yang Anda butuhkan di katalog.</p><Link className="button button-primary" href="/products">Jelajahi produk</Link></div>
+    <div className="empty-state"><ShoppingBag size={30} className="muted" /><h2 className="h2" style={{ fontSize: 28 }}>Keranjang belanja Anda masih kosong.</h2><p className="muted" style={{ margin: 0 }}>Temukan langganan akun bersama yang Anda butuhkan di katalog.</p><Link className="button button-primary" href="/products">Jelajahi produk</Link></div>
   );
 
   const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);

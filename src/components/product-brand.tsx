@@ -22,6 +22,9 @@ function ProductLogoAssets({ product }: Pick<ProductBrandProps, "product">) {
   if (product.logoTone === "spotify") return <span className="spotify-asset-crop"><Image unoptimized src="/design-assets/logo-spotify.png" alt="" width={600} height={600} /></span>;
   if (product.logoTone === "youtube") return <><Image unoptimized src="/design-assets/logo-youtube.png" alt="" width={216} height={90} /><strong className="youtube-premium-label">Premium</strong></>;
   if (product.logoTone === "microsoft") return <Image unoptimized src="/design-assets/logo-microsoft-365.png" alt="" width={376} height={62} />;
+  if (product.logoTone === "canva") return <Image unoptimized src="/design-assets/logo-canva.svg" alt="" width={240} height={64} />;
+  if (product.logoTone === "googleone") return <Image unoptimized src="/design-assets/logo-google-one.svg" alt="" width={280} height={64} />;
+  if (product.logoTone === "dropbox") return <Image unoptimized src="/design-assets/logo-dropbox.svg" alt="" width={280} height={64} />;
   return null;
 }
 

@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
             : <>Kami sudah mengirim tautan atur ulang kata sandi ke <strong style={{ color: "var(--ink)" }}>{email}</strong>. Tautan hanya dapat digunakan sekali dan berlaku terbatas.</>}
         </p>
         <p className="muted small" style={{ margin: 0 }}>
-          Tidak menerima email? Periksa folder spam, lalu tunggu beberapa menit sebelum mengirim ulang.
+          Tidak menerima email? Periksa folder spam, lalu tunggu beberapa menit sebelum mengirim ulang. Masih terkendala? <a href="mailto:necly.services@gmail.com">Hubungi admin via email</a>.
         </p>
         <button className="button button-secondary" style={{ width: "100%", marginTop: 8 }} type="button" onClick={() => setSent(false)}>Kirim ulang</button>
         <Link className="button button-ghost" style={{ width: "100%" }} href="/login"><ArrowLeft size={14} /> Kembali ke masuk</Link>

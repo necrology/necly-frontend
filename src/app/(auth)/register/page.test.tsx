@@ -48,7 +48,7 @@ describe("halaman pendaftaran", () => {
     fireEvent.click(screen.getByRole("checkbox"));
     fireEvent.click(screen.getByRole("button", { name: /buat akun/i }));
 
-    expect(screen.getByText("Kata sandi harus terdiri dari 10–72 byte.")).toBeInTheDocument();
+    expect(screen.getByText("Kata sandi terlalu panjang. Gunakan maksimal 72 karakter.")).toBeInTheDocument();
     expect(registerMock).not.toHaveBeenCalled();
   });
 });

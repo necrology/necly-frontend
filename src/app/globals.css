@@ -291,6 +291,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .auth-form-wrap { display: grid; place-items: center; padding: 52px 30px; background: #fff; }
 .auth-form { width: min(100%, 430px); display: grid; gap: 21px; }
 .password-toggle { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); width: 36px; height: 36px; display: grid; place-items: center; border: 0; color: var(--muted); background: transparent; cursor: pointer; }
+.field-required { margin-left: 4px; color: #e5484d; font-weight: 700; }
 .auth-divider { display: flex; align-items: center; gap: 13px; color: var(--faint); font-size: 10px; }
 .auth-divider::before, .auth-divider::after { content: ""; height: 1px; flex: 1; background: var(--line); }
 
@@ -864,7 +865,9 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .account-page { display: grid; gap: 22px; padding: 46px 0 92px; }
 .account-head { display: grid; gap: 12px; }
 .account-head .lede { max-width: 620px; }
-.account-orders-link { width: fit-content; }
+.account-orders-link { width: fit-content; color: #2a2140; background: #fcbd50; border-color: #fcbd50; }
+.account-orders-link:hover { color: #2a2140; background: #ffd477; border-color: #ffd477; }
+.account-forgot-link { justify-self: start; margin-top: -8px; padding-inline: 0; }
 /* Riwayat pesanan pelanggan: daftar, status, total, dan pagination. */
 .orders-page { display: grid; gap: 16px; padding: 0 0 96px; }
 .orders-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
@@ -929,6 +932,7 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-mobile-nav-link:hover, .commerce-mobile-nav-link.active { color: #fff; background: rgb(255 255 255 / .15); }
   .commerce-mobile-login { min-height: 52px; display: grid; place-items: center; margin-top: 8px; border-radius: 999px; color: var(--commerce-violet-dark); background: var(--commerce-gold); font-size: 15px; font-weight: 700; }
   .commerce-mobile-account-action { color: #fff; }
+  .commerce-mobile-login-action { color: #fff; }
 }
 
 /* ---------- Home hero ---------- */
@@ -1333,8 +1337,8 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   body { padding-bottom: env(safe-area-inset-bottom); }
 
   /* Mobile hero inverts to the solid blue panel with white copy. */
-  .commerce-home-hero { padding: 34px 0 46px; border-radius: 0 0 34px 34px; background: #4c1ef9; }
-  .commerce-home-hero-inner { grid-template-columns: 1fr; gap: 24px; text-align: center; }
+  .commerce-home-hero { padding: 28px 0 42px; border-radius: 0 0 34px 34px; background: #4c1ef9; }
+  .commerce-home-hero-inner { grid-template-columns: 1fr; gap: 12px; text-align: center; }
   .commerce-home-hero-copy h1 { color: #fff; font-size: clamp(2rem, 9vw, 2.6rem); }
   .commerce-home-hero-copy h1 span { color: #fcbd50; }
   .commerce-home-hero-copy > p { margin-inline: auto; color: #dbe4ff; font-size: 13px; }
@@ -1342,7 +1346,7 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   /* Tombol CTA tetap kuning di mobile; hanya lebarnya yang mengikuti isi. */
   .commerce-hero-cta { width: fit-content; margin: 22px auto 0; padding: 0 24px; justify-content: center; background: var(--commerce-gold); border: 0; color: #fff; }
   .commerce-hero-cta:hover { background: #ffd35e; }
-  .commerce-home-hero-art { max-width: 400px; margin-inline: auto; }
+  .commerce-home-hero-art { max-width: 400px; margin-inline: auto; margin-top: -4px; }
   .commerce-home-hero-art > span { width: 74px; height: 74px; font-size: 9px; }
 
   .commerce-stats-section { padding: 46px 0; }

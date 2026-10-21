@@ -89,9 +89,10 @@ export interface AuthSessionResponse {
 interface AuthState {
   user: User | null;
   accessToken: string | null;
+  expiresAt: number | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setAuth: (user: User, accessToken: string) => void;
+  setAuth: (user: User, accessToken: string, expiresIn?: number) => void;
   clearAuth: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -352,15 +353,60 @@ export function apiErrorNumber(error: unknown, field: string): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+const AUTH_EXPIRY_KEY = "necly-auth-expires-at";
+
+function readStoredExpiry(): number | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(AUTH_EXPIRY_KEY);
+  const value = raw ? Number(raw) : NaN;
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function persistExpiry(value: number | null) {
+  if (typeof window === "undefined") return;
+  if (value) window.localStorage.setItem(AUTH_EXPIRY_KEY, String(value));
+  else window.localStorage.removeItem(AUTH_EXPIRY_KEY);
+}
+
+function decodeTokenExpiry(accessToken: string): number | null {
+  try {
+    if (typeof atob !== "function") return null;
+    const payload = accessToken.split(".")[1];
+    if (!payload) return null;
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = JSON.parse(atob(normalized)) as { exp?: unknown };
+    return typeof json.exp === "number" ? json.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+export function sessionExpiryFrom(accessToken: string, expiresIn?: number): number | null {
+  if (typeof expiresIn === "number" && Number.isFinite(expiresIn) && expiresIn > 0) {
+    return Date.now() + expiresIn * 1000;
+  }
+  return decodeTokenExpiry(accessToken);
+}
+
+export function isSessionExpired(expiresAt: number | null | undefined, now = Date.now()): boolean {
+  return typeof expiresAt === "number" && expiresAt > 0 && now >= expiresAt;
+}
+
 export const useAuthStore = create<AuthState>()((set) => ({
   user: null,
   accessToken: null,
+  expiresAt: readStoredExpiry(),
   isAuthenticated: false,
   isLoading: false,
-  setAuth: (user, accessToken) =>
-    set({ user, accessToken, isAuthenticated: true, isLoading: false }),
-  clearAuth: () =>
-    set({ user: null, accessToken: null, isAuthenticated: false, isLoading: false }),
+  setAuth: (user, accessToken, expiresIn) => {
+    const expiresAt = sessionExpiryFrom(accessToken, expiresIn);
+    persistExpiry(expiresAt);
+    set({ user, accessToken, expiresAt, isAuthenticated: true, isLoading: false });
+  },
+  clearAuth: () => {
+    persistExpiry(null);
+    set({ user: null, accessToken: null, expiresAt: null, isAuthenticated: false, isLoading: false });
+  },
   setLoading: (isLoading) => set({ isLoading }),
 }));
 
@@ -420,7 +466,8 @@ async function refreshSession() {
         throw new ApiError(messageFromPayload(payload, response.status), response.status, payload);
       }
       const session = payload as AuthSessionResponse;
-      useAuthStore.getState().setAuth(normalizeUser(session.user), session.access_token);
+      useAuthStore.getState().setAuth(normalizeUser(session.user), session.access_token, session.expires_in);
+      void syncSessionExpiry();
       return session;
     })().finally(() => {
       refreshInFlight = null;
@@ -437,7 +484,13 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const firstToken = useAuthStore.getState().accessToken;
+  const state = useAuthStore.getState();
+  // Jangan coba memakai sesi yang menurut jam perangkat sudah kedaluwarsa.
+  // Endpoint auth tetap diizinkan agar logout/login bisa membersihkan sesi.
+  if (!endpoint.startsWith("/auth/") && isSessionExpired(state.expiresAt)) {
+    throw new ApiError("Sesi Anda sudah berakhir. Silakan masuk kembali.", 401, { code: "session_expired" });
+  }
+  const firstToken = state.accessToken;
   let response = await fetchApi(endpoint, options, firstToken);
 
   if (response.status === 401 && firstToken && mayRefresh(endpoint)) {
@@ -473,9 +526,45 @@ async function sameOriginRequest<T>(endpoint: string, options: RequestInit): Pro
   return payload as T;
 }
 
+/**
+ * Access token TTL (`expires_in`) jauh lebih pendek daripada masa berlaku sesi
+ * refresh (mis. 7 hari). Ambil `expires_at` sesi saat ini dari /auth/sessions
+ * supaya guard kedaluwarsa memakai tanggal yang sama dengan yang tampil di
+ * halaman "Perangkat yang masuk". Bila gagal, TTL access token tetap dipakai
+ * sebagai batas aman.
+ */
+async function syncSessionExpiry() {
+  try {
+    const response = await fetchApi("/auth/sessions", {}, useAuthStore.getState().accessToken);
+    if (!response.ok) return;
+    const payload = await readPayload(response) as { sessions?: ApiSession[] };
+    const current = payload.sessions?.find((session) => session.current);
+    if (!current?.expires_at) return;
+    const expiresAt = new Date(current.expires_at).getTime();
+    if (!Number.isFinite(expiresAt) || expiresAt <= 0) return;
+    useAuthStore.setState({ expiresAt });
+    persistExpiry(expiresAt);
+  } catch {
+    // Biarkan TTL access token sebagai fallback yang aman.
+  }
+}
+
 export async function bootstrapAuth() {
   const state = useAuthStore.getState();
-  if (state.accessToken) return state.user;
+  if (state.accessToken && !isSessionExpired(state.expiresAt)) return state.user;
+  // QA baris 81-82: bila jam perangkat sudah melewati masa berlaku sesi, jangan
+  // pulihkan sesi lewat refresh cookie. Akhiri sesi server sekali agar mengubah
+  // tanggal kembali tidak membuat pengguna otomatis masuk lagi.
+  if (isSessionExpired(state.expiresAt)) {
+    try {
+      await apiRequest<{ message: string }>("/auth/logout", { method: "POST" });
+    } catch {
+      // Sesi mungkin sudah tidak valid di server; tetap bersihkan state lokal.
+    } finally {
+      useAuthStore.getState().clearAuth();
+    }
+    return null;
+  }
   state.setLoading(true);
   try {
     const session = await refreshSession();
@@ -499,7 +588,8 @@ export const authApi = {
       body: JSON.stringify(data),
     });
     const user = normalizeUser(session.user);
-    useAuthStore.getState().setAuth(user, session.access_token);
+    useAuthStore.getState().setAuth(user, session.access_token, session.expires_in);
+    void syncSessionExpiry();
     return { ...session, user };
   },
 
