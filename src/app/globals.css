@@ -340,7 +340,11 @@ body:has(.auth-form-login) { overflow: hidden; }
 .about-section { padding-block: 40px; }
 .about-principles-section { padding-top: 10px; }
 .about-flow-section { padding-block: 38px; }
-.about-cta-section { padding-block: 36px; }
+/* NEC-85: CTA Tentang dirapatkan agar tidak menyisakan ruang kosong besar di atas
+   dan bawahnya. Padding vertikal dipusatkan pada band bergaris, bukan ditumpuk
+   dengan padding section. */
+.about-cta-section { padding-block: 0; }
+.about-cta-section .cta-band { padding-block: 40px; }
 .principle-list { display: grid; }
 .principle { display: grid; grid-template-columns: 42px 1fr; gap: 18px; border-top: 1px solid var(--line); padding: 28px 0; }
 .principle-number { color: var(--blue); font-size: 11px; font-weight: 700; }
@@ -463,7 +467,10 @@ body:has(.auth-form-login) { overflow: hidden; }
   .about-section { padding-block: 24px; }
   .about-principles-section { padding-top: 8px; }
   .about-flow-section { padding-block: 26px; }
-  .about-cta-section { padding-block: 28px; }
+  /* NEC-85: di layar sempit kurangi jarak atas/bawah CTA dan rapatkan tombol
+     ke judul supaya tidak ada ruang kosong berlebih sebelum footer. */
+  .about-cta-section { padding-block: 0; }
+  .about-cta-section .cta-band { gap: 20px; padding-block: 32px; }
   .about-grid { grid-template-columns: 1fr; gap: 12px; }
   .dashboard-layout { display: block; }
   .dashboard-sidebar { position: fixed; left: 0; width: 236px; transform: translateX(-100%); transition: transform 180ms ease; box-shadow: 20px 0 60px rgb(6 27 49 / .16); }
