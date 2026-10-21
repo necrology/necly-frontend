@@ -158,6 +158,37 @@ export type ApiCartItem = {
   quantity: number;
 };
 
+/** Akun yang terpasang pada satu delivery. Tidak pernah memuat kredensial. */
+export type ApiDeliveryAssignedAccount = {
+  inventory_account_id: string;
+  label: string;
+  status: string;
+  activated_at?: string | null;
+  access_expires_at?: string | null;
+  /** `null` berarti belum aktif; `0` berarti masa akses sudah habis. */
+  days_remaining?: number | null;
+};
+
+/** Riwayat penggantian akun beserta status email pengganti. */
+export type ApiDeliveryReplacement = {
+  id: string;
+  order_id: string;
+  order_item_id: string;
+  delivery_id: string;
+  replacement_of: string;
+  old_inventory_account_id?: string | null;
+  inventory_account_id: string;
+  reason: string;
+  complaint_approved?: boolean;
+  status: "pending" | "sending" | "sent" | "failed" | string;
+  attempts?: number;
+  error_code?: string | null;
+  email_sent_at?: string | null;
+  replaced_by?: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 /** Satu baris buku pengiriman W17. Tidak pernah berisi kredensial. */
 export type ApiOrderDelivery = {
   id: string;
@@ -168,8 +199,42 @@ export type ApiOrderDelivery = {
   error_code?: string | null;
   sent_at?: string | null;
   last_attempt_at?: string | null;
+  /** Hanya diisi endpoint admin; daftar akun tanpa kredensial. */
+  assigned_accounts?: ApiDeliveryAssignedAccount[];
+  /** Hanya diisi endpoint admin; riwayat penggantian tanpa kredensial. */
+  replacements?: ApiDeliveryReplacement[];
   created_at: string;
   updated_at: string;
+};
+
+/** Opsi akun untuk satu item pesanan dari GET /admin/orders/:id/delivery-options. */
+export type ApiDeliveryAccountOption = {
+  inventory_account_id: string;
+  label: string;
+  status: string;
+  expires_at?: string | null;
+  days_remaining?: number | null;
+  sharing_limit: number;
+  assigned_users: number;
+  used_slots: number;
+  remaining_slots: number;
+  /** Pembeli sudah pernah menerima akun ini untuk produk yang sama. */
+  used_by_customer: boolean;
+  assigned_to_item: boolean;
+  can_assign: boolean;
+};
+
+/** Kelompok opsi akun untuk satu item pesanan. */
+export type ApiDeliveryItemOptions = {
+  delivery_id: string;
+  order_item_id: string;
+  product_id: string;
+  product_price_id: string;
+  product_name: string;
+  duration_name: string;
+  quantity: number;
+  assigned_account_ids: string[];
+  accounts: ApiDeliveryAccountOption[];
 };
 
 export type ApiOrder = {
@@ -213,6 +278,8 @@ export type ApiOrder = {
   customer?: { id: string; name: string; email: string } | null;
   /** Hanya diisi endpoint admin; pembeli tidak menerima baris internal ini. */
   deliveries?: ApiOrderDelivery[];
+  /** Status pembayaran terbaru pada detail admin; pembeli tidak menerimanya. */
+  payment_status?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -863,6 +930,33 @@ export const adminApi = {
     apiRequest<{ delivery: ApiOrderDelivery }>(
       `/admin/orders/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}/retry`,
       { method: "POST" },
+    ),
+  getOrderDeliveryOptions: (id: string) =>
+    apiRequest<{ items: ApiDeliveryItemOptions[] }>(
+      `/admin/orders/${encodeURIComponent(id)}/delivery-options`,
+    ),
+  assignOrderDeliveryAccount: (id: string, deliveryId: string, inventoryAccountId: string) =>
+    apiRequest<{ delivery: ApiOrderDelivery }>(
+      `/admin/orders/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}/assign`,
+      { method: "POST", body: JSON.stringify({ inventory_account_id: inventoryAccountId }) },
+    ),
+  replaceOrderDeliveryAccount: (
+    id: string,
+    deliveryId: string,
+    inventoryAccountId: string,
+    reason: string,
+    complaintApproved = false,
+  ) =>
+    apiRequest<{ delivery: ApiOrderDelivery }>(
+      `/admin/orders/${encodeURIComponent(id)}/deliveries/${encodeURIComponent(deliveryId)}/replace`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          inventory_account_id: inventoryAccountId,
+          reason,
+          complaint_approved: complaintApproved,
+        }),
+      },
     ),
   listPayments: (params?: { page?: number; per_page?: number; status?: string; search?: string }) =>
     apiRequest<ApiAdminPaymentListResponse>(`/admin/payments${toQuery(params)}`),

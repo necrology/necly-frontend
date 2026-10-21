@@ -1,29 +1,40 @@
 "use client";
 
-import { AlertTriangle, ArrowLeft, CreditCard, MailCheck, PackageCheck, RefreshCw, RotateCw } from "lucide-react";
+import { AlertTriangle, ArrowLeft, CreditCard, MailCheck, PackageCheck, RefreshCw, RotateCw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
-import { ApiError, adminApi, bootstrapAuth, DEMO_MODE, type ApiOrder, type ApiOrderDelivery } from "@/lib/api";
+import {
+  ApiError,
+  adminApi,
+  apiErrorCode,
+  bootstrapAuth,
+  DEMO_MODE,
+  type ApiDeliveryItemOptions,
+  type ApiOrder,
+  type ApiOrderDelivery,
+} from "@/lib/api";
 import { formatDateTimeWIB, formatIDR } from "@/lib/money";
 import { orderStatusLabel } from "@/lib/order-status";
+import {
+  deliveryErrorGuidanceFor,
+  deliveryNeedsReplacement,
+  describeDeliveryFailure,
+  remainingAccessLabel,
+  replacementStatusLabel,
+  replacementStatusTone,
+  summarizeDeliveries,
+  summarizeOrderPayment,
+} from "@/lib/order-delivery";
 import { dashboardOrders } from "@/data/seed";
+import { DeliveryAccountPicker, ReplaceAccountPanel } from "./delivery-picker";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type LoadError = {
   kind: "not_found" | "forbidden" | "unauthorized" | "generic";
   message: string;
-};
-
-const paymentStatuses: Record<string, string> = {
-  pending: "Menunggu",
-  paid: "Dibayar",
-  expired: "Kedaluwarsa",
-  cancelled: "Dibatalkan",
-  failed: "Gagal",
-  refunded: "Dikembalikan",
 };
 
 const deliveryStatusLabels: Record<ApiOrderDelivery["status"], string> = {
@@ -40,27 +51,23 @@ const deliveryStatusTone: Record<ApiOrderDelivery["status"], string> = {
   failed: "status-danger",
 };
 
-const deliveryErrorLabels: Record<string, string> = {
-  buyer_email_unverified: "Email pembeli belum terverifikasi",
-  buyer_unavailable: "Pembeli tidak tersedia",
-  mailer_disabled: "Pengiriman email belum dikonfigurasi",
-  credential_cipher_unavailable: "Kunci kredensial tidak tersedia",
-  inventory_unavailable: "Inventaris tidak tersedia",
-  inventory_account_unavailable: "Akun inventaris tidak tersedia",
-  credential_invalid: "Format kredensial inventaris tidak valid",
-  email_failed: "Email gagal dikirim",
-  persistence_failed: "Gagal menyimpan status pengiriman",
-};
-
 function describeDeliveryError(error: unknown) {
   if (error instanceof ApiError) {
+    const code = apiErrorCode(error);
+    const guidance = deliveryErrorGuidanceFor(code);
+    if (guidance) return `${guidance.label} (${code}). ${guidance.action}`;
+    const mapped = describeDeliveryFailure(error, "Periksa status pesanan lalu coba lagi.");
     if (error.status === 503) return "Fitur pengiriman akun belum dikonfigurasi di server.";
-    if (error.status === 409) return error.message || "Pesanan belum berada pada status yang dapat dikirim.";
     if (error.status === 403) return "Hanya admin yang dapat mengirim akun.";
     if (error.status === 404) return error.message || "Pesanan atau pengiriman tidak ditemukan.";
-    return `Gagal mengirim akun (HTTP ${error.status}): ${error.message}`;
+    return `${mapped.message} ${mapped.guidance}`.trim();
   }
-  return "Gagal mengirim akun. Silakan coba lagi.";
+  return "Gagal memproses pengiriman akun. Silakan coba lagi.";
+}
+
+function accountReference(id?: string | null, labels?: Map<string, string>) {
+  if (!id) return "—";
+  return labels?.get(id) ?? `Akun ${id.slice(0, 8)}`;
 }
 
 function demoOrder(orderId: string): ApiOrder {
@@ -104,11 +111,23 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
   const [error, setError] = useState<LoadError | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
-  const [confirmingSend, setConfirmingSend] = useState(false);
-  const [sending, setSending] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState("");
   const [actionError, setActionError] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerItems, setPickerItems] = useState<ApiDeliveryItemOptions[]>([]);
+  const [pickerSelection, setPickerSelection] = useState<Record<string, string>>({});
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerError, setPickerError] = useState<string | null>(null);
+  const [pickerSubmitting, setPickerSubmitting] = useState(false);
+  const [replaceDelivery, setReplaceDelivery] = useState<ApiOrderDelivery | null>(null);
+  const [replaceItem, setReplaceItem] = useState<ApiDeliveryItemOptions | null>(null);
+  const [replaceSelection, setReplaceSelection] = useState("");
+  const [replaceReason, setReplaceReason] = useState("");
+  const [replaceComplaint, setReplaceComplaint] = useState(false);
+  const [replaceLoading, setReplaceLoading] = useState(false);
+  const [replaceError, setReplaceError] = useState<string | null>(null);
+  const [replaceSubmitting, setReplaceSubmitting] = useState(false);
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
@@ -213,31 +232,96 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
   const items = order.items ?? [];
   const deliveries = order.deliveries ?? [];
   const itemNameById = new Map(items.map((item) => [item.id, item.product_name]));
+  const paymentSummary = summarizeOrderPayment(order);
+  const deliverySummary = summarizeDeliveries(deliveries);
+  const replacementHistory = deliveries.flatMap((delivery) =>
+    (delivery.replacements ?? []).map((replacement) => ({ ...replacement, delivery })),
+  );
+  const accountLabels = new Map(
+    deliveries.flatMap((delivery) =>
+      (delivery.assigned_accounts ?? []).map((account) => [account.inventory_account_id, account.label] as const),
+    ),
+  );
   const approvable = order.status === "paid" || order.status === "fulfilling";
   const alreadyApproved = ["processing", "shipped", "delivered", "completed"].includes(order.status);
   const hasUnsent = deliveries.length === 0 || deliveries.some((delivery) => delivery.status !== "sent");
   const canSend = !DEMO_MODE && (approvable || (alreadyApproved && hasUnsent));
   const sendLabel = approvable ? "Setujui & kirim akun" : "Kirim akun";
 
-  const approveAndSend = async () => {
-    setSending(true);
+  const openSendPicker = async () => {
+    setPickerOpen(true);
+    setPickerLoading(true);
+    setPickerError(null);
+    setPickerItems([]);
+    setPickerSelection({});
     setActionError("");
     setActionNotice("");
     try {
-      const updated = await adminApi.approveOrderDelivery(order.id);
+      const response = await adminApi.getOrderDeliveryOptions(order.id);
+      setPickerItems(response.items);
+      const initial: Record<string, string> = {};
+      response.items.forEach((item) => {
+        const current = item.accounts.find((account) => account.assigned_to_item && account.can_assign && !account.used_by_customer);
+        const eligible = current ?? item.accounts.find((account) => account.can_assign && !account.used_by_customer);
+        if (eligible) initial[item.order_item_id] = eligible.inventory_account_id;
+      });
+      setPickerSelection(initial);
+    } catch (failure) {
+      setPickerError(describeDeliveryError(failure));
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const confirmSend = async () => {
+    const unsentItems = pickerItems.filter((item) => deliveries.find((delivery) => delivery.id === item.delivery_id)?.status !== "sent");
+    if (unsentItems.length === 0) return;
+    setPickerSubmitting(true);
+    setActionError("");
+    setActionNotice("");
+    try {
+      for (const item of unsentItems) {
+        const accountId = pickerSelection[item.order_item_id];
+        if (!accountId) throw new Error(`Akun untuk ${item.product_name} belum dipilih.`);
+        if (!item.assigned_account_ids.includes(accountId)) {
+          await adminApi.assignOrderDeliveryAccount(order.id, item.delivery_id, accountId);
+        }
+      }
+
+      let retryFailure: unknown = null;
+      if (approvable) {
+        await adminApi.approveOrderDelivery(order.id);
+      } else {
+        for (const item of unsentItems) {
+          const delivery = deliveries.find((row) => row.id === item.delivery_id);
+          if (delivery?.status === "sent") continue;
+          try {
+            await adminApi.retryOrderDelivery(order.id, item.delivery_id);
+          } catch (failure) {
+            retryFailure ??= failure;
+          }
+        }
+      }
+
+      const updated = await adminApi.getOrder(order.id);
       setOrder(updated);
-      setConfirmingSend(false);
+      setPickerOpen(false);
       const sent = (updated.deliveries ?? []).filter((delivery) => delivery.status === "sent").length;
+      const failed = (updated.deliveries ?? []).filter((delivery) => delivery.status === "failed").length;
       setActionNotice(
-        sent > 0
-          ? `Pengiriman diproses. ${sent} item sudah terkirim ke email pembeli terverifikasi.`
-          : "Persetujuan tersimpan, tetapi belum ada item yang berhasil dikirim. Periksa status di bawah.",
+        `${sent} dari ${(updated.deliveries ?? []).length} item terkirim ke email pembeli terverifikasi.` +
+          (failed > 0 ? ` ${failed} item masih gagal; periksa kode kesalahan di bawah.` : ""),
       );
+      if (retryFailure) setActionError(describeDeliveryError(retryFailure));
     } catch (failure) {
       setActionError(describeDeliveryError(failure));
-      setConfirmingSend(false);
+      try {
+        setOrder(await adminApi.getOrder(order.id));
+      } catch {
+        // Pesan aksi tetap ditampilkan walau penyegaran data ikut gagal.
+      }
     } finally {
-      setSending(false);
+      setPickerSubmitting(false);
     }
   };
 
@@ -247,14 +331,7 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
     setActionNotice("");
     try {
       const result = await adminApi.retryOrderDelivery(order.id, delivery.id);
-      setOrder((current) =>
-        current
-          ? {
-              ...current,
-              deliveries: (current.deliveries ?? []).map((row) => (row.id === result.delivery.id ? result.delivery : row)),
-            }
-          : current,
-      );
+      setOrder(await adminApi.getOrder(order.id));
       setActionNotice(
         result.delivery.status === "sent"
           ? "Pengiriman berhasil diulang. Email tidak dikirim dua kali bila status sudah sent."
@@ -267,6 +344,52 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
     }
   };
 
+  const openReplace = async (delivery: ApiOrderDelivery) => {
+    setReplaceDelivery(delivery);
+    setReplaceItem(null);
+    setReplaceSelection("");
+    setReplaceReason("");
+    setReplaceComplaint(false);
+    setReplaceError(null);
+    setReplaceLoading(true);
+    setActionError("");
+    setActionNotice("");
+    try {
+      const response = await adminApi.getOrderDeliveryOptions(order.id);
+      const item = response.items.find((row) => row.order_item_id === delivery.order_item_id) ?? null;
+      setReplaceItem(item);
+    } catch (failure) {
+      setReplaceError(describeDeliveryError(failure));
+    } finally {
+      setReplaceLoading(false);
+    }
+  };
+
+  const confirmReplace = async () => {
+    if (!replaceDelivery || !replaceSelection) return;
+    setReplaceSubmitting(true);
+    setReplaceError(null);
+    setActionError("");
+    setActionNotice("");
+    try {
+      const result = await adminApi.replaceOrderDeliveryAccount(
+        order.id,
+        replaceDelivery.id,
+        replaceSelection,
+        replaceReason.trim(),
+        replaceComplaint,
+      );
+      const replacement = result.delivery.replacements?.[result.delivery.replacements.length - 1];
+      setOrder(await adminApi.getOrder(order.id));
+      setReplaceDelivery(null);
+      setActionNotice(`Penggantian akun diproses. ${replacementStatusLabel(replacement?.status)}.`);
+    } catch (failure) {
+      setReplaceError(describeDeliveryError(failure));
+    } finally {
+      setReplaceSubmitting(false);
+    }
+  };
+
   return (
     <div className="dashboard-page">
       <PageHeader
@@ -275,7 +398,12 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
         actions={
           <>
             {canSend && (
-              <button className="button button-primary button-sm" type="button" onClick={() => setConfirmingSend(true)} disabled={sending}>
+              <button
+                className="button button-primary button-sm"
+                type="button"
+                onClick={() => void openSendPicker()}
+                disabled={pickerLoading || pickerSubmitting}
+              >
                 <MailCheck size={13} /> {sendLabel}
               </button>
             )}
@@ -293,24 +421,86 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
       {actionNotice && <div className="notice success" role="status">{actionNotice}</div>}
       {actionError && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{actionError}</div>}
 
-      {confirmingSend && (
-        <div className="card panel" role="alertdialog" aria-label="Konfirmasi pengiriman akun">
+      <section className="status-pair" aria-label="Status pembayaran dan pengiriman">
+        <article className="card panel">
           <div className="panel-header">
-            <h2 className="panel-title">Kirim kredensial akun ke pembeli?</h2>
+            <h2 className="panel-title">Status pembayaran</h2>
+            <CreditCard size={14} className="muted" aria-hidden="true" />
           </div>
-          <p className="muted" style={{ margin: "0 0 14px", fontSize: 11 }}>
-            Email berisi username, password, dan instruksi penggunaan akan dikirim ke <strong>{order.customer?.email ?? "email pembeli"}</strong>.
-            Pengiriman hanya berhasil bila email pembeli sudah terverifikasi. Aksi ini idempoten per item pesanan.
-          </p>
-          <div className="table-actions" style={{ justifyContent: "flex-start" }}>
-            <button className="button button-primary button-sm" type="button" onClick={() => void approveAndSend()} disabled={sending}>
-              {sending ? "Mengirim…" : "Ya, setujui & kirim"}
-            </button>
-            <button className="button button-secondary button-sm" type="button" onClick={() => setConfirmingSend(false)} disabled={sending}>
-              Batal
-            </button>
+          <span className={`badge ${paymentSummary.paid ? "status-success" : "status-warning"}`}>
+            {paymentSummary.label}
+          </span>
+          <div className="summary-lines" style={{ marginBottom: 0 }}>
+            <div className="summary-line"><span>Metode</span><strong>{paymentSummary.method ?? "—"}</strong></div>
+            <div className="summary-line">
+              <span>Waktu pembayaran</span>
+              <strong>{paymentSummary.paidAt ? `${formatDateTimeWIB(paymentSummary.paidAt)} WIB` : "—"}</strong>
+            </div>
+            <div className="summary-line">
+              <span>Status API</span>
+              <strong className="tabular">{paymentSummary.status || "—"}</strong>
+            </div>
           </div>
-        </div>
+        </article>
+        <article className="card panel">
+          <div className="panel-header">
+            <h2 className="panel-title">Status pengiriman</h2>
+            <ShieldCheck size={14} className="muted" aria-hidden="true" />
+          </div>
+          <span className={`badge ${deliverySummary.tone}`}>{deliverySummary.label}</span>
+          <div className="summary-lines" style={{ marginBottom: 0 }}>
+            <div className="summary-line">
+              <span>Item terkirim</span>
+              <strong className="tabular">{deliverySummary.sent} / {deliverySummary.total}</strong>
+            </div>
+            <div className="summary-line">
+              <span>Pengiriman gagal</span>
+              <strong className="tabular" style={{ color: deliverySummary.failed > 0 ? "var(--danger)" : undefined }}>
+                {deliverySummary.failed}
+              </strong>
+            </div>
+            <div className="summary-line">
+              <span>Riwayat penggantian</span>
+              <strong className="tabular">{replacementHistory.length}</strong>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      {pickerOpen && (
+        <DeliveryAccountPicker
+          items={pickerItems}
+          deliveries={deliveries}
+          selection={pickerSelection}
+          onSelect={(itemId, accountId) => setPickerSelection((current) => ({ ...current, [itemId]: accountId }))}
+          onCancel={() => setPickerOpen(false)}
+          onConfirm={() => void confirmSend()}
+          onRetry={() => void openSendPicker()}
+          loading={pickerLoading}
+          error={pickerError}
+          submitting={pickerSubmitting}
+          approvable={approvable}
+        />
+      )}
+
+      {replaceDelivery && (
+        <ReplaceAccountPanel
+          delivery={replaceDelivery}
+          item={replaceItem}
+          itemName={itemNameById.get(replaceDelivery.order_item_id) ?? "item pesanan"}
+          selectedId={replaceSelection}
+          reason={replaceReason}
+          complaintApproved={replaceComplaint}
+          onSelect={setReplaceSelection}
+          onReason={setReplaceReason}
+          onComplaint={setReplaceComplaint}
+          onCancel={() => setReplaceDelivery(null)}
+          onConfirm={() => void confirmReplace()}
+          onRetry={() => void openReplace(replaceDelivery)}
+          loading={replaceLoading}
+          error={replaceError}
+          submitting={replaceSubmitting}
+        />
       )}
 
       <section className="metric-grid" aria-label="Ringkasan pesanan">
@@ -426,44 +616,86 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
                 <tr>
                   <th>Item</th>
                   <th>Status</th>
+                  <th>Akun & masa akses</th>
                   <th>Percobaan</th>
-                  <th>Terakhir dicoba</th>
                   <th>Dikirim</th>
                   <th aria-label="Aksi" />
                 </tr>
               </thead>
               <tbody>
-                {deliveries.map((delivery) => (
-                  <tr key={delivery.id}>
-                    <td className="table-primary">{itemNameById.get(delivery.order_item_id) ?? "Item pesanan"}</td>
-                    <td>
-                      <span className={`badge ${deliveryStatusTone[delivery.status] ?? "status-info"}`}>
-                        {deliveryStatusLabels[delivery.status] ?? delivery.status}
-                      </span>
-                      {delivery.error_code && (
-                        <div className="muted" style={{ fontSize: 9, marginTop: 4 }}>
-                          {deliveryErrorLabels[delivery.error_code] ?? delivery.error_code}
+                {deliveries.map((delivery) => {
+                  const errorGuidance = deliveryErrorGuidanceFor(delivery.error_code);
+                  const canReplace = deliveryNeedsReplacement(delivery);
+                  const itemName = itemNameById.get(delivery.order_item_id) ?? "item pesanan";
+                  return (
+                    <tr key={delivery.id}>
+                      <td className="table-primary">{itemNameById.get(delivery.order_item_id) ?? "Item pesanan"}</td>
+                      <td style={{ whiteSpace: "normal", minWidth: 160 }}>
+                        <span className={`badge ${deliveryStatusTone[delivery.status] ?? "status-info"}`}>
+                          {deliveryStatusLabels[delivery.status] ?? delivery.status}
+                        </span>
+                        {delivery.error_code && (
+                          <div style={{ fontSize: 9, marginTop: 4, color: "var(--danger)" }}>
+                            {errorGuidance?.label ?? delivery.error_code} <span className="tabular">({delivery.error_code})</span>
+                            {errorGuidance && <div className="table-secondary">{errorGuidance.action}</div>}
+                          </div>
+                        )}
+                        {delivery.last_attempt_at && (
+                          <div className="table-secondary">Terakhir dicoba {formatDateTimeWIB(delivery.last_attempt_at)} WIB</div>
+                        )}
+                      </td>
+                      <td style={{ whiteSpace: "normal", minWidth: 230 }}>
+                        {(delivery.assigned_accounts ?? []).length === 0 ? (
+                          <span className="muted small">Belum ada akun terpasang.</span>
+                        ) : (
+                          <div className="delivery-account-list">
+                            {(delivery.assigned_accounts ?? []).map((account) => (
+                              <div className="delivery-account-line" key={account.inventory_account_id}>
+                                <strong>{account.label}</strong>
+                                <span className="badge status-info">{remainingAccessLabel(account)}</span>
+                                <span className="table-secondary">
+                                  {account.activated_at
+                                    ? `Aktif sejak ${formatDateTimeWIB(account.activated_at)} WIB · `
+                                    : ""}
+                                  {account.access_expires_at
+                                    ? `akses sampai ${formatDateTimeWIB(account.access_expires_at)} WIB`
+                                    : "masa akses belum dihitung"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td className="tabular">{delivery.attempts}</td>
+                      <td>{delivery.sent_at ? `${formatDateTimeWIB(delivery.sent_at)} WIB` : "—"}</td>
+                      <td>
+                        <div className="table-actions">
+                          {delivery.status === "failed" && (
+                            <button
+                              className="table-action"
+                              type="button"
+                              aria-label={`Ulangi pengiriman ${itemName}`}
+                              onClick={() => void retryDelivery(delivery)}
+                              disabled={retryingId === delivery.id}
+                            >
+                              <RotateCw size={13} />
+                            </button>
+                          )}
+                          {canReplace && (
+                            <button
+                              className="button button-secondary button-sm"
+                              type="button"
+                              aria-label={`Ganti akun ${itemName}`}
+                              onClick={() => void openReplace(delivery)}
+                            >
+                              <RefreshCw size={13} /> Ganti akun
+                            </button>
+                          )}
                         </div>
-                      )}
-                    </td>
-                    <td className="tabular">{delivery.attempts}</td>
-                    <td>{delivery.last_attempt_at ? `${formatDateTimeWIB(delivery.last_attempt_at)} WIB` : "—"}</td>
-                    <td>{delivery.sent_at ? `${formatDateTimeWIB(delivery.sent_at)} WIB` : "—"}</td>
-                    <td>
-                      {delivery.status === "failed" && (
-                        <button
-                          className="table-action"
-                          type="button"
-                          aria-label={`Ulangi pengiriman ${itemNameById.get(delivery.order_item_id) ?? delivery.id}`}
-                          onClick={() => void retryDelivery(delivery)}
-                          disabled={retryingId === delivery.id}
-                        >
-                          <RotateCw size={13} />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -472,6 +704,60 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
           <p className="muted small" style={{ margin: "12px 0 0", display: "flex", alignItems: "center", gap: 6 }}>
             <AlertTriangle size={13} /> Kegagalan tidak mengubah status pesanan; perbaiki penyebab lalu ulangi pengiriman.
           </p>
+        )}
+      </section>
+
+      <section className="card" style={{ padding: 22 }} aria-label="Riwayat penggantian akun">
+        <div className="panel-header" style={{ padding: 0 }}>
+          <div>
+            <h2 className="panel-title">Riwayat penggantian akun</h2>
+            <span className="muted" style={{ fontSize: 9 }}>
+              Audit penggantian dan status email pengganti. Tidak memuat kredensial.
+            </span>
+          </div>
+          <span className="muted" style={{ fontSize: 9 }}>{replacementHistory.length} penggantian</span>
+        </div>
+        {replacementHistory.length === 0 ? (
+          <p className="muted small" style={{ margin: "12px 0 0" }} role="status">
+            Belum ada penggantian akun untuk pesanan ini.
+          </p>
+        ) : (
+          <div className="table-scroll" style={{ marginTop: 12 }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Akun lama</th>
+                  <th>Akun baru</th>
+                  <th>Alasan</th>
+                  <th>Status email</th>
+                  <th>Waktu</th>
+                </tr>
+              </thead>
+              <tbody>
+                {replacementHistory.map((replacement) => (
+                  <tr key={replacement.id}>
+                    <td className="table-primary">{itemNameById.get(replacement.order_item_id) ?? "Item pesanan"}</td>
+                    <td>{accountReference(replacement.old_inventory_account_id, accountLabels)}</td>
+                    <td>{accountReference(replacement.inventory_account_id, accountLabels)}</td>
+                    <td style={{ whiteSpace: "normal", minWidth: 220 }}>
+                      {replacement.reason}
+                      {replacement.complaint_approved && <span className="badge status-warning" style={{ marginLeft: 6 }}>Komplain disetujui</span>}
+                    </td>
+                    <td>
+                      <span className={`badge ${replacementStatusTone(replacement.status)}`}>
+                        {replacementStatusLabel(replacement.status)}
+                      </span>
+                      {replacement.error_code && (
+                        <div className="table-secondary tabular">{replacement.error_code}</div>
+                      )}
+                    </td>
+                    <td>{replacement.email_sent_at ? `${formatDateTimeWIB(replacement.email_sent_at)} WIB` : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
