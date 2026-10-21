@@ -37,24 +37,39 @@ function productCategoryId(product: ApiProduct) {
 }
 
 /**
- * QA baris 88: nama paket dari katalog masih membawa label internal
- * "Slot Anggota Rumah Tangga" / "Slot Anggota". Label itu tidak boleh tampil
- * sebagai judul layanan di storefront.
+ * QA baris 88 / NEC-95: nama paket dari katalog masih membawa label internal
+ * "Slot Anggota Rumah Tangga", "Slot Anggota", dan kata "Family". Label itu
+ * tidak boleh tampil sebagai judul layanan di storefront maupun dashboard.
  */
+const internalNameLabels = [
+  /\s*[-–—]?\s*slot anggota rumah tangga\s*/gi,
+  /\s*[-–—]?\s*slot anggota\s*/gi,
+  /\s*[-–—]?\s*slot keluarga\s*/gi,
+  /\s*[-–—]?\s*\bslots?\b\s*/gi,
+  /\s*[-–—]?\s*\bfamily\b\s*/gi,
+];
+
 export function cleanProductName(name: string) {
-  const cleaned = name
-    .replace(/\s*[-–—]?\s*slot anggota rumah tangga\s*/gi, " ")
-    .replace(/\s*[-–—]?\s*slot anggota\s*/gi, " ")
-    .replace(/\bslots?\b\s*/gi, "")
+  const cleaned = internalNameLabels
+    .reduce((value, label) => value.replace(label, " "), name)
     .replace(/\s{2,}/g, " ")
     .replace(/^[\s\-–—]+|[\s\-–—]+$/g, "")
     .trim();
   return cleaned || name.trim();
 }
 
-/** Ganti istilah internal "slot" pada teks bebas dari katalog. */
+/**
+ * Ganti istilah internal "slot" pada teks bebas dari katalog dan buang kata
+ * "Family" (termasuk frasa "Family Sharing") agar deskripsi tetap rapi.
+ */
 export function cleanSlotCopy(text: string) {
-  return text.replace(/\bslots?\b/gi, (match) => match[0] === match[0].toUpperCase() ? "Akses" : "akses");
+  return text
+    .replace(/\bfamily\s+sharing\b/gi, "berbagi keluarga")
+    .replace(/\bfamily\b\s*/gi, "")
+    .replace(/\bslots?\b/gi, (match) => (match[0] === match[0].toUpperCase() ? "Akses" : "akses"))
+    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([.,;:])/g, "$1")
+    .trim();
 }
 
 function durationLabel(days: number) {

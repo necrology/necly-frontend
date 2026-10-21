@@ -35,7 +35,7 @@ import ProductsPage from "./page";
 
 const PRODUCT = {
   id: "prd-music",
-  name: "Spotify Family",
+  name: "Spotify Premium",
   slug: "spotify-family",
   description: "Musik keluarga",
   category_id: "cat-music",
@@ -66,18 +66,18 @@ describe("produk admin (W18)", () => {
   it("mempertahankan category_id asli saat edit tanpa memilih kategori lagi", async () => {
     render(<ProductsPage />);
 
-    expect(await screen.findByText("Spotify Family")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Family" }));
+    expect(await screen.findByText("Spotify Premium")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Premium" }));
 
     const category = screen.getByLabelText("Kategori") as HTMLSelectElement;
     expect(category.value).toBe("cat-music");
 
-    fireEvent.change(screen.getByLabelText("Nama produk"), { target: { value: "Spotify Family Baru" } });
+    fireEvent.change(screen.getByLabelText("Nama produk"), { target: { value: "Spotify Premium Baru" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan produk" }));
 
     await waitFor(() => expect(updateProductMock).toHaveBeenCalledTimes(1));
     expect(updateProductMock.mock.calls[0]?.[1]).toMatchObject({
-      name: "Spotify Family Baru",
+      name: "Spotify Premium Baru",
       category_id: "cat-music",
       active: true,
       coming_soon: false,
@@ -88,9 +88,9 @@ describe("produk admin (W18)", () => {
 
   it("menolak mengosongkan deskripsi saat edit karena backend mempertahankan nilai lama", async () => {
     render(<ProductsPage />);
-    await screen.findByText("Spotify Family");
+    await screen.findByText("Spotify Premium");
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Family" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Premium" }));
     fireEvent.change(screen.getByLabelText("Deskripsi"), { target: { value: "" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan produk" }));
 
@@ -100,7 +100,7 @@ describe("produk admin (W18)", () => {
 
   it("mewajibkan kategori dipilih untuk produk baru alih-alih memilih kategori pertama diam-diam", async () => {
     render(<ProductsPage />);
-    await screen.findByText("Spotify Family");
+    await screen.findByText("Spotify Premium");
 
     fireEvent.click(screen.getByRole("button", { name: "Tambah produk" }));
     fireEvent.change(screen.getByLabelText("Nama produk"), { target: { value: "Produk Baru" } });
@@ -115,14 +115,14 @@ describe("produk admin (W18)", () => {
 
   it("mengirim payload status yang konsisten dari aksi cepat baris", async () => {
     render(<ProductsPage />);
-    await screen.findByText("Spotify Family");
+    await screen.findByText("Spotify Premium");
 
-    fireEvent.change(screen.getByLabelText("Ubah status Spotify Family"), { target: { value: "Coming Soon" } });
+    fireEvent.change(screen.getByLabelText("Ubah status Spotify Premium"), { target: { value: "Coming Soon" } });
 
     await waitFor(() => expect(updateProductMock).toHaveBeenCalledTimes(1));
     expect(updateProductMock).toHaveBeenCalledWith("prd-music", { active: true, coming_soon: true });
 
-    fireEvent.change(screen.getByLabelText("Ubah status Spotify Family"), { target: { value: "Nonaktif" } });
+    fireEvent.change(screen.getByLabelText("Ubah status Spotify Premium"), { target: { value: "Nonaktif" } });
 
     await waitFor(() => expect(updateProductMock).toHaveBeenCalledTimes(2));
     expect(updateProductMock).toHaveBeenLastCalledWith("prd-music", { active: false, coming_soon: false });
@@ -142,19 +142,19 @@ describe("produk admin (W18)", () => {
     fireEvent.change(screen.getByLabelText("Filter status"), { target: { value: "Coming Soon" } });
 
     expect(screen.getByText("Canva Teams")).toBeInTheDocument();
-    expect(screen.queryByText("Spotify Family")).not.toBeInTheDocument();
+    expect(screen.queryByText("Spotify Premium")).not.toBeInTheDocument();
   });
 
   it("mengompres foto yang dipilih dan mengirim data URL saat menyimpan", async () => {
     render(<ProductsPage />);
-    await screen.findByText("Spotify Family");
+    await screen.findByText("Spotify Premium");
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Family" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Premium" }));
     const file = new File(["foto"], "foto.jpg", { type: "image/jpeg" });
     fireEvent.change(screen.getByLabelText("Pilih foto produk"), { target: { files: [file] } });
 
     await waitFor(() => expect(compressProductImageMock).toHaveBeenCalledWith(file));
-    await waitFor(() => expect(screen.getByAltText("Pratinjau foto Spotify Family")).toHaveAttribute("src", COMPRESSED_PHOTO));
+    await waitFor(() => expect(screen.getByAltText("Pratinjau foto Spotify Premium")).toHaveAttribute("src", COMPRESSED_PHOTO));
 
     fireEvent.click(screen.getByRole("button", { name: "Simpan produk" }));
 
@@ -175,9 +175,9 @@ describe("produk admin (W18)", () => {
     });
 
     render(<ProductsPage />);
-    await screen.findByText("Spotify Family");
+    await screen.findByText("Spotify Premium");
 
-    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Family" }));
+    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Premium" }));
     fireEvent.click(screen.getByRole("button", { name: "Hapus foto" }));
     expect(screen.getByText("Foto akan dihapus saat produk disimpan.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Simpan produk" }));

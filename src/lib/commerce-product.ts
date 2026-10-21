@@ -22,7 +22,7 @@ const brandRules: Array<{ pattern: RegExp; tone: BrandTone; brand: (name: string
   { pattern: /microsoft|office|365/i, tone: "microsoft", brand: () => "Microsoft 365" },
   { pattern: /canva/i, tone: "canva", brand: () => "Canva Teams" },
   { pattern: /google one/i, tone: "googleone", brand: () => "Google One 2 TB" },
-  { pattern: /dropbox/i, tone: "dropbox", brand: () => "Dropbox Family" },
+  { pattern: /dropbox/i, tone: "dropbox", brand: () => "Dropbox" },
 ];
 
 export function brandForProduct(name: string): { brand: string; logoTone: BrandTone } {
