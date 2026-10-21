@@ -140,15 +140,16 @@ describe("revisi QA putaran kedua", () => {
     expect(css).toContain(".about-grid { grid-template-columns: 1fr; gap: 12px; }");
   });
 
-  it("baris 71: teks akun dan keluar di menu mobile berwarna putih", () => {
+  it("baris 71 & NEC-88: teks akun dan keluar di menu mobile berwarna hitam", () => {
     expect(header.match(/commerce-mobile-account-action/g)).toHaveLength(2);
-    expect(css).toContain(".commerce-mobile-account-action { color: #fff; }");
+    expect(css).toContain(".commerce-mobile-account-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }");
   });
 
-  it("NEC-88: tombol akun di drawer mobile tidak melebar penuh", () => {
+  it("NEC-88: tombol akun di drawer mobile tidak melebar penuh dan lebarnya sama", () => {
     // Sebelumnya kedua tombol memakai lebar drawer (358px di 390px) karena
-    // diwarisi dari CTA "Log In" yang memang selebar layar.
-    expect(css).toContain(".commerce-mobile-account-action { width: fit-content; max-width: 100%; justify-self: start; padding-inline: 24px; }");
+    // diwarisi dari CTA "Log In" yang memang selebar layar. Revisi berikutnya
+    // menyamakan lebar keduanya lewat max-width yang sama.
+    expect(css).toContain("width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px;");
   });
 
   it("baris 66: ajakan daftar di halaman login diperbesar", () => {
