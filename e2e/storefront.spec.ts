@@ -10,6 +10,21 @@ test("home renders the public storefront shell", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Layanan" }).first()).toBeVisible();
 });
 
+test("mobile hero keeps the animation close to the title block", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+  const gap = await page.evaluate(() => {
+    const cta = document.querySelector(".commerce-hero-cta")?.getBoundingClientRect();
+    const art = document.querySelector(".commerce-home-hero-art")?.getBoundingClientRect();
+    if (!cta || !art) return null;
+    return Math.round(art.top - cta.bottom);
+  });
+  expect(gap).not.toBeNull();
+  expect(gap).toBeGreaterThanOrEqual(4);
+  expect(gap).toBeLessThanOrEqual(16);
+});
+
 test("catalog route renders the existing search and category controls", async ({ page }) => {
   const response = await page.goto("/products");
   expect(response?.status()).toBe(200);

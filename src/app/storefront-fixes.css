@@ -185,7 +185,12 @@ img, svg { max-width: 100%; }
   .commerce-catalog-hero-art { width: min(100%, 310px); margin-inline: auto; }
   .commerce-catalog-hero-art img { aspect-ratio: 720 / 520; }
   .commerce-home-hero { position: relative; z-index: 1; overflow: hidden; margin-bottom: 22px; border-radius: 0 0 50% 50% / 0 0 10% 10%; }
-  .commerce-home-hero-art { width: min(100%, 340px); }
+  /* NEC-84: aturan ritme umum di atas menimpa gap hero mobile dari globals.css.
+     Pertahankan ilustrasi menempel pada blok judul, bukan melayang jauh di bawahnya. */
+  .commerce-home-hero { padding: 28px 0 34px; }
+  .commerce-home-hero-inner { gap: 12px; }
+  .commerce-hero-cta { margin-top: 18px; }
+  .commerce-home-hero-art { width: min(100%, 340px); margin-top: -2px; }
   .commerce-home-hero-art > span { left: 0; }
   .commerce-offer-banner, .commerce-offer-copy, .commerce-offer-countdown { min-width: 0; }
   .commerce-offer-copy { align-items: flex-start; }
