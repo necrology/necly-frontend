@@ -5,7 +5,7 @@ import { DashboardTopbar } from "./dashboard-topbar";
 import { PageHeader } from "./page-header";
 import { StatusBadge } from "./status-badge";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard", useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }) }));
 
 afterEach(cleanup);
 
