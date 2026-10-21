@@ -120,6 +120,27 @@ describe("mapApiProduct", () => {
     expect(product.priceOptions[0].stock).toBe(0);
   });
 
+  it("memetakan coming_soon dan image_url tanpa mengubah perilaku stok", () => {
+    const product = mapApiProduct({
+      ...apiProduct,
+      coming_soon: true,
+      image_url: "https://cdn.necly.id/produk/netflix.jpg",
+    });
+
+    expect(product.comingSoon).toBe(true);
+    expect(product.imageUrl).toBe("https://cdn.necly.id/produk/netflix.jpg");
+    expect(product.active).toBe(true);
+    expect(product.stock).toBe(6);
+  });
+
+  it("menganggap produk lama tanpa active sebagai aktif dan tanpa foto", () => {
+    const product = mapApiProduct(apiProduct);
+
+    expect(product.active).toBe(true);
+    expect(product.comingSoon).toBe(false);
+    expect(product.imageUrl).toBeUndefined();
+  });
+
   it("tidak membuat bukti sosial dari data API", () => {
     const product = mapApiProduct(apiProduct);
 

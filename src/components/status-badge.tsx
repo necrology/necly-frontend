@@ -52,6 +52,8 @@ const statusLabels: Record<string, { label: string; tone: StatusTone }> = {
   failed: { label: "Gagal", tone: "status-danger" },
   nonaktif: { label: "Nonaktif", tone: "status-danger" },
   inactive: { label: "Nonaktif", tone: "status-danger" },
+  "coming soon": { label: "Coming Soon", tone: "status-warning" },
+  coming_soon: { label: "Coming Soon", tone: "status-warning" },
   menunggu: { label: "Menunggu", tone: "status-warning" },
   pending: { label: "Menunggu", tone: "status-warning" },
   waiting: { label: "Menunggu", tone: "status-warning" },

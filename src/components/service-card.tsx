@@ -5,6 +5,9 @@ import { formatIDR } from "@/lib/money";
 import type { SubscriptionProduct } from "@/lib/types";
 
 function badgeFor(product: SubscriptionProduct) {
+  // Badge Coming Soon harus menang atas Preorder/Stok/featured agar status
+  // produk tidak terbaca sebagai "habis" atau "sedang tren".
+  if (product.comingSoon) return { label: "Coming Soon", className: "coming-soon" };
   if (product.featured && product.category === "Streaming") return { label: "Populer", className: "popular" };
   if (product.featured) return { label: "Best Seller", className: "best" };
   if (product.stock === 0) return { label: "Preorder", className: "new" };
@@ -14,6 +17,8 @@ function badgeFor(product: SubscriptionProduct) {
 
 export function ServiceCard({ product }: { product: SubscriptionProduct }) {
   const badge = badgeFor(product);
+  const comingSoon = product.comingSoon === true;
+
   return (
     <article className="catalog-card">
       <ServiceVisual service={product} />
@@ -29,8 +34,17 @@ export function ServiceCard({ product }: { product: SubscriptionProduct }) {
           {product.benefits.slice(0, 2).map((benefit) => <li key={benefit}><CheckCircle2 size={13} />{benefit}</li>)}
         </ul>
         <div className="catalog-card-actions">
-          <Link className="catalog-detail-link" href={`/products/${product.slug}`} aria-label={`Lihat ${product.name}`}><Eye size={14} />Lihat Skema Harga</Link>
-          <Link className="catalog-order-button" href={`/products/${product.slug}`}>Pesan</Link>
+          {comingSoon ? (
+            <>
+              <span className="catalog-detail-link is-disabled" aria-disabled="true"><Eye size={14} />Lihat Skema Harga</span>
+              <span className="catalog-order-button is-disabled" aria-disabled="true">Pesan</span>
+            </>
+          ) : (
+            <>
+              <Link className="catalog-detail-link" href={`/products/${product.slug}`} aria-label={`Lihat ${product.name}`}><Eye size={14} />Lihat Skema Harga</Link>
+              <Link className="catalog-order-button" href={`/products/${product.slug}`}>Pesan</Link>
+            </>
+          )}
         </div>
       </div>
     </article>

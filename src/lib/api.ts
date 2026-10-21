@@ -140,6 +140,8 @@ export type ApiProduct = {
   slug: string;
   description: string;
   image_url?: string;
+  /** Produk tampil di katalog tetapi tidak dapat dipesan. */
+  coming_soon?: boolean;
   active?: boolean;
   prices?: ApiProductPrice[];
   /** Tidak pernah dikirim katalog; stok dihitung dari available_slots. */

@@ -39,6 +39,12 @@ export type SubscriptionProduct = {
   };
   accent: "sky" | "blue" | "indigo" | "violet";
   featured?: boolean;
+  /** Foto produk dari `image_url`; kosong berarti pakai ilustrasi bawaan. */
+  imageUrl?: string;
+  /** Produk tetap tampil di katalog, tetapi tidak dapat dipesan. */
+  comingSoon?: boolean;
+  /** Status publikasi dari API. Dihilangkan hanya untuk data demo lama. */
+  active?: boolean;
   priceOptions: PriceOption[];
   termsNote: string;
 };

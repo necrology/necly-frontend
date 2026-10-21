@@ -1,19 +1,26 @@
 "use client";
 
-import { Edit3, Eye, Plus, Search, X } from "lucide-react";
+import { Edit3, Eye, Plus, Search, Trash2, Upload, X } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
+import { ProductPhoto } from "@/components/product-photo";
 import { StatusBadge } from "@/components/status-badge";
 import { formatIDR } from "@/lib/money";
 import { ApiError, adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { mapApiProductToSubscriptionProduct } from "@/lib/admin-mappers";
+import { PRODUCT_IMAGE_ACCEPT, compressProductImage, isHttpsImageUrl, validateProductImageFile } from "@/lib/product-image";
+import { productStatus, productStatusPayload, type ProductStatus } from "@/lib/product-status";
 import type { SubscriptionProduct } from "@/lib/types";
 import type { ApiProduct } from "@/lib/api";
 
 const categories = ["Semua", "Streaming", "Produktivitas", "Kreatif", "Edukasi", "Keamanan"] as const;
+const statusOptions: ProductStatus[] = ["Aktif", "Coming Soon", "Nonaktif"];
+const statusFilters = ["Semua status", ...statusOptions] as const;
+const fallbackPhoto = "/illustrations/product-workspace.svg";
 
 type CategoryOption = { id: string; name: string };
+type PhotoMode = "keep" | "replace" | "remove";
 
 type ProductForm = {
   mode: "create" | "edit";
@@ -22,6 +29,11 @@ type ProductForm = {
   slug: string;
   categoryId: string;
   description: string;
+  status: ProductStatus;
+  imageUrl?: string;
+  imageUrlInput: string;
+  photoMode: PhotoMode;
+  photoValue?: string;
 };
 
 function slugify(value: string) {
@@ -36,14 +48,18 @@ function slugify(value: string) {
 export default function DashboardProductsPage() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("Semua");
+  const [statusFilter, setStatusFilter] = useState<(typeof statusFilters)[number]>("Semua status");
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [apiProducts, setApiProducts] = useState<SubscriptionProduct[] | null>(null);
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<ProductForm | null>(null);
   const [formError, setFormError] = useState("");
+  const [photoError, setPhotoError] = useState("");
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState("");
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -111,13 +127,15 @@ export default function DashboardProductsPage() {
       renderProducts.filter(
         (product) =>
           (category === "Semua" || product.category === category) &&
+          (statusFilter === "Semua status" || productStatus(product) === statusFilter) &&
           product.name.toLowerCase().includes(query.toLowerCase()),
       ),
-    [query, category, renderProducts],
+    [query, category, statusFilter, renderProducts],
   );
 
   const openCreate = () => {
     setFormError("");
+    setPhotoError("");
     setNotice("");
     setForm({
       mode: "create",
@@ -125,11 +143,15 @@ export default function DashboardProductsPage() {
       slug: "",
       categoryId: "",
       description: "",
+      status: "Aktif",
+      imageUrlInput: "",
+      photoMode: "keep",
     });
   };
 
   const openEdit = (product: SubscriptionProduct) => {
     setFormError("");
+    setPhotoError("");
     setNotice("");
     setForm({
       mode: "edit",
@@ -138,7 +160,27 @@ export default function DashboardProductsPage() {
       slug: product.slug,
       categoryId: product.categoryId ?? "",
       description: product.description,
+      status: productStatus(product),
+      imageUrl: product.imageUrl,
+      imageUrlInput: product.imageUrl && isHttpsImageUrl(product.imageUrl) ? product.imageUrl : "",
+      photoMode: "keep",
     });
+  };
+
+  const handlePhotoFile = async (file: File | undefined) => {
+    if (!file) return;
+    setPhotoError("");
+    const invalid = validateProductImageFile(file);
+    if (invalid) {
+      setPhotoError(invalid);
+      return;
+    }
+    try {
+      const compressed = await compressProductImage(file);
+      setForm((current) => current ? { ...current, photoMode: "replace", photoValue: compressed, imageUrlInput: "" } : current);
+    } catch (failure) {
+      setPhotoError(failure instanceof Error ? failure.message : "Foto gagal diproses.");
+    }
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -162,14 +204,36 @@ export default function DashboardProductsPage() {
       return;
     }
 
+    const typedImageUrl = form.imageUrlInput.trim();
+    if (typedImageUrl && !isHttpsImageUrl(typedImageUrl)) {
+      setFormError("URL foto harus diawali dengan https://.");
+      return;
+    }
+
+    let imageUrlToSend: string | undefined;
+    if (form.photoMode === "remove") {
+      imageUrlToSend = "";
+    } else if (form.photoMode === "replace") {
+      imageUrlToSend = form.photoValue ?? (isHttpsImageUrl(typedImageUrl) ? typedImageUrl : undefined);
+      if (!imageUrlToSend) {
+        setFormError("Pilih file foto atau isi URL foto yang valid.");
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         name,
         slug,
         category_id: form.categoryId,
         description: form.description.trim(),
+        ...productStatusPayload(form.status),
       };
+      // Saat edit tanpa mengganti foto, `image_url` tidak dikirim agar backend
+      // tidak menimpa foto lama. Hapus foto dikirim sebagai string kosong.
+      if (imageUrlToSend !== undefined) payload.image_url = imageUrlToSend;
+
       if (form.mode === "create") {
         await adminApi.createProduct(payload);
         setNotice(`Produk ${name} dibuat. Tambahkan harga dan akses lewat halaman inventaris.`);
@@ -190,6 +254,25 @@ export default function DashboardProductsPage() {
     }
   };
 
+  const changeStatus = async (product: SubscriptionProduct, nextStatus: ProductStatus) => {
+    if (DEMO_MODE || statusUpdatingId) return;
+    setStatusError("");
+    setStatusUpdatingId(product.id);
+    try {
+      await adminApi.updateProduct(product.id, productStatusPayload(nextStatus));
+      setNotice(`Status ${product.name} diubah menjadi ${nextStatus}.`);
+      await loadProducts();
+    } catch (failure) {
+      setStatusError(
+        failure instanceof ApiError
+          ? `Gagal mengubah status ${product.name}: ${failure.message}`
+          : `Gagal mengubah status ${product.name}.`,
+      );
+    } finally {
+      setStatusUpdatingId(null);
+    }
+  };
+
   if (error && !DEMO_MODE) {
     return (
       <div className="dashboard-page" style={{ display: "grid", placeItems: "center", minHeight: "50vh" }}>
@@ -204,11 +287,19 @@ export default function DashboardProductsPage() {
     );
   }
 
+  const photoSrc = form
+    ? form.photoMode === "remove"
+      ? undefined
+      : form.photoMode === "replace"
+        ? form.photoValue ?? form.imageUrlInput
+        : form.imageUrl
+    : undefined;
+
   return (
     <div className="dashboard-page">
       <PageHeader
         title="Produk akun sharing"
-        description="Kelola paket akun langganan sharing, harga, dan ketersediaan akses anggota agar pelanggan bisa berlangganan lebih hemat."
+        description="Kelola paket akun langganan sharing, harga, ketersediaan akses anggota, dan status tayang agar pelanggan bisa berlangganan lebih hemat."
         actions={
           <button
             className="button button-primary button-sm"
@@ -221,6 +312,7 @@ export default function DashboardProductsPage() {
         }
       />
       {notice && <div className="notice success" role="status">{notice}</div>}
+      {statusError && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{statusError}</div>}
       {form && (
         <form className="card panel" onSubmit={submit}>
           <div className="panel-header">
@@ -264,6 +356,18 @@ export default function DashboardProductsPage() {
                 ))}
               </select>
             </div>
+            <div className="field">
+              <label className="label" htmlFor="p-status">Status produk</label>
+              <select
+                className="select"
+                id="p-status"
+                value={form.status}
+                onChange={(event) => setForm({ ...form, status: event.target.value as ProductStatus })}
+              >
+                {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
+              </select>
+              <span className="table-secondary">Coming Soon tampil di katalog, tetapi tidak bisa dipesan.</span>
+            </div>
             <div className="field" style={{ gridColumn: "1 / -1" }}>
               <label className="label" htmlFor="p-description">Deskripsi</label>
               <textarea
@@ -273,6 +377,65 @@ export default function DashboardProductsPage() {
                 value={form.description}
                 onChange={(event) => setForm({ ...form, description: event.target.value })}
               />
+            </div>
+            <div className="field" style={{ gridColumn: "1 / -1" }}>
+              <span className="label">Foto produk</span>
+              <div className="product-photo-field">
+                <div className="product-photo-frame">
+                  <ProductPhoto src={photoSrc} alt={`Pratinjau foto ${form.name || "produk"}`} fallbackSrc={fallbackPhoto} />
+                </div>
+                <div className="product-photo-controls">
+                  <div className="product-photo-actions">
+                    <input
+                      className="sr-only"
+                      id="p-photo"
+                      type="file"
+                      accept={PRODUCT_IMAGE_ACCEPT}
+                      aria-label="Pilih foto produk"
+                      onChange={(event) => {
+                        void handlePhotoFile(event.target.files?.[0]);
+                        event.target.value = "";
+                      }}
+                    />
+                    <label className="button button-secondary button-sm" htmlFor="p-photo"><Upload size={13} /> Pilih file</label>
+                    {(photoSrc || form.imageUrl) && (
+                      <button
+                        className="button button-secondary button-sm"
+                        type="button"
+                        onClick={() => setForm({ ...form, photoMode: "remove", photoValue: undefined, imageUrlInput: "" })}
+                      >
+                        <Trash2 size={13} /> Hapus foto
+                      </button>
+                    )}
+                  </div>
+                  <p className="table-secondary" style={{ margin: 0 }}>
+                    JPG, PNG, atau WebP maksimal 2 MB. Foto dikompres otomatis di browser (sisi terpanjang 1000 px).
+                  </p>
+                  {form.photoMode === "remove" && <p className="table-secondary" style={{ margin: 0 }}>Foto akan dihapus saat produk disimpan.</p>}
+                  {photoError && <p className="field-error" role="alert" style={{ margin: 0 }}>{photoError}</p>}
+                </div>
+              </div>
+            </div>
+            <div className="field" style={{ gridColumn: "1 / -1" }}>
+              <label className="label" htmlFor="p-image-url">URL foto (opsional)</label>
+              <input
+                className="input"
+                id="p-image-url"
+                type="url"
+                inputMode="url"
+                placeholder="https://contoh.com/foto-produk.jpg"
+                value={form.imageUrlInput}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setForm({
+                    ...form,
+                    imageUrlInput: value,
+                    photoMode: value.trim() ? "replace" : "keep",
+                    photoValue: undefined,
+                  });
+                }}
+              />
+              <span className="table-secondary">Gunakan URL https:// bila foto sudah dihosting. Kosongkan bila tidak ingin mengganti foto.</span>
             </div>
             {formError && <div className="field" style={{ gridColumn: "1 / -1", color: "var(--danger)" }} role="alert">{formError}</div>}
             <div className="field" style={{ gridColumn: "1 / -1" }}>
@@ -288,8 +451,17 @@ export default function DashboardProductsPage() {
           <Search size={14} />
           <input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari produk…" />
         </div>
-        <select className="select" style={{ width: 170 }} value={category} onChange={(event) => setCategory(event.target.value)}>
+        <select className="select" style={{ width: 170 }} value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter kategori">
           {categories.map((item) => <option key={item}>{item}</option>)}
+        </select>
+        <select
+          className="select"
+          style={{ width: 160 }}
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value as (typeof statusFilters)[number])}
+          aria-label="Filter status"
+        >
+          {statusFilters.map((item) => <option key={item}>{item}</option>)}
         </select>
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} hasil</span>
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
@@ -299,7 +471,9 @@ export default function DashboardProductsPage() {
           <table className="data-table">
             <thead>
               <tr>
+                <th>Foto</th>
                 <th>Produk</th>
+                <th>Status</th>
                 <th>Kategori</th>
                 <th>Harga awal</th>
                 <th>Ketersediaan akses</th>
@@ -309,45 +483,70 @@ export default function DashboardProductsPage() {
             </thead>
             <tbody>
               {rows.length === 0 && !loading ? (
-                <tr><td colSpan={6} className="muted" style={{ textAlign: "center" }}>Belum ada produk akun sharing.</td></tr>
-              ) : rows.map((product) => (
-                <tr key={product.id}>
-                  <td>
-                    <span className="table-primary">{product.name}</span>
-                    <br />
-                    <span className="table-secondary">{product.id}</span>
-                  </td>
-                  <td>{product.category}</td>
-                  <td className="tabular">{formatIDR(product.price)}</td>
-                  <td>
-                    <StatusBadge status={product.stock > 0 ? "Aktif" : "Daftar tunggu"} />
-                    <span className="table-secondary" style={{ marginLeft: 7 }}>{product.stock} akses</span>
-                  </td>
-                  <td>{product.operator.name}</td>
-                  <td>
-                    <div className="table-actions">
-                      <Link
-                        className="table-action"
-                        href={`/products/${encodeURIComponent(product.slug)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={`Pratinjau ${product.name}`}
-                      >
-                        <Eye size={13} />
-                      </Link>
-                      <button
-                        className="table-action"
-                        aria-label={`Edit ${product.name}`}
-                        onClick={() => openEdit(product)}
-                        disabled={DEMO_MODE || categoryOptions.length === 0}
+                <tr><td colSpan={8} className="muted" style={{ textAlign: "center" }}>Belum ada produk akun sharing.</td></tr>
+              ) : rows.map((product) => {
+                const status = productStatus(product);
+                return (
+                  <tr key={product.id}>
+                    <td>
+                      <ProductPhoto
+                        className="product-thumb"
+                        src={product.imageUrl}
+                        alt={`Foto ${product.name}`}
+                        fallbackSrc={fallbackPhoto}
+                      />
+                    </td>
+                    <td>
+                      <span className="table-primary">{product.name}</span>
+                      <br />
+                      <span className="table-secondary">{product.id}</span>
+                    </td>
+                    <td>
+                      <StatusBadge status={status} />
+                      <select
+                        className="select table-status-select"
+                        value={status}
+                        aria-label={`Ubah status ${product.name}`}
+                        disabled={DEMO_MODE || statusUpdatingId === product.id}
+                        onChange={(event) => void changeStatus(product, event.target.value as ProductStatus)}
                         title={DEMO_MODE ? "Mode demo tidak menyimpan perubahan" : undefined}
                       >
-                        <Edit3 size={13} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {statusOptions.map((item) => <option key={item} value={item}>{item}</option>)}
+                      </select>
+                      {statusUpdatingId === product.id && <span className="table-secondary" style={{ marginLeft: 6 }}>Menyimpan…</span>}
+                    </td>
+                    <td>{product.category}</td>
+                    <td className="tabular">{formatIDR(product.price)}</td>
+                    <td>
+                      <StatusBadge status={product.stock > 0 ? "Aktif" : "Daftar tunggu"} />
+                      <span className="table-secondary" style={{ marginLeft: 7 }}>{product.stock} akses</span>
+                    </td>
+                    <td>{product.operator.name}</td>
+                    <td>
+                      <div className="table-actions">
+                        <Link
+                          className="table-action"
+                          href={`/products/${encodeURIComponent(product.slug)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Pratinjau ${product.name}`}
+                        >
+                          <Eye size={13} />
+                        </Link>
+                        <button
+                          className="table-action"
+                          aria-label={`Edit ${product.name}`}
+                          onClick={() => openEdit(product)}
+                          disabled={DEMO_MODE || categoryOptions.length === 0}
+                          title={DEMO_MODE ? "Mode demo tidak menyimpan perubahan" : undefined}
+                        >
+                          <Edit3 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

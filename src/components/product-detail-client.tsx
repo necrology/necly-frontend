@@ -1,13 +1,14 @@
 "use client";
 
-import { CheckCircle2, ChevronDown, CircleAlert, Flame, Gift, Info, ShieldCheck, Star, UsersRound, Zap } from "lucide-react";
-import Image from "next/image";
+import { CheckCircle2, ChevronDown, CircleAlert, Clock3, Flame, Gift, Info, ShieldCheck, Star, UsersRound, Zap } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { defaultDeviceOptions, type CommerceProduct } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { ProductBrand } from "@/components/product-brand";
+import { ProductPhoto } from "@/components/product-photo";
+import { productIllustration } from "@/components/service-visual";
 import { useCartStore } from "@/stores/cart-store";
 
 const accordions = [
@@ -60,6 +61,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   const deviceOptions: number[] = product.deviceOptions?.length ? product.deviceOptions : [...defaultDeviceOptions];
   const option = selectedDuration === null ? product.priceOptions[0] : (product.priceOptions[selectedDuration] ?? product.priceOptions[0]);
   const estimated = selectedPackage && selectedDuration !== null;
+  const comingSoon = product.comingSoon === true;
   // Stok yang berlaku adalah milik paket yang sedang dipilih: backend memeriksa
   // slot per product_price, bukan per produk.
   const inStock = (option.stock ?? product.stock) > 0;
@@ -79,6 +81,9 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   ];
 
   const addToCart = () => {
+    // Coming Soon bukan stok habis: tombol dan seluruh pemilih dinonaktifkan,
+    // dan halaman ini tidak boleh pernah mendorong item ke keranjang.
+    if (comingSoon) return;
     if (!selectedPackage || selectedDuration === null || selectedDevice === null) {
       setShowWarnings(true);
       scrollTo(!selectedPackage ? packageSectionRef : selectedDuration === null ? durationRowRef : deviceRowRef);
@@ -100,30 +105,40 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   };
 
   return (
-    <div className="commerce-product-detail-shell">
+    <div className={`commerce-product-detail-shell ${comingSoon ? "is-coming-soon" : ""}`}>
       <div className="commerce-product-detail-main">
         <div className="commerce-product-showcase">
           {/* Baris 33: logo brand hanya dicantumkan sekali. Overlay di atas artwork
               dihapus karena logo yang sama sudah tampil di kolom informasi. */}
           <div className="commerce-product-image">
-            <Image src="/illustrations/product-streaming.svg" alt={`Ilustrasi ${product.name}`} fill priority sizes="(max-width: 767px) 100vw, 38vw" />
+            <ProductPhoto src={product.imageUrl} alt={`Foto produk ${product.name}`} fallbackSrc={productIllustration(product.category)} loading="eager" />
           </div>
           <div className="commerce-product-information">
-            <div className="commerce-product-labels"><span><Flame size={12} strokeWidth={2.5} aria-hidden="true" />Paling Populer</span><span><Star size={12} strokeWidth={2.5} aria-hidden="true" />Rekomendasi</span></div>
+            <div className="commerce-product-labels">
+              {comingSoon ? (
+                <span className="is-coming-soon"><Clock3 size={12} strokeWidth={2.5} aria-hidden="true" />Coming Soon</span>
+              ) : (
+                <><span><Flame size={12} strokeWidth={2.5} aria-hidden="true" />Paling Populer</span><span><Star size={12} strokeWidth={2.5} aria-hidden="true" />Rekomendasi</span></>
+              )}
+            </div>
             <ProductBrand product={product} />
             <h1>{product.name}</h1>
             <p>{product.description}</p>
             <p className="commerce-detail-price">{formatRupiahLabel(option.price)} <small>/ bulan</small></p>
-            <p className={`commerce-stock-ready ${inStock ? "" : "is-empty"}`}>{inStock ? <CheckCircle2 size={18} /> : <CircleAlert size={18} />}{inStock ? "Stok tersedia, langsung bisa diproses!" : "Stok habis, saat ini masuk daftar tunggu"}</p>
+            {comingSoon ? (
+              <p className="commerce-coming-soon-banner" role="status"><Clock3 size={18} />Produk ini segera hadir. Pemesanan dibuka setelah tanggal rilis.</p>
+            ) : (
+              <p className={`commerce-stock-ready ${inStock ? "" : "is-empty"}`}>{inStock ? <CheckCircle2 size={18} /> : <CircleAlert size={18} />}{inStock ? "Stok tersedia, langsung bisa diproses!" : "Stok habis, saat ini masuk daftar tunggu"}</p>
+            )}
             <h2 ref={packageSectionRef}>Pilih Paket <span className="commerce-required" aria-hidden="true">*</span></h2>
-            <button type="button" className={`commerce-package-option ${selectedPackage ? "selected" : ""}`} aria-pressed={selectedPackage} onClick={() => setSelectedPackage(true)}><span className="commerce-radio" /><span><strong>{product.packageName}</strong><small>{product.brand}</small></span><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></button>
+            <button type="button" className={`commerce-package-option ${selectedPackage ? "selected" : ""}`} aria-pressed={selectedPackage} disabled={comingSoon} onClick={() => setSelectedPackage(true)}><span className="commerce-radio" /><span><strong>{product.packageName}</strong><small>{product.brand}</small></span><b>{formatRupiahLabel(option.price)} <small>/ bulan</small></b></button>
             {packageMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih paket dahulu sebelum memesan.</p>}
             <h2 ref={durationSectionRef}>Pilih Durasi Berlangganan <span className="commerce-required" aria-hidden="true">*</span></h2>
-            <div className="commerce-duration-row" ref={durationRowRef}>{product.priceOptions.map((duration, index) => { const hasStock = (duration.stock ?? product.stock) > 0; return <button type="button" className={index === selectedDuration ? "selected" : ""} aria-pressed={index === selectedDuration} disabled={!hasStock} onClick={() => setSelectedDuration(index)} key={duration.id}>{duration.label}{hasStock ? "" : " · Habis"}</button>; })}</div>
+            <div className="commerce-duration-row" ref={durationRowRef}>{product.priceOptions.map((duration, index) => { const hasStock = (duration.stock ?? product.stock) > 0; return <button type="button" className={index === selectedDuration ? "selected" : ""} aria-pressed={index === selectedDuration} disabled={comingSoon || !hasStock} onClick={() => setSelectedDuration(index)} key={duration.id}>{duration.label}{hasStock ? "" : " · Habis"}</button>; })}</div>
             {durationMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih durasi berlangganan dahulu sebelum memesan.</p>}
             {stockMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Durasi ini sedang habis. Pilih durasi lain yang masih tersedia.</p>}
             <h2>Pilih Jumlah Perangkat <span className="commerce-required" aria-hidden="true">*</span></h2>
-            <div className="commerce-duration-row" ref={deviceRowRef}>{deviceOptions.map((devices) => <button type="button" className={devices === selectedDevice ? "selected" : ""} aria-pressed={devices === selectedDevice} onClick={() => setSelectedDevice(devices)} key={devices}>{devices} Perangkat</button>)}</div>
+            <div className="commerce-duration-row" ref={deviceRowRef}>{deviceOptions.map((devices) => <button type="button" className={devices === selectedDevice ? "selected" : ""} aria-pressed={devices === selectedDevice} disabled={comingSoon} onClick={() => setSelectedDevice(devices)} key={devices}>{devices} Perangkat</button>)}</div>
             {deviceMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih jumlah perangkat dahulu sebelum memesan.</p>}
           </div>
         </div>
@@ -163,13 +178,13 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
         <h2>Ringkasan Pesanan</h2>
         <div className="commerce-summary-product commerce-summary-product--text"><div><strong>{product.name} - {product.packageName}</strong><b>{estimated ? <>{formatRupiahLabel(option.price)} <small>/ bulan</small></> : "—"}</b></div></div>
         <div className="commerce-summary-line"><span>Paket Dipilih</span><strong>{product.packageName}</strong><small>{product.brand}</small></div>
-        <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration}>Ubah</button></span><strong>{selectedDuration !== null ? option.label : "Belum dipilih"}</strong></div>
+        <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration} disabled={comingSoon}>Ubah</button></span><strong>{selectedDuration !== null ? option.label : "Belum dipilih"}</strong></div>
         <div className="commerce-summary-line"><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
         <div className="commerce-summary-total"><span>Total Biaya</span><b>{estimated ? formatRupiahLabel(option.price) : "—"}</b></div>
-        <button className="commerce-primary-button" type="button" disabled={selectedDuration !== null && !inStock} onClick={addToCart}>{added ? "Lanjut ke checkout…" : selectedDuration !== null && !inStock ? "Stok habis" : <>Pesan <span>→</span></>}</button>
+        <button className="commerce-primary-button" type="button" disabled={comingSoon || (selectedDuration !== null && !inStock)} onClick={addToCart}>{added ? "Lanjut ke checkout…" : selectedDuration !== null && !inStock && !comingSoon ? "Stok habis" : <>Pesan <span>→</span></>}</button>
       </aside>
       <aside className="commerce-buy-reasons"><h2>Kenapa Beli di Sini?</h2>{purchaseReasons.map(([title, detail, Icon]) => <article key={title}><span><Icon size={25} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</aside>
-      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{estimated ? formatRupiahLabel(option.price) : "Lengkapi pilihan"}</b></span><button type="button" disabled={selectedDuration !== null && !inStock} onClick={addToCart}>{added ? "Memproses…" : selectedDuration !== null && !inStock ? "Stok habis" : "Pesan"}</button></div>
+      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{estimated ? formatRupiahLabel(option.price) : "Lengkapi pilihan"}</b></span><button type="button" disabled={comingSoon || (selectedDuration !== null && !inStock)} onClick={addToCart}>{added ? "Memproses…" : selectedDuration !== null && !inStock && !comingSoon ? "Stok habis" : "Pesan"}</button></div>
       <Link className="commerce-detail-backlink" href="/products">Kembali ke Produk</Link>
     </div>
   );
