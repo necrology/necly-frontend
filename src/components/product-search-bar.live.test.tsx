@@ -62,7 +62,7 @@ describe("katalog live", () => {
 
     fireEvent.change(screen.getByRole("combobox", { name: "Pilih kategori" }), { target: { value: "Produktivitas" } });
 
-    expect(screen.getByText("Apple Music Family")).toBeInTheDocument();
+    expect(screen.getByText("Apple Music")).toBeInTheDocument();
     expect(screen.queryByText("Netflix Premium")).not.toBeInTheDocument();
   });
 
