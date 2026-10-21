@@ -202,7 +202,7 @@ export default function AccountPage() {
       <article className="card account-card">
         <h2 className="h3"><KeyRound size={16} aria-hidden="true" /> Ubah kata sandi</h2>
         <p className="muted small account-password-hint">
-          Masukkan kata sandi Anda saat ini untuk mengonfirmasi.
+          Masukkan kata sandi Anda saat ini untuk mengkonfirmasi.
           <br />
           Setelah tersimpan, semua perangkat lain akan keluar otomatis.
         </p>
