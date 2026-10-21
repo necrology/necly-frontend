@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" role="img" aria-label="Google One">
-  <text x="4" y="43" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" letter-spacing="-1.2">
-    <tspan fill="#4285f4">G</tspan><tspan fill="#ea4335">o</tspan><tspan fill="#fbbc05">o</tspan><tspan fill="#4285f4">g</tspan><tspan fill="#34a853">l</tspan><tspan fill="#ea4335">e</tspan>
-  </text>
-  <circle cx="204" cy="32" r="19" fill="#4285f4"/>
-  <text x="204" y="40" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#fff">1</text>
-  <text x="232" y="42" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#202124">One</text>
-</svg>

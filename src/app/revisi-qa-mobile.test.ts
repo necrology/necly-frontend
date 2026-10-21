@@ -239,10 +239,10 @@ describe("revisi QA putaran kedua", () => {
   });
 
   it("baris 90: logo Canva, Google One, dan Dropbox tersedia", () => {
-    expect(productBrand).toContain("/design-assets/logo-canva.svg");
-    expect(productBrand).toContain("/design-assets/logo-google-one.svg");
+    expect(productBrand).toContain("/design-assets/logo-canva.png");
+    expect(productBrand).toContain("/design-assets/logo-google-one.png");
     expect(productBrand).toContain("/design-assets/logo-dropbox.svg");
-    for (const logo of ["logo-canva.svg", "logo-google-one.svg", "logo-dropbox.svg"]) {
+    for (const logo of ["logo-canva.png", "logo-google-one.png", "logo-dropbox.svg"]) {
       expect(existsSync(join(process.cwd(), "public", "design-assets", logo))).toBe(true);
     }
   });
