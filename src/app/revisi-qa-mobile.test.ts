@@ -189,6 +189,13 @@ describe("revisi QA putaran kedua", () => {
     expect(account).toContain("Masukkan kata sandi Anda saat ini untuk mengonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.");
   });
 
+  it("NEC-92: panduan ubah kata sandi tidak memecah kata 'mengonfirmasi.' ke baris berikutnya", () => {
+    expect(account).toContain('<p className="muted small account-password-hint">');
+    expect(account).toContain("Masukkan kata sandi Anda saat ini untuk mengonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.");
+    expect(css).toContain(".account-password-hint { letter-spacing: -0.01em; }");
+    expect(css).toContain(".account-password-hint { font-size: clamp(9px, 2.7vw, 11px); }");
+  });
+
   it("baris 81-82: sesi kedaluwarsa diakhiri saat navigasi dan tidak dipulihkan", () => {
     expect(apiSource).toContain("isSessionExpired");
     expect(apiSource).toContain("necly-auth-expires-at");

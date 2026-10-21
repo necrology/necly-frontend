@@ -916,6 +916,13 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .account-card h2 { display: flex; align-items: center; gap: 9px; margin: 0; }
 .account-card form { display: grid; gap: 18px; }
 .account-card > .button { width: fit-content; }
+/* NEC-92: kalimat panduan ubah kata sandi harus utuh di baris awal, sehingga
+   kata "mengonfirmasi." tidak turun sendirian ke baris berikutnya. Ukuran
+   mobile mengikuti teks sekunder lain dan menyusut halus di layar sempit. */
+.account-password-hint { letter-spacing: -0.01em; }
+@media (max-width: 580px) {
+  .account-password-hint { font-size: clamp(9px, 2.7vw, 11px); }
+}
 .account-facts { display: grid; gap: 10px; margin: 0; }
 .account-facts > div { display: grid; gap: 2px; }
 .account-facts dt { color: var(--commerce-muted); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
