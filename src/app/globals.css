@@ -958,10 +958,10 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-mobile-nav-link { min-height: 50px; display: flex; align-items: center; border-radius: 14px; padding: 0 14px; color: #ede6ff; font-size: 14px; font-weight: 600; }
   .commerce-mobile-nav-link:hover, .commerce-mobile-nav-link.active { color: #fff; background: rgb(255 255 255 / .15); }
   .commerce-mobile-login { min-height: 52px; display: grid; place-items: center; margin-top: 8px; border-radius: 999px; color: var(--commerce-violet-dark); background: var(--commerce-gold); font-size: 15px; font-weight: 700; }
-  .commerce-mobile-account-action { color: #fff; }
-  /* NEC-88: "Akun & keamanan" dan "Keluar" tidak perlu selebar drawer;
-     cukup selebar labelnya agar menu akun tidak terlihat seperti CTA utama. */
-  .commerce-mobile-account-action { width: fit-content; max-width: 100%; justify-self: start; padding-inline: 24px; }
+  /* NEC-88: "Akun & keamanan" dan "Keluar" tidak melebar penuh, berwarna
+     hitam di atas emas, dan sudutnya hanya sedikit membulat. Lebar keduanya
+     disamakan lewat max-width yang sama. */
+  .commerce-mobile-account-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }
   .commerce-mobile-login-action { color: #fff; }
 }
 
