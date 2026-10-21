@@ -145,6 +145,12 @@ describe("revisi QA putaran kedua", () => {
     expect(css).toContain(".commerce-mobile-account-action { color: #fff; }");
   });
 
+  it("NEC-88: tombol akun di drawer mobile tidak melebar penuh", () => {
+    // Sebelumnya kedua tombol memakai lebar drawer (358px di 390px) karena
+    // diwarisi dari CTA "Log In" yang memang selebar layar.
+    expect(css).toContain(".commerce-mobile-account-action { width: fit-content; max-width: 100%; justify-self: start; padding-inline: 24px; }");
+  });
+
   it("baris 66: ajakan daftar di halaman login diperbesar", () => {
     expect(login).toContain('className="muted auth-register-prompt"');
     expect(css).toContain(".auth-register-prompt { margin: 0 !important; text-align: center; font-size: 14px !important; }");

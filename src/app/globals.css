@@ -939,6 +939,9 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-mobile-nav-link:hover, .commerce-mobile-nav-link.active { color: #fff; background: rgb(255 255 255 / .15); }
   .commerce-mobile-login { min-height: 52px; display: grid; place-items: center; margin-top: 8px; border-radius: 999px; color: var(--commerce-violet-dark); background: var(--commerce-gold); font-size: 15px; font-weight: 700; }
   .commerce-mobile-account-action { color: #fff; }
+  /* NEC-88: "Akun & keamanan" dan "Keluar" tidak perlu selebar drawer;
+     cukup selebar labelnya agar menu akun tidak terlihat seperti CTA utama. */
+  .commerce-mobile-account-action { width: fit-content; max-width: 100%; justify-self: start; padding-inline: 24px; }
   .commerce-mobile-login-action { color: #fff; }
 }
 
