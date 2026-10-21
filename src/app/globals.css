@@ -834,8 +834,7 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 @media (max-width: 800px) { .reference-product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.catalog-hero-illustration { width: 245px; height: 135px; }.catalog-benefit-strip { grid-template-columns: 1fr 1fr; }.catalog-benefit:nth-child(2) { border-right: 0; }.catalog-benefit:nth-child(-n+2) { border-bottom: 1px solid #dedff0; } }
 @media (max-width: 580px) { .site-header { border-radius: 0 0 14px 14px; }.catalog-hero { min-height: 217px; }.catalog-hero-content { min-height: 217px; padding-block: 27px 75px; padding-inline: 12px; }.catalog-kicker { font-size: 8px; }.catalog-hero h1 { font-size: 2.28rem; }.catalog-hero p:not(.catalog-kicker) { font-size: 12px; }.catalog-hero-illustration { width: 125px; height: 105px; position: absolute; right: -26px; top: 87px; opacity: .85; }.catalog-hero-illustration::before { width: 78px; height: 54px; border-width: 4px; }.catalog-hero-illustration b { display: none; }.catalog-controls { display: grid; gap: 9px; margin-top: -55px; position: relative; }.catalog-search, .catalog-select { height: 45px; }.catalog-select { width: 100%; }.offer-banner { align-items: flex-start; flex-direction: column; gap: 9px; margin-top: 12px; padding: 14px; }.offer-copy > svg { width: 24px; }.offer-copy strong { font-size: 13px; }.offer-copy span { font-size: 9px; }.offer-timer { width: 100%; justify-content: space-between; }.offer-timer > span { font-size: 10px; }.offer-time { min-width: 48px; }.reference-catalog-main { padding-top: 12px; }.reference-product-grid { grid-template-columns: 1fr; gap: 12px; }.catalog-card { grid-template-columns: 39% 61%; grid-template-rows: 1fr; min-height: 197px; }.catalog-card .service-visual { height: auto !important; border-right: 1px solid #e9e9f2; border-bottom: 0; }.catalog-card-content { padding: 12px; }.catalog-card h3 { min-height: 0; font-size: 14px; }.catalog-benefits { min-height: 0; margin: 6px 0 9px; }.catalog-benefit-strip { margin-top: 0; margin-bottom: 32px; }.catalog-benefit { min-height: 83px; padding: 12px; }.catalog-benefit svg { width: 26px; }.catalog-benefit strong { font-size: 10px; }.catalog-benefit span { font-size: 8px; }.desktop-only { display: none; } }
 
-/* ============================================================
-   PUBLIC STOREFRONT: screenshot-aligned desktop + mobile system.
+/* =====================================================   PUBLIC STOREFRONT: screenshot-aligned desktop + mobile system.
    Scoped to .commerce-* classes so dashboard/auth styles stay intact.
    ============================================================ */
 :root {
@@ -1337,8 +1336,7 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .microsoft-mark i:nth-child(3) { background: #00a4ef; }
 .microsoft-mark i:nth-child(4) { background: #ffb900; }
 
-/* ============================================================
-   Tablet
+/* =====================================================   Tablet
    ============================================================ */
 @media (max-width: 1023px) {
   .commerce-container { width: min(calc(100% - 48px), 100%); }
@@ -1359,8 +1357,7 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
   .commerce-footer-content { grid-template-columns: 1fr; gap: 22px; text-align: left; }
 }
 
-/* ============================================================
-   Mobile
+/* =====================================================   Mobile
    ============================================================ */
 @media (max-width: 767px) {
   .commerce-container { width: min(calc(100% - 40px), 100%); }
@@ -1746,3 +1743,41 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .product-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .product-photo-actions .button { cursor: pointer; }
 .table-status-select { display: block; width: 124px; min-height: 30px; margin-top: 6px; padding: 4px 6px; font-size: 10px; }
+/* Halaman ambil OTP email akun (NEC-93). */
+.otp-page { padding: 56px 0 90px; display: grid; gap: 30px; }
+.otp-head { max-width: 720px; display: grid; gap: 12px; }
+.otp-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); gap: 22px; align-items: start; }
+.otp-form { padding: 26px; display: grid; gap: 18px; }
+.otp-form-heading { display: flex; gap: 12px; align-items: flex-start; }
+.otp-form-heading svg { color: var(--brand); flex: 0 0 auto; margin-top: 3px; }
+.otp-code-input { letter-spacing: .18em; font-weight: 700; text-transform: uppercase; }
+.otp-hint { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.otp-alert { margin: 0; border: 1px solid #ffd1cc; border-radius: 8px; padding: 11px 13px; color: #9f1d17; background: var(--danger-bg); font-size: 12px; line-height: 1.5; }
+.otp-security { margin: 0; display: flex; gap: 8px; align-items: flex-start; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.otp-side { display: grid; gap: 16px; position: sticky; top: 90px; }
+.otp-result, .otp-help { padding: 24px; display: grid; gap: 14px; justify-items: start; }
+.otp-code { display: block; width: 100%; padding: 18px 14px; border: 1px dashed var(--brand); border-radius: 10px; color: var(--ink); background: #f7f3ff; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: clamp(30px, 5vw, 42px); font-weight: 800; letter-spacing: .28em; text-align: center; }
+.otp-result-note { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.otp-steps { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+@media (max-width: 900px) {
+  .otp-page { padding-top: 34px; }
+  .otp-grid { grid-template-columns: 1fr; }
+  .otp-side { position: static; }
+}
+
+/* Bagian akses akun + OTP pada detail pesanan (NEC-93). */
+.order-access h2 { display: flex; align-items: center; gap: 8px; }
+.order-access-list { display: grid; gap: 12px; margin-top: 16px; }
+.order-access-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 15px 16px; background: #fff; }
+.order-access-email { display: flex; align-items: center; gap: 7px; margin: 8px 0 0; color: var(--ink); font-size: 12px; font-weight: 600; word-break: break-all; }
+.order-access-mail-icon { display: inline-grid; place-items: center; width: 18px; height: 18px; flex: 0 0 auto; border-radius: 50%; color: var(--brand); background: #f3eeff; font-size: 11px; font-weight: 800; }
+.order-access-code { display: grid; justify-items: end; gap: 7px; }
+.order-access-code code { border: 1px dashed var(--brand); border-radius: 7px; padding: 7px 12px; color: var(--ink); background: #f7f3ff; font-size: 18px; font-weight: 800; letter-spacing: .18em; }
+.order-access-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+@media (max-width: 700px) {
+  .order-access-row { grid-template-columns: 1fr; }
+  .order-access-code { justify-items: start; }
+  .order-access-actions { justify-content: flex-start; }
+}
+
+.account-head-links { display: flex; flex-wrap: wrap; gap: 10px; }

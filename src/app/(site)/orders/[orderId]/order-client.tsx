@@ -1,9 +1,9 @@
 "use client";
 
-import { Check, Circle, CreditCard, ExternalLink, Headphones, LoaderCircle, PackageCheck, RefreshCw } from "lucide-react";
+import { Check, Circle, ClipboardCopy, CreditCard, ExternalLink, Headphones, KeyRound, LoaderCircle, PackageCheck, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { ApiError, bootstrapAuth, checkoutApi, DEMO_MODE, type ApiOrder } from "@/lib/api";
+import { ApiError, bootstrapAuth, checkoutApi, DEMO_MODE, accountOtpApi, type ApiAccountAccessResponse, type ApiOrder, type ApiOTPAccessCode } from "@/lib/api";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDateTimeID, formatIDR } from "@/lib/money";
 import { getOrderSteps, normalizeOrderStatus, orderStatusLabel } from "@/lib/order-status";
@@ -19,6 +19,10 @@ type LoadError = {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function MailIcon() {
+  return <span aria-hidden="true" className="order-access-mail-icon">@</span>;
+}
 
 const paymentStatusLabels: Record<string, string> = {
   pending: "Menunggu",
@@ -76,6 +80,11 @@ function OrderClientInner({ orderId }: OrderClientProps) {
   const [error, setError] = useState<LoadError | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
+  const [access, setAccess] = useState<ApiAccountAccessResponse | null>(null);
+  const [accessCodes, setAccessCodes] = useState<Record<string, ApiOTPAccessCode>>({});
+  const [accessBusy, setAccessBusy] = useState("");
+  const [accessError, setAccessError] = useState("");
+  const [copiedCode, setCopiedCode] = useState("");
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
@@ -106,6 +115,17 @@ function OrderClientInner({ orderId }: OrderClientProps) {
       }
       const data = await checkoutApi.getOrder(orderId);
       setOrder(data);
+      // Akses akun hanya ada setelah admin mengirim pesanan. Pesanan yang masih
+      // menunggu pembayaran/approval tidak perlu memanggil endpoint ini.
+      if (["processing", "shipped", "delivered", "completed"].includes(data.status)) {
+        try {
+          setAccess(await accountOtpApi.listAccess(orderId));
+        } catch {
+          setAccess(null);
+        }
+      } else {
+        setAccess(null);
+      }
     } catch (failure) {
       setOrder(null);
       setError(errorFromFailure(failure));
@@ -121,6 +141,41 @@ function OrderClientInner({ orderId }: OrderClientProps) {
     });
     return () => { cancelled = true; };
   }, [loadOrder, reloadToken]);
+
+  const issueAccessCode = async (itemId: string) => {
+    if (!order) return;
+    setAccessBusy(itemId);
+    setAccessError("");
+    try {
+      const issued = await accountOtpApi.issueCode(order.id, itemId);
+      setAccessCodes((current) => ({ ...current, [itemId]: issued }));
+    } catch (failure) {
+      if (failure instanceof ApiError) {
+        const payload = failure.payload as { code?: string } | undefined;
+        if (payload?.code === "otp_unavailable") {
+          setAccessError("Layanan ambil OTP belum aktif. Hubungi dukungan Necly dengan nomor pesanan ini.");
+        } else if (payload?.code === "order_not_approved") {
+          setAccessError("Kode akses baru bisa dibuat setelah admin mengirim akun pesanan ini.");
+        } else {
+          setAccessError(failure.message);
+        }
+      } else {
+        setAccessError("Kode akses gagal dibuat. Coba lagi sebentar lagi.");
+      }
+    } finally {
+      setAccessBusy("");
+    }
+  };
+
+  const copyAccessCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      window.setTimeout(() => setCopiedCode(""), 2000);
+    } catch {
+      setAccessError("Kode tidak dapat disalin otomatis. Salin kode yang tampil secara manual.");
+    }
+  };
 
   if (loading) {
     return (
@@ -231,6 +286,67 @@ function OrderClientInner({ orderId }: OrderClientProps) {
               </a>
             )}
           </section>
+          {access && access.items.length > 0 && (
+            <section className="card order-access" style={{ padding: 27 }}>
+              <h2 className="h3"><KeyRound size={17} aria-hidden="true" /> Akses akun &amp; OTP</h2>
+              <p className="muted small" style={{ marginTop: 8 }}>
+                Saat platform meminta kode OTP, buat kode akses di bawah lalu gunakan halaman Ambil OTP.
+                Kode akses berlaku 15 menit dan tidak sama dengan kata sandi akun.
+              </p>
+              {!access.otp_inbox_ready && (
+                <div className="demo-banner" role="status">
+                  <KeyRound size={16} />
+                  <span>Layanan ambil OTP belum aktif. Hubungi dukungan Necly dengan menyertakan nomor pesanan.</span>
+                </div>
+              )}
+              {accessError && <p className="otp-alert" role="alert">{accessError}</p>}
+              <div className="order-access-list">
+                {access.items.map((item) => {
+                  const issued = accessCodes[item.order_item_id];
+                  return (
+                    <div className="order-access-row" key={`${item.order_item_id}-${item.account_email}`}>
+                      <div>
+                        <strong>{item.product_name}</strong>
+                        <p className="muted small" style={{ margin: "3px 0 0" }}>
+                          {item.account_label} · {item.duration_name}
+                        </p>
+                        <p className="order-access-email"><MailIcon /> {item.account_email}</p>
+                      </div>
+                      {issued ? (
+                        <div className="order-access-code">
+                          <code>{issued.code}</code>
+                          <span className="muted small">Berlaku sampai {formatDateTimeID(issued.expires_at)}</span>
+                          <div className="order-access-actions">
+                            <button className="button button-secondary button-sm" type="button" onClick={() => copyAccessCode(issued.code)}>
+                              {copiedCode === issued.code ? <><Check size={14} /> Tersalin</> : <><ClipboardCopy size={14} /> Salin kode</>}
+                            </button>
+                            <Link
+                              className="button button-primary button-sm"
+                              href={`/otp?email=${encodeURIComponent(item.account_email)}&code=${encodeURIComponent(issued.code)}`}
+                            >
+                              Ambil OTP
+                            </Link>
+                          </div>
+                          <span className="muted small">
+                            {issued.email_sent ? "Kode akses juga dikirim ke email akun Necly Anda." : "Kode akses tampil di sini; email kode tidak terkirim."}
+                          </span>
+                        </div>
+                      ) : (
+                        <button
+                          className="button button-primary button-sm"
+                          type="button"
+                          disabled={!access.otp_inbox_ready || accessBusy === item.order_item_id}
+                          onClick={() => issueAccessCode(item.order_item_id)}
+                        >
+                          {accessBusy === item.order_item_id ? "Membuat kode…" : "Buat kode akses OTP"}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
           <section className="card" style={{ padding: 27 }}>
             <h2 className="h3">Item pesanan</h2>
             <div style={{ display: "grid", gap: 12 }}>
