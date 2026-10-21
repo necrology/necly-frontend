@@ -628,8 +628,11 @@ export const authApi = {
       body: JSON.stringify({ email }),
     }),
 
+  // Sama seperti lupa kata sandi: lewat Route Handler same-origin agar
+  // penyimpanan kata sandi baru tidak gagal karena CORS/jaringan lintas origin
+  // di browser mobile (Safari menampilkan "Load failed").
   resetPassword: (data: { token: string; password: string }) =>
-    apiRequest<{ message: string; user: ApiUser }>("/auth/reset-password", {
+    sameOriginRequest<{ message: string; user: ApiUser }>("/api/auth/reset-password", {
       method: "POST",
       body: JSON.stringify(data),
     }),
