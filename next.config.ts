@@ -12,7 +12,7 @@ const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   `connect-src 'self' ${apiOriginValue} https://cloudflareinsights.com`,
   "frame-ancestors 'none'",

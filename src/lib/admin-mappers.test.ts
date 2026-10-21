@@ -4,6 +4,7 @@ import {
   mapApiDashboard,
   mapApiOrderToDashboardOrder,
   mapApiUserToCustomer,
+  mapApiProductToSubscriptionProduct,
 } from "./admin-mappers";
 import { ORDER_STATUS_OPTIONS, orderStatusLabel } from "./order-status";
 import type { ApiOrder, ApiUser } from "./api";
@@ -237,5 +238,29 @@ describe("kontrak status akses pengguna (perbaikan PR #6)", () => {
     expect(mapped.initials).toBe("BS");
     expect(mapped.verified).toBe(true);
     expect(mapApiUserToCustomer(apiUser({ email_verified_at: null })).verified).toBe(false);
+  });
+});
+
+
+describe("kontrak Coming Soon dan foto produk admin (NEC-89)", () => {
+  it("memetakan active, coming_soon, dan image_url untuk tabel dashboard", () => {
+    const product = mapApiProductToSubscriptionProduct({
+      id: "prd-coming",
+      name: "Canva Pro",
+      slug: "canva-pro",
+      description: "Desain kolaboratif",
+      category: { id: "cat-kreatif", name: "Kreatif", slug: "kreatif" },
+      active: true,
+      coming_soon: true,
+      image_url: "https://cdn.necly.id/canva.jpg",
+      prices: [{ id: "price-1", amount: 50_000, active: true, duration: { name: "1 Bulan", days: 30 }, available_slots: 2 }],
+    });
+
+    expect(product).toMatchObject({
+      comingSoon: true,
+      active: true,
+      imageUrl: "https://cdn.necly.id/canva.jpg",
+      stock: 2,
+    });
   });
 });

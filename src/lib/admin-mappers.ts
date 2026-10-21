@@ -174,6 +174,9 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
     },
     accent: mappedCategory === "Streaming" ? "indigo" : mappedCategory === "Kreatif" ? "violet" : mappedCategory === "Keamanan" ? "blue" : "sky",
     featured: false,
+    imageUrl: apiProduct.image_url?.trim() || undefined,
+    comingSoon: apiProduct.coming_soon === true,
+    active: apiProduct.active !== false,
     priceOptions,
     termsNote: "Akses diberikan melalui undangan anggota atau kursi resmi sesuai ketentuan penyedia.",
   };

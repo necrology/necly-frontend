@@ -1713,3 +1713,36 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .testimonial-name { color: var(--commerce-ink); font-size: 12px; font-weight: 700; }
 .testimonial-product { border-radius: 999px; padding: 3px 9px; color: #4c1ef9; background: #ecebff; font-size: 10px; font-weight: 700; }
 .testimonial-meta time { color: var(--commerce-muted); font-size: 10px; }
+
+/* ---------- Coming Soon + foto produk (NEC-89) ---------- */
+.service-visual .service-photo { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.catalog-badge.coming-soon { background: #b45309; }
+.commerce-badge.coming-soon { background: #b45309; }
+.commerce-stock-pill.coming-soon { background: #b45309; }
+.commerce-card-photo { position: relative; aspect-ratio: 16 / 9; overflow: hidden; margin: -6px -6px 14px; border-radius: 16px; background: #f4f0ff; }
+.commerce-card-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.commerce-card-actions .is-disabled { opacity: .65; cursor: not-allowed; pointer-events: none; }
+.catalog-card-actions .is-disabled { opacity: .65; cursor: not-allowed; pointer-events: none; }
+.catalog-order-button.is-disabled { color: #5f5677; background: #e7e2f4; box-shadow: none; }
+.commerce-order-link.is-disabled { color: #5f5677; background: #e7e2f4; }
+.commerce-product-image > img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; padding: 26px; }
+.commerce-product-labels span.is-coming-soon { color: #8a4b00; background: #fff1cc; }
+.commerce-product-labels span.is-coming-soon svg { color: #b45309; }
+.commerce-coming-soon-banner { display: flex; align-items: center; gap: 8px; width: fit-content; border: 1px solid #f0d59a; border-radius: 12px; padding: 9px 12px; color: #7a4b00; background: #fff7e3; font-size: 11px; font-weight: 600; line-height: 1.45; }
+.commerce-coming-soon-banner svg { flex: 0 0 auto; color: #b45309; }
+.commerce-product-card.is-coming-soon { border-color: #f0d59a; }
+.commerce-product-detail-shell.is-coming-soon .commerce-package-option,
+.commerce-product-detail-shell.is-coming-soon .commerce-duration-row button,
+.commerce-product-detail-shell.is-coming-soon .commerce-summary-line button { opacity: .62; cursor: not-allowed; }
+.commerce-primary-button:disabled,
+.commerce-mobile-order-bar button:disabled { background: #c9c1e2; box-shadow: none; cursor: not-allowed; }
+.commerce-primary-button:disabled:hover { background: #c9c1e2; }
+.commerce-mobile-order-bar button:disabled:hover { background: #c9c1e2; }
+.product-thumb { display: block; width: 52px; height: 52px; border: 1px solid var(--line); border-radius: 6px; object-fit: cover; background: #f4f6f8; }
+.product-photo-field { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; }
+.product-photo-frame { width: 128px; height: 96px; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: #f7f9fb; }
+.product-photo-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.product-photo-controls { display: grid; flex: 1; gap: 8px; min-width: 220px; }
+.product-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.product-photo-actions .button { cursor: pointer; }
+.table-status-select { display: block; width: 124px; min-height: 30px; margin-top: 6px; padding: 4px 6px; font-size: 10px; }
