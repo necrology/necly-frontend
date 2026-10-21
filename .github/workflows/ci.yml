@@ -20,6 +20,10 @@ concurrency:
 
 env:
   SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  # Nilai ini hanya untuk job verify/e2e: browser Playwright mem-mock origin ini.
+  # Job image WAJIB menimpanya dengan origin publik (lihat env pada job `image`),
+  # kalau tidak, bundle production akan memanggil http://127.0.0.1:58080 dari
+  # browser pengguna dan seluruh API (login, reset kata sandi, katalog) gagal.
   NEXT_PUBLIC_API_URL: http://127.0.0.1:58080/api/v1
   NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
   NEXT_PUBLIC_DEMO_MODE: "false"
@@ -71,8 +75,19 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://api.necly-service.my.id/api/v1' }}
+      NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://necly-service.my.id' }}
     steps:
       - uses: actions/checkout@v4
+      - name: Tolak origin loopback pada image production
+        run: |
+          case "$NEXT_PUBLIC_API_URL" in
+            *127.0.0.1*|*localhost*|*0.0.0.0*)
+              echo "::error::NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL bukan origin publik; image production tidak boleh di-bake dengan origin loopback."
+              exit 1
+              ;;
+          esac
       - uses: docker/setup-buildx-action@v3
       - uses: docker/metadata-action@v5
         id: meta

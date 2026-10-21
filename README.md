@@ -158,7 +158,13 @@ browser-mocked API. No backend, database, or production credentials are needed.
 
 ## Deployment Notes
 
-- Set all `NEXT_PUBLIC_*` env vars at runtime
+- `NEXT_PUBLIC_*` di-inline saat build, bukan dibaca saat runtime. Image yang
+  di-deploy harus dibangun dengan origin publik (lihat job `image` di CI:
+  `https://api.necly-service.my.id/api/v1` dan `https://necly-service.my.id`).
+  Jangan pernah mem-bake `127.0.0.1`/`localhost`: browser pengguna akan
+  memanggil perangkatnya sendiri dan semua permintaan API gagal (`Load failed`).
+- `INTERNAL_API_URL` dibaca saat runtime oleh Route Handler `/api/auth/*` untuk
+  memanggil backend dari dalam jaringan deployment.
 - No frontend secrets (all secrets backend-side)
 - Standalone output → minimal container
 - Healthcheck: `GET /` returns 200
