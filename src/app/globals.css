@@ -373,6 +373,19 @@ body:has(.auth-form-login) { overflow: hidden; }
 .topbar-spacer { margin-left: auto; }
 .profile-button { min-height: 44px; display: flex; align-items: center; gap: 10px; border: 0; border-radius: 5px; padding: 5px 8px; color: var(--ink-2); background: transparent; cursor: pointer; }
 .profile-button:hover { background: var(--surface-2); }
+.profile-chevron { transition: transform 150ms ease; }
+.profile-chevron.open { transform: rotate(180deg); }
+.dashboard-profile { position: relative; flex: 0 0 auto; }
+.dashboard-profile-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 90; width: 252px; display: grid; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: #fff; box-shadow: 0 18px 46px rgb(6 27 49 / .18); }
+.dashboard-profile-identity { display: flex; align-items: center; gap: 10px; padding: 14px; border-bottom: 1px solid var(--line); background: #f8fafb; }
+.dashboard-profile-identity > div { min-width: 0; display: grid; gap: 2px; }
+.dashboard-profile-identity strong { overflow: hidden; color: var(--ink); font-size: 11px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-profile-identity small { overflow: hidden; color: var(--muted); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-profile-identity span { color: var(--faint); font-size: 8px; font-weight: 650; letter-spacing: .07em; text-transform: uppercase; }
+.dashboard-profile-menu > a, .dashboard-profile-menu > button { min-height: 42px; display: flex; align-items: center; gap: 9px; border: 0; padding: 0 14px; color: var(--ink-2); background: #fff; font-size: 10px; font-weight: 550; text-align: left; text-decoration: none; cursor: pointer; }
+.dashboard-profile-menu > a:hover, .dashboard-profile-menu > button:hover { color: var(--ink); background: #f3f6f8; }
+.dashboard-profile-menu > button { border-top: 1px solid var(--line); color: var(--danger); }
+.dashboard-profile-menu > button:disabled { opacity: .65; cursor: progress; }
 .profile-avatar { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--indigo); font-size: 9px; font-weight: 700; }
 .dashboard-content { padding: 26px; }
 .dashboard-page { display: grid; gap: 22px; }
