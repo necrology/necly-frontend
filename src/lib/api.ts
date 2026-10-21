@@ -238,6 +238,32 @@ export type ApiTestimonial = {
   created_at: string;
 };
 
+/** Akun yang sudah dikirim untuk satu pesanan. Tidak pernah berisi kata sandi. */
+export type ApiAccountAccess = {
+  order_item_id: string;
+  product_name: string;
+  duration_name: string;
+  account_label: string;
+  account_email: string;
+};
+
+export type ApiAccountAccessResponse = {
+  items: ApiAccountAccess[];
+  otp_inbox_ready: boolean;
+};
+
+export type ApiOTPAccessCode = {
+  code: string;
+  expires_at: string;
+  emails: string[];
+  email_sent: boolean;
+};
+
+export type ApiOTPLookup = {
+  otp: string;
+  received_at: string | null;
+};
+
 export type CheckoutResponse = {
   order: ApiOrder;
   payment: {
@@ -507,6 +533,20 @@ export async function apiRequest<T>(
   const payload = await readPayload(response);
   if (!response.ok) {
     if (response.status === 401) useAuthStore.getState().clearAuth();
+    throw new ApiError(messageFromPayload(payload, response.status), response.status, payload);
+  }
+  return payload as T;
+}
+
+/**
+ * Request publik yang tidak boleh membawa sesi. Halaman ambil OTP dipakai
+ * pengguna yang sedang login di platform lain, jadi sesi Necly yang kedaluwarsa
+ * tidak boleh membuat permintaan ini gagal sebelum mencapai backend.
+ */
+async function publicApiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetchApi(endpoint, options, null);
+  const payload = await readPayload(response);
+  if (!response.ok) {
     throw new ApiError(messageFromPayload(payload, response.status), response.status, payload);
   }
   return payload as T;
@@ -821,6 +861,29 @@ export const checkoutApi = {
   },
 
   getOrder: (id: string) => apiRequest<ApiOrder>(`/orders/${encodeURIComponent(id)}`),
+};
+
+export const accountOtpApi = {
+  /** Daftar akun yang sudah dikirim untuk pesanan milik pengguna. */
+  listAccess: (orderId: string) =>
+    apiRequest<ApiAccountAccessResponse>(`/orders/${encodeURIComponent(orderId)}/account-access`),
+
+  /**
+   * Membuat kode akses 15 menit. Kode dikembalikan sekali dan juga dikirim ke
+   * email pembeli; kata sandi akun/mailbox tidak pernah ikut.
+   */
+  issueCode: (orderId: string, itemId: string) =>
+    apiRequest<ApiOTPAccessCode>(
+      `/orders/${encodeURIComponent(orderId)}/account-access/${encodeURIComponent(itemId)}/code`,
+      { method: "POST" },
+    ),
+
+  /** Publik: menukar email akun + kode akses dengan OTP terbaru. */
+  lookup: (email: string, code: string) =>
+    publicApiRequest<ApiOTPLookup>("/account-otp/lookup", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
+    }),
 };
 
 export const adminApi = {
