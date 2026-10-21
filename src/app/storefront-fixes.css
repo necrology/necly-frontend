@@ -188,7 +188,7 @@ img, svg { max-width: 100%; }
   /* NEC-84: aturan ritme umum di atas menimpa gap hero mobile dari globals.css.
      Pertahankan ilustrasi menempel pada blok judul, bukan melayang jauh di bawahnya. */
   .commerce-home-hero { padding: 28px 0 34px; }
-  .commerce-home-hero-inner { gap: 15px; }
+  .commerce-home-hero-inner { gap: 26px; }
   .commerce-hero-cta { margin-top: 18px; }
   .commerce-home-hero-art { width: min(100%, 340px); margin-top: 0; }
   /* NEC-84: aset ilustrasi punya 211 dari 636 baris transparan di bagian atas.
