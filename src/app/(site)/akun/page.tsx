@@ -201,8 +201,10 @@ export default function AccountPage() {
 
       <article className="card account-card">
         <h2 className="h3"><KeyRound size={16} aria-hidden="true" /> Ubah kata sandi</h2>
-        <p className="muted small">
-          Masukkan kata sandi Anda saat ini untuk mengonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.
+        <p className="muted small account-password-hint">
+          Masukkan kata sandi Anda saat ini untuk mengonfirmasi.
+          <br />
+          Setelah tersimpan, semua perangkat lain akan keluar otomatis.
         </p>
         {notice && <div className="notice success" role="status">{notice}</div>}
         {errors.submit && <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>{errors.submit}</div>}

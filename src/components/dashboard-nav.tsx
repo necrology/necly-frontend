@@ -54,5 +54,15 @@ export function DashboardNav() {
   const collapsed = useDashboardUiStore((state) => state.sidebarCollapsed);
   const toggle = useDashboardUiStore((state) => state.toggleSidebar);
   const setMobileOpen = useDashboardUiStore((state) => state.setMobileSidebarOpen);
-  return <aside className="dashboard-sidebar"><div style={{ display: "flex", alignItems: "center" }}><BrandLogo href="/dashboard" compact={collapsed} /><button className="table-action dashboard-nav-close" style={{ marginLeft: "auto", marginRight: 11 }} type="button" onClick={() => setMobileOpen(false)} aria-label="Tutup navigasi"><X size={14} /></button></div><nav className="dashboard-nav" aria-label="Navigasi dashboard">{groups.map((group) => <div key={group.label}><div className="dashboard-nav-label">{group.label}</div>{group.items.map(({ label, href, icon: Icon }) => <Link key={href} href={href} title={collapsed ? label : undefined} className={cn("dashboard-nav-link", pathname === href && "active")} onClick={() => setMobileOpen(false)}><Icon size={15} /><span className="nav-copy">{label}</span></Link>)}</div>)}</nav><div className="sidebar-footer"><Link className="dashboard-nav-link" href="/"><Settings size={15} /><span className="nav-copy">Kembali ke marketplace</span></Link><button className="dashboard-nav-link" style={{ width: "100%", border: 0, cursor: "pointer" }} type="button" onClick={toggle}><ChevronLeft size={15} style={{ transform: collapsed ? "rotate(180deg)" : undefined }} /><span className="nav-copy">Ciutkan sidebar</span></button></div></aside>;
+  const closeOrCollapse = () => {
+    // Di mobile tombol footer berperan sebagai penutup drawer; di desktop ia
+    // tetap menciutkan sidebar. Sebelumnya di mobile hanya mengubah state
+    // collapsed sehingga drawer terlihat tidak mau tertutup.
+    if (typeof window !== "undefined" && window.innerWidth <= 800) {
+      setMobileOpen(false);
+      return;
+    }
+    toggle();
+  };
+  return <aside className="dashboard-sidebar"><div style={{ display: "flex", alignItems: "center" }}><BrandLogo href="/dashboard" compact={collapsed} /><button className="table-action dashboard-nav-close" style={{ marginLeft: "auto", marginRight: 11 }} type="button" onClick={() => setMobileOpen(false)} aria-label="Tutup navigasi"><X size={14} /></button></div><nav className="dashboard-nav" aria-label="Navigasi dashboard">{groups.map((group) => <div key={group.label}><div className="dashboard-nav-label">{group.label}</div>{group.items.map(({ label, href, icon: Icon }) => <Link key={href} href={href} title={collapsed ? label : undefined} className={cn("dashboard-nav-link", pathname === href && "active")} onClick={() => setMobileOpen(false)}><Icon size={15} /><span className="nav-copy">{label}</span></Link>)}</div>)}</nav><div className="sidebar-footer"><Link className="dashboard-nav-link" href="/"><Settings size={15} /><span className="nav-copy">Kembali ke marketplace</span></Link><button className="dashboard-nav-link" style={{ width: "100%", border: 0, cursor: "pointer" }} type="button" onClick={closeOrCollapse}><ChevronLeft size={15} style={{ transform: collapsed ? "rotate(180deg)" : undefined }} /><span className="nav-copy">Ciutkan sidebar</span></button></div></aside>;
 }
