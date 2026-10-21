@@ -161,7 +161,7 @@ export default function DashboardPage() {
   };
 
   const demoOrders: DashboardOrder[] = [
-    { id: "NCL-260906-091", customer: "Nabila Rahma", customerEmail: "nabila@example.id", product: "StreamFlix Family Slot", service: "StreamFlix Family Slot", duration: "3 bulan", amount: 109_000, status: "Diproses", date: "06 Sep 2026", due: "06 Sep · 10:20" },
+    { id: "NCL-260906-091", customer: "Nabila Rahma", customerEmail: "nabila@example.id", product: "StreamFlix Family", service: "StreamFlix Family", duration: "3 bulan", amount: 109_000, status: "Diproses", date: "06 Sep 2026", due: "06 Sep · 10:20" },
     { id: "NCL-260906-090", customer: "Rafi Akbar", customerEmail: "rafi@example.id", product: "CineMax Family Member", service: "CineMax Family Member", duration: "1 bulan", amount: 32_000, status: "Dibayar", date: "06 Sep 2026", due: "06 Sep · 10:35" },
     { id: "NCL-260905-089", customer: "Andra Kurnia", customerEmail: "andra@example.id", product: "OfficeCloud Family Seat", service: "OfficeCloud Family Seat", duration: "12 bulan", amount: 499_000, status: "Aktif", date: "05 Sep 2026", due: "05 Sep · 16:08" },
     { id: "NCL-260905-088", customer: "Tio Hadi", customerEmail: "tio@example.id", product: "AI Studio Team Seat", service: "AI Studio Team Seat", duration: "1 bulan", amount: 79_000, status: "Menunggu pembayaran", date: "05 Sep 2026", due: "—" },
@@ -186,7 +186,7 @@ export default function DashboardPage() {
     <div className="dashboard-page">
       <PageHeader
         title="Ringkasan operasional"
-        description="Pantau penjualan akun langganan sharing, pembayaran, aktivasi slot anggota, dan ketersediaan agar pelanggan berlangganan lebih hemat."
+        description="Pantau penjualan akun langganan sharing, pembayaran, aktivasi akses anggota, dan ketersediaan agar pelanggan berlangganan lebih hemat."
         actions={
           <>
             <span className="badge status-info" title="Endpoint metrik belum menerima parameter rentang waktu">
@@ -218,7 +218,7 @@ export default function DashboardPage() {
           icon={<CircleCheckBig size={14} />}
         />
         <MetricCard
-          label="Slot tersedia"
+          label="Akses tersedia"
           value={displayData ? String(displayData.availableSlots) : "—"}
           change={comparisonText}
           icon={<Boxes size={14} />}

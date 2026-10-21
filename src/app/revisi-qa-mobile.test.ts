@@ -27,6 +27,15 @@ const apiSource = read("src", "lib", "api.ts");
 const productMapper = read("src", "lib", "product-mapper.ts");
 const productBrand = read("src", "components", "product-brand.tsx");
 const brandSource = read("src", "lib", "commerce-product.ts");
+const authValidation = read("src", "lib", "auth-validation.ts");
+const registerPage = read("src", "app", "(auth)", "register", "page.tsx");
+const cartPage = read("src", "app", "(site)", "cart", "page.tsx");
+const cartClient = read("src", "app", "(site)", "cart", "cart-client.tsx");
+const authLayout = read("src", "app", "(auth)", "layout.tsx");
+const terms = read("src", "app", "(site)", "syarat-ketentuan", "page.tsx");
+const serviceVisual = read("src", "components", "service-visual.tsx");
+const seed = read("src", "data", "seed.ts");
+const inventoryPage = read("src", "app", "dashboard", "inventory", "page.tsx");
 
 describe("revisi QA putaran kedua", () => {
   it("baris 9: ikon panah dihapus, teks CTA putih, badge 'Lebih Hemat' dihapus", () => {
@@ -220,5 +229,37 @@ describe("revisi QA putaran kedua", () => {
     for (const logo of ["logo-canva.svg", "logo-google-one.svg", "logo-dropbox.svg"]) {
       expect(existsSync(join(process.cwd(), "public", "design-assets", logo))).toBe(true);
     }
+  });
+
+  it("placeholder dan pesan kata sandi tidak lagi memakai istilah byte", () => {
+    expect(authValidation).toContain("Kata sandi minimal 10 karakter");
+    expect(authValidation).not.toContain("10–72 byte");
+    expect(passwordField).toContain("Minimal 10 karakter");
+    for (const source of [login, registerPage, account]) {
+      expect(source).not.toContain("10–72 byte");
+    }
+  });
+
+  it("kata slot sudah hilang dari halaman pelanggan dan label dashboard utama", () => {
+    expect(cartPage).not.toMatch(/slot/i);
+    expect(cartClient).not.toMatch(/slot/i);
+    expect(authLayout).not.toMatch(/slot/i);
+    expect(terms).not.toMatch(/slot/i);
+    expect(serviceVisual).not.toMatch(/slot/i);
+    expect(productMapper).toContain("jumlah akses yang tersedia");
+    expect(seed).not.toContain("StreamFlix Slot Keluarga");
+    expect(seed).not.toContain("MusicFlow Slot Keluarga");
+    expect(seed).not.toContain("Readly Slot Keluarga");
+    expect(inventoryPage).toContain('label="Akses tersedia"');
+    expect(inventoryPage).toContain("Tambah akses akun");
+    expect(inventoryPage).not.toContain("Konfirmasi tambah slot");
+  });
+
+  it("email punya jalur kirim ulang dan kontak admin saat gagal", () => {
+    expect(forgot).toContain("mailto:necly.services@gmail.com");
+    expect(registerPage).toContain("resendVerification");
+    expect(registerPage).toContain("mailto:necly.services@gmail.com");
+    expect(issue).toContain("mailto:necly.services@gmail.com");
+    expect(login).toContain("mailto:necly.services@gmail.com");
   });
 });

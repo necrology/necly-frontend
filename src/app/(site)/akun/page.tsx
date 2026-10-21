@@ -209,7 +209,7 @@ export default function AccountPage() {
         <form onSubmit={submitPassword} noValidate>
           <PasswordField id="account-current" name="current" label="Kata sandi saat ini" autoComplete="current-password" placeholder="Kata sandi sekarang" error={errors.current} required />
           <Link className="button button-ghost button-sm auth-forgot-link account-forgot-link" href="/forgot-password">Lupa sandi saat ini?</Link>
-          <PasswordField id="account-new" name="password" label="Kata sandi baru" autoComplete="new-password" placeholder="10–72 byte" error={errors.password} required />
+          <PasswordField id="account-new" name="password" label="Kata sandi baru" autoComplete="new-password" placeholder="Minimal 10 karakter" error={errors.password} required />
           <PasswordField id="account-confirm" name="confirm" label="Konfirmasi kata sandi baru" autoComplete="new-password" placeholder="Ulangi kata sandi baru" error={errors.confirm} required />
           <button className="button button-primary" type="submit" disabled={savingPassword}>
             {savingPassword ? "Menyimpan…" : "Simpan kata sandi baru"}

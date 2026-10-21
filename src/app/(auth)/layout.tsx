@@ -7,8 +7,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <BrandLogo href="/" />
         <div style={{ maxWidth: 500, marginTop: 76 }}>
           <span className="eyebrow" style={{ color: "#68cbf5" }}>Langganan premium aman dan hemat</span>
-          <h2 className="h1" style={{ color: "white", marginTop: 16 }}>Akses slot akun bersama tanpa repot.</h2>
-          <p style={{ color: "#aebdce", marginTop: 22 }}>Necly menjual slot akun langganan premium yang bisa dipakai bersama. Pelanggan hemat biaya, aktivasi via undangan resmi, tanpa berbagi kata sandi.</p>
+          <h2 className="h1" style={{ color: "white", marginTop: 16 }}>Akses akun bersama tanpa repot.</h2>
+          <p style={{ color: "#aebdce", marginTop: 22 }}>Necly menyediakan akses akun langganan premium yang bisa dipakai bersama. Pelanggan hemat biaya, aktivasi via undangan resmi, tanpa berbagi kata sandi.</p>
         </div>
       </aside>
       <section className="auth-form-wrap">{children}</section>

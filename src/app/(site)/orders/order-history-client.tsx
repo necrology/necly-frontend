@@ -44,7 +44,7 @@ const DEMO_ORDERS: ApiOrder[] = [
       {
         id: "demo-item-1",
         product_price_id: "demo-price-1",
-        product_name: "StreamFlix Slot Keluarga (Demo)",
+        product_name: "StreamFlix Keluarga (Demo)",
         duration_name: "3 bulan",
         unit_price: 109_000,
         quantity: 1,

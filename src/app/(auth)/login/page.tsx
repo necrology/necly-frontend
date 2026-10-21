@@ -136,7 +136,7 @@ function LoginContent() {
           <input className="input" id="login-email" name="email" type="email" autoComplete="username" placeholder="anda@contoh.id" value={emailValue} onChange={(event) => setEmailValue(event.target.value)} aria-invalid={Boolean(errors.email)} />
           {errors.email && <span className="field-error" role="alert">{errors.email}</span>}
         </div>
-        <PasswordField id="login-password" name="password" label="Kata sandi" autoComplete="current-password" placeholder="10–72 byte" error={errors.password} />
+        <PasswordField id="login-password" name="password" label="Kata sandi" autoComplete="current-password" placeholder="Masukkan kata sandi" error={errors.password} />
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14 }}>
           <label className="check-row"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>Ingat saya</span></label>
           {/* Baris 65: tautan lupa kata sandi diberi warna aksen biru supaya jelas
@@ -150,6 +150,7 @@ function LoginContent() {
               {resending ? "Mengirim…" : "Kirim ulang tautan verifikasi"}
             </button>
             {resendNotice && <p className="muted small" role="status">{resendNotice}</p>}
+            <p className="muted small" style={{ margin: 0 }}>Masih tidak menerima email? <a href="mailto:necly.services@gmail.com">Hubungi admin via email</a>.</p>
           </div>
         )}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Sedang masuk…" : <>Masuk <ArrowRight size={14} /></>}</button>

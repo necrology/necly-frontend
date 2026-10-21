@@ -16,7 +16,7 @@ describe("Halaman dan Client Keranjang", () => {
 
   it("memiliki metadata berbahasa Indonesia", () => {
     expect(cartMetadata.title).toBe("Keranjang belanja");
-    expect(cartMetadata.description).toContain("Periksa pilihan slot langganan Anda");
+    expect(cartMetadata.description).toContain("Periksa pilihan langganan Anda");
   });
 
   it("menampilkan teks keranjang kosong dalam bahasa Indonesia", () => {

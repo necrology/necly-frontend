@@ -61,7 +61,7 @@ function ResetPasswordContent() {
         <p className="muted" style={{ marginTop: 14, marginBottom: 0 }}>{DEMO_MODE ? "Mode demo aktif. Kata sandi tidak benar-benar diubah." : "Tautan ini hanya berlaku sekali. Setelah tersimpan, semua sesi lama akan diakhiri."}</p>
       </div>
       <form onSubmit={submit} style={{ display: "grid", gap: 18 }} noValidate>
-        <PasswordField id="reset-password" name="password" label="Kata sandi baru" autoComplete="new-password" placeholder="10–72 byte" error={errors.password} />
+        <PasswordField id="reset-password" name="password" label="Kata sandi baru" autoComplete="new-password" placeholder="Minimal 10 karakter" error={errors.password} />
         <PasswordField id="reset-confirm" name="confirm" label="Konfirmasi kata sandi baru" autoComplete="new-password" placeholder="Ulangi kata sandi baru" error={errors.confirm} />
         {errors.submit && <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>{errors.submit}</div>}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Menyimpan…" : <><KeyRound size={14} /> Simpan kata sandi baru</>}</button>

@@ -145,7 +145,7 @@ export default function OrdersAdminPage() {
     <div className="dashboard-page">
       <PageHeader
         title="Pesanan akun sharing"
-        description="Kelola pesanan akun langganan sharing, terima pembayaran, dan koordinasikan aktivasi slot anggota ke pelanggan."
+        description="Kelola pesanan akun langganan sharing, terima pembayaran, dan koordinasikan aktivasi akses anggota ke pelanggan."
         actions={<button className="button button-secondary button-sm" onClick={exportRows} disabled={rows.length === 0}><Download size={13} /> Ekspor pesanan</button>}
       />
       <div className="toolbar">

@@ -20,7 +20,7 @@ describe("dashboard overview localization", () => {
   };
 
   it("uses Indonesian operational headings and amounts", () => {
-    for (const label of ["Ringkasan operasional", "Pendapatan kotor", "Pesanan baru", "Aktivasi berjalan", "Slot tersedia", "Pesanan terbaru"]) {
+    for (const label of ["Ringkasan operasional", "Pendapatan kotor", "Pesanan baru", "Aktivasi berjalan", "Akses tersedia", "Pesanan terbaru"]) {
       expect(source).toContain(label);
     }
     // Check for Indonesian locale formatting (toLocaleString with id-ID)
@@ -64,7 +64,7 @@ describe("dashboard overview localization", () => {
       pesanan: "Belum ada pesanan.",
       pembayaran: "Belum ada pembayaran.",
       pelanggan: "Belum ada pelanggan.",
-      inventaris: "Belum ada akun inventaris. Tambahkan akun untuk mulai menjual slot.",
+      inventaris: "Belum ada akun inventaris. Tambahkan akun untuk mulai menjual akses.",
       voucher: "Belum ada voucher.",
       laporan: "Belum ada data laporan.",
       audit: "Belum ada aktivitas tercatat.",
@@ -85,8 +85,8 @@ describe("dashboard overview localization", () => {
 
   it("menggunakan copy operasional akun sharing yang jelas", () => {
     expect(source).toContain("akun langganan sharing");
-    expect(productsSource).toContain("slot anggota");
+    expect(productsSource).toContain("akses anggota");
     expect(pageSources.inventaris).toContain("akun langganan");
-    expect(pageSources.pesanan).toContain("aktivasi slot anggota");
+    expect(pageSources.pesanan).toContain("aktivasi akses anggota");
   });
 });

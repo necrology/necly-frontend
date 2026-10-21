@@ -163,7 +163,7 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
       "Masa akses tercatat di pesanan",
     ],
     activationSteps: [
-      { title: "Pilih paket", description: "Pilih durasi dan jumlah slot yang tersedia." },
+      { title: "Pilih paket", description: "Pilih durasi dan jumlah akses yang tersedia." },
       { title: "Selesaikan pembayaran", description: "Bayar melalui kanal pembayaran yang tersedia." },
       { title: "Terima akses", description: "Tim Necly mengirim undangan anggota atau kursi tim ke akun Anda." },
     ],

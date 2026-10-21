@@ -79,7 +79,7 @@ describe("dashboard admin (C12/C19)", () => {
     await waitFor(() => expect(metric("Pendapatan kotor")).toHaveTextContent("Rp167.400"));
     expect(metric("Pesanan baru")).toHaveTextContent("1");
     expect(metric("Aktivasi berjalan")).toHaveTextContent("1");
-    expect(metric("Slot tersedia")).toHaveTextContent("1");
+    expect(metric("Akses tersedia")).toHaveTextContent("1");
     expect(metric("Pendapatan kotor")).toHaveTextContent("—");
 
     expect(listOrdersMock).toHaveBeenCalledWith({ page: 1, per_page: 5 });

@@ -101,6 +101,7 @@ export default function IssueReportPage() {
                 <h2>Laporan Diterima</h2>
               </div>
               <p>Catat nomor pesanan Anda. Tim akan meninjau laporan berdasarkan informasi yang dikirimkan.</p>
+              <p className="muted small">Tim Necly akan menindaklanjuti melalui email yang Anda masukkan. Jika butuh bantuan cepat, <a href="mailto:necly.services@gmail.com">hubungi admin via email</a>.</p>
               {/* Baris 57: info cooldown 3 jam, tanpa tombol "kirim laporan lain". */}
               <p className="issue-cooldown">{cooldownCopy}</p>
               {/* Baris 60: tombol putih, dan berubah seperti tombol "Kirim laporan"

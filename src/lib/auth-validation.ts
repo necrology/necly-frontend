@@ -2,7 +2,8 @@ const encoder = new TextEncoder();
 
 export function passwordError(password: string): string | undefined {
   const length = encoder.encode(password).byteLength;
-  if (length < 10 || length > 72) return "Kata sandi harus terdiri dari 10–72 byte.";
+  if (length < 10) return "Kata sandi minimal 10 karakter.";
+  if (length > 72) return "Kata sandi terlalu panjang. Gunakan maksimal 72 karakter.";
   return undefined;
 }
 
