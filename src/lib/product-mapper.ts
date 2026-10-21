@@ -45,10 +45,16 @@ export function cleanProductName(name: string) {
   const cleaned = name
     .replace(/\s*[-–—]?\s*slot anggota rumah tangga\s*/gi, " ")
     .replace(/\s*[-–—]?\s*slot anggota\s*/gi, " ")
+    .replace(/\bslots?\b\s*/gi, "")
     .replace(/\s{2,}/g, " ")
     .replace(/^[\s\-–—]+|[\s\-–—]+$/g, "")
     .trim();
   return cleaned || name.trim();
+}
+
+/** Ganti istilah internal "slot" pada teks bebas dari katalog. */
+export function cleanSlotCopy(text: string) {
+  return text.replace(/\bslots?\b/gi, (match) => match[0] === match[0].toUpperCase() ? "Akses" : "akses");
 }
 
 function durationLabel(days: number) {
@@ -105,8 +111,8 @@ export function mapApiProduct(product: ApiProduct): SubscriptionProduct {
     price: primaryPrice?.price ?? 0,
     stock,
     duration: primaryPrice?.duration ?? "Belum tersedia",
-    summary: product.description,
-    description: product.description,
+    summary: cleanSlotCopy(product.description),
+    description: cleanSlotCopy(product.description),
     accessType: category === "Streaming" ? "Undangan anggota" : "Kursi tim",
     benefits: [
       "Akun langganan tersedia untuk dipakai bersama",

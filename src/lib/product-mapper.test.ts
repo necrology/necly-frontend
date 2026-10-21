@@ -85,6 +85,18 @@ describe("mapApiProduct", () => {
     expect(product.benefits.join(" ")).not.toMatch(/slot/i);
   });
 
+  it("menghapus kata slot dari nama dan deskripsi produk", () => {
+    const product = mapApiProduct({
+      ...apiProduct,
+      name: "StreamFlix Slot Keluarga",
+      description: "Slot akun langganan untuk dipakai bersama.",
+    });
+
+    expect(product.name).toBe("StreamFlix Keluarga");
+    expect(product.summary).toBe("Akses akun langganan untuk dipakai bersama.");
+    expect(product.description).not.toMatch(/slot/i);
+  });
+
   it("membaca ketersediaan dari available_slots, bukan stock", () => {
     const product = mapApiProduct(apiProduct);
 
