@@ -186,14 +186,17 @@ describe("revisi QA putaran kedua", () => {
     expect(account).toContain("Lupa sandi saat ini?");
     expect(account).toContain("authApi.logout()");
     expect(account).toContain('router.replace("/login?passwordChanged=1")');
-    expect(account).toContain("Masukkan kata sandi Anda saat ini untuk mengonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.");
+    expect(account).toContain("Masukkan kata sandi Anda saat ini untuk mengonfirmasi.");
+    expect(account).toContain("Setelah tersimpan, semua perangkat lain akan keluar otomatis.");
   });
 
   it("NEC-92: panduan ubah kata sandi tidak memecah kata 'mengonfirmasi.' ke baris berikutnya", () => {
     expect(account).toContain('<p className="muted small account-password-hint">');
-    expect(account).toContain("Masukkan kata sandi Anda saat ini untuk mengonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.");
-    expect(css).toContain(".account-password-hint { letter-spacing: -0.01em; }");
-    expect(css).toContain(".account-password-hint { font-size: clamp(9px, 2.7vw, 11px); }");
+    expect(account).toMatch(
+      /Masukkan kata sandi Anda saat ini untuk mengonfirmasi\.\s*<br \/>\s*Setelah tersimpan, semua perangkat lain akan keluar otomatis\./,
+    );
+    expect(css).toContain(".account-password-hint { letter-spacing: -0.015em; }");
+    expect(css).toContain(".account-password-hint { font-size: clamp(9px, 2.6vw, 11px); }");
   });
 
   it("baris 81-82: sesi kedaluwarsa diakhiri saat navigasi dan tidak dipulihkan", () => {
