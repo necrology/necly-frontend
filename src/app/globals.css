@@ -239,9 +239,18 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .cart-list { display: grid; gap: 12px; }
 .cart-item { display: grid; grid-template-columns: 76px minmax(0,1fr) auto; gap: 18px; align-items: center; padding: 18px; }
 .cart-thumb { width: 76px; height: 76px; display: grid; place-items: center; border-radius: 6px; color: #fff; background: var(--accent, var(--blue)); font-size: 14px; font-weight: 700; }
-.quantity { display: inline-flex; align-items: center; border: 1px solid var(--line-strong); border-radius: 5px; overflow: hidden; }
-.quantity button { width: 36px; height: 36px; border: 0; background: #fff; cursor: pointer; }
-.quantity span { min-width: 34px; text-align: center; font-size: 12px; }
+.quantity { display: inline-flex; align-items: stretch; height: 38px; border: 1px solid var(--line-strong); border-radius: 6px; background: #fff; overflow: hidden; box-shadow: var(--shadow-sm); }
+.quantity-button { width: 36px; min-width: 36px; height: 36px; display: grid; place-items: center; padding: 0; border: 0; color: var(--ink-2); background: #fff; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; }
+.quantity-button:hover:not(:disabled) { color: var(--blue); background: #f4f1ff; }
+.quantity-button:active:not(:disabled) { background: #eae4ff; }
+.quantity-button:focus-visible { position: relative; z-index: 1; outline: 2px solid var(--blue); outline-offset: -2px; }
+.quantity-button:disabled { color: var(--faint); background: var(--surface-2); opacity: 1; }
+.quantity-value { display: grid; place-items: center; min-width: 38px; padding: 0 4px; border-inline: 1px solid var(--line); font-size: 12px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+@media (max-width: 767px) {
+  .quantity { height: 44px; border-radius: 7px; }
+  .quantity-button { width: 44px; min-width: 44px; height: 42px; }
+  .quantity-value { min-width: 40px; font-size: 13px; }
+}
 .summary-card { align-self: start; position: sticky; top: 96px; padding: 24px; }
 .summary-lines { display: grid; gap: 12px; margin: 20px 0; }
 .summary-line { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); font-size: 12px; }

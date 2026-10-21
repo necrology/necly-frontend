@@ -1,12 +1,13 @@
 "use client";
 
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { ShoppingBag, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { catalogApi, DEMO_MODE } from "@/lib/api";
 import { reconcileCartItems } from "@/lib/cart-reconciliation";
 import { cartTotals, formatIDR } from "@/lib/money";
+import { QuantityStepper } from "@/components/quantity-stepper";
 import { useCartStore, type CartItem } from "@/stores/cart-store";
 
 /**
@@ -79,6 +80,10 @@ export function CartClient() {
         {liveNotice && <p className="commerce-field-warning" role="status"><span aria-hidden="true">!</span>{liveNotice}</p>}
         {items.map((item, index) => {
           const key = lineKey(item);
+          // Store membatasi jumlah dengan stok paket yang dipilih; tombol plus
+          // harus memakai batas yang sama agar tidak terlihat aktif padahal
+          // kliknya tidak mengubah apa pun.
+          const maxQuantity = item.selectedStock ?? item.stock;
           return (
             <article className="card cart-item accent-blue" key={`${key}-${index}`}>
               <span className="cart-thumb" aria-hidden="true">{initials(item.name)}</span>
@@ -91,11 +96,13 @@ export function CartClient() {
               <div className="cart-item-actions" style={{ display: "grid", justifyItems: "end", gap: 10 }}>
                 <strong className="tabular">{formatIDR(item.price * item.quantity)}</strong>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div className="quantity">
-                    <button type="button" aria-label={`Kurangi jumlah ${item.name}`} disabled={item.quantity <= 1} onClick={() => setQuantity(key, item.quantity - 1)}><Minus size={13} /></button>
-                    <span>{item.quantity}</span>
-                    <button type="button" aria-label={`Tambah jumlah ${item.name}`} disabled={item.quantity >= item.stock} onClick={() => setQuantity(key, item.quantity + 1)}><Plus size={13} /></button>
-                  </div>
+                  <QuantityStepper
+                    value={item.quantity}
+                    min={1}
+                    max={maxQuantity}
+                    itemName={item.name}
+                    onChange={(quantity) => setQuantity(key, quantity)}
+                  />
                   <button className="table-action" type="button" aria-label={`Hapus ${item.name}`} onClick={() => removeItem(key)}><Trash2 size={13} /></button>
                 </div>
               </div>
