@@ -12,6 +12,7 @@ import {
   ReceiptText,
   Settings,
   ShoppingBag,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
@@ -34,6 +35,7 @@ const groups = [
     items: [
       { label: "Produk", href: "/dashboard/products", icon: ShoppingBag },
       { label: "Inventaris", href: "/dashboard/inventory", icon: Boxes },
+      { label: "Akun", href: "/dashboard/accounts", icon: UserRound },
       { label: "Pesanan", href: "/dashboard/orders", icon: ClipboardList },
       { label: "Pelanggan", href: "/dashboard/customers", icon: Users },
       { label: "Pembayaran", href: "/dashboard/payments", icon: CircleDollarSign },

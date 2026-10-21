@@ -1,4 +1,12 @@
-import type { ApiOrder, ApiUser, ApiProduct, ApiCategory, ApiProductPrice } from "./api";
+import type {
+  ApiCategory,
+  ApiInventoryAccount,
+  ApiInventorySlot,
+  ApiOrder,
+  ApiProduct,
+  ApiProductPrice,
+  ApiUser,
+} from "./api";
 import { cleanProductName, cleanSlotCopy, mapProductCategory } from "./product-mapper";
 import type {
   DashboardOrder,
@@ -211,6 +219,117 @@ export function mapApiVoucher(apiVoucher: Record<string, unknown>): Voucher {
         ? parsedEnd.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
         : "—",
     active: apiVoucher.active === true,
+  };
+}
+
+export type ManagedAccount = {
+  id: string;
+  productId: string;
+  productName: string;
+  label: string;
+  status: string;
+  expiresAt: string | null;
+  /** `null` berarti tanpa batas waktu; `0` berarti sudah kedaluwarsa. */
+  daysRemaining: number | null;
+  sharingLimit: number;
+  totalSlots: number;
+  availableSlots: number;
+  usedSlots: number;
+  remainingSlots: number;
+  assignedUsers: number;
+  otpConfigured: boolean;
+  needsReview: boolean;
+  sellable: boolean;
+};
+
+export type ManagedSlot = {
+  id: string;
+  productPriceId: string;
+  status: string;
+  name: string | null;
+  email: string | null;
+  orderId: string | null;
+  orderNumber: string | null;
+  /** Identitas user pemilik slot, dipakai untuk menggabungkan user yang sama. */
+  reservedBy: string | null;
+  paymentStatus: string | null;
+  activatedAt: string | null;
+  accessExpiresAt: string | null;
+  /** Sisa masa akses pembeli; `null` bila slot belum pernah aktif. */
+  daysRemaining: number | null;
+  reservedUntil: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+function daysUntil(value: string | null | undefined, now: Date): number | null {
+  if (!value) return null;
+  const expires = new Date(value);
+  if (Number.isNaN(expires.getTime())) return null;
+  return Math.max(0, Math.ceil((expires.getTime() - now.getTime()) / 86_400_000));
+}
+
+/**
+ * Normalisasi akun inventaris untuk halaman Manajemen akun. Backend NEC-96
+ * sudah mengirim field turunan; fallback lokal hanya untuk payload lama supaya
+ * tabel tidak menampilkan angka palsu saat field baru belum ada.
+ */
+export function mapApiInventoryAccountToManaged(
+  account: ApiInventoryAccount,
+  productName?: string,
+  now: Date = new Date(),
+): ManagedAccount {
+  const sharingLimit = account.sharing_limit ?? 1;
+  const totalSlots = account.total_slots ?? 0;
+  const availableSlots = account.available_slots ?? 0;
+  const usedSlots = account.used_slots ?? Math.max(totalSlots - availableSlots, 0);
+  const remainingSlots = account.remaining_slots ?? Math.max(sharingLimit - totalSlots, 0);
+  const expiresAt = account.expires_at ?? null;
+  const daysRemaining =
+    typeof account.days_remaining === "number" ? account.days_remaining : daysUntil(expiresAt, now);
+
+  return {
+    id: account.id,
+    productId: account.product_id,
+    productName: account.product?.name?.trim() || productName?.trim() || "Produk tidak dikenal",
+    label: (account.label ?? "").trim() || "Akun inventaris",
+    status: account.status,
+    expiresAt,
+    daysRemaining,
+    sharingLimit,
+    totalSlots,
+    availableSlots,
+    usedSlots,
+    remainingSlots,
+    assignedUsers: account.assigned_users ?? usedSlots,
+    otpConfigured: account.otp_configured === true,
+    // Akun lama di atas lima pengguna tetap ditandai meskipun backend lama
+    // belum mengirim `needs_review`.
+    needsReview: account.needs_review === true || sharingLimit > 5 || totalSlots > 5,
+    sellable: account.sellable ?? (account.status === "active" && (daysRemaining === null || daysRemaining > 0)),
+  };
+}
+
+/** Normalisasi assignment slot tanpa pernah menyentuh kredensial akun. */
+export function mapApiInventorySlotAssignment(slot: ApiInventorySlot, now: Date = new Date()): ManagedSlot {
+  const accessExpiresAt = slot.access_expires_at ?? null;
+  return {
+    id: slot.id,
+    productPriceId: slot.product_price_id,
+    status: slot.status,
+    name: slot.reserved_name?.trim() || null,
+    email: slot.reserved_email?.trim() || null,
+    orderId: slot.order_id ?? null,
+    orderNumber: slot.order_number ?? null,
+    reservedBy: slot.reserved_by ?? null,
+    paymentStatus: slot.payment_status ?? null,
+    activatedAt: slot.activated_at ?? null,
+    accessExpiresAt,
+    daysRemaining:
+      typeof slot.days_remaining === "number" ? slot.days_remaining : daysUntil(accessExpiresAt, now),
+    reservedUntil: slot.reserved_until ?? null,
+    createdAt: slot.created_at ?? null,
+    updatedAt: slot.updated_at ?? null,
   };
 }
 
