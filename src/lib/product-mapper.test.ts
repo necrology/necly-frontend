@@ -92,9 +92,35 @@ describe("mapApiProduct", () => {
       description: "Slot akun langganan untuk dipakai bersama.",
     });
 
-    expect(product.name).toBe("StreamFlix Keluarga");
+    expect(product.name).toBe("StreamFlix");
     expect(product.summary).toBe("Akses akun langganan untuk dipakai bersama.");
     expect(product.description).not.toMatch(/slot/i);
+  });
+
+  // NEC-95: kata "Family" juga label internal dan harus hilang dari judul
+  // layanan, termasuk saat digabung dengan label "Slot".
+  it("menghapus kata Family dan label slot dari nama produk", () => {
+    const product = mapApiProduct({
+      ...apiProduct,
+      name: "Spotify Premium Family - Slot Anggota",
+      description: "Slot Premium Family untuk anggota keluarga yang tinggal serumah.",
+    });
+
+    expect(product.name).toBe("Spotify Premium");
+    expect(product.summary).toBe("Akses Premium untuk anggota keluarga yang tinggal serumah.");
+    expect(product.name).not.toMatch(/family|slot/i);
+    expect(product.description).not.toMatch(/family|slot/i);
+  });
+
+  it("membersihkan brand Family dan frasa Family Sharing pada deskripsi", () => {
+    const product = mapApiProduct({
+      ...apiProduct,
+      name: "Apple Music Family - Slot Anggota",
+      description: "Slot anggota keluarga melalui Family Sharing agar biaya lebih hemat.",
+    });
+
+    expect(product.name).toBe("Apple Music");
+    expect(product.description).toBe("Akses anggota keluarga melalui berbagi keluarga agar biaya lebih hemat.");
   });
 
   it("membaca ketersediaan dari available_slots, bukan stock", () => {

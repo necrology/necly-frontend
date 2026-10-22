@@ -175,9 +175,14 @@ export default function AccountPage() {
         <span className="eyebrow">Akun saya</span>
         <h1 className="h1">Akun &amp; keamanan</h1>
         <p className="lede">Kelola kata sandi dan perangkat yang masih masuk ke akun Anda.</p>
-        <Link className="button button-secondary button-sm account-orders-link" href="/orders">
-          <ReceiptText size={15} aria-hidden="true" /> Pesanan saya
-        </Link>
+        <div className="account-head-links">
+          <Link className="button button-secondary button-sm account-orders-link" href="/orders">
+            <ReceiptText size={15} aria-hidden="true" /> Pesanan saya
+          </Link>
+          <Link className="button button-secondary button-sm" href="/otp">
+            <KeyRound size={15} aria-hidden="true" /> Ambil OTP akun
+          </Link>
+        </div>
       </header>
 
       <article className="card account-card">
@@ -202,7 +207,7 @@ export default function AccountPage() {
       <article className="card account-card">
         <h2 className="h3"><KeyRound size={16} aria-hidden="true" /> Ubah kata sandi</h2>
         <p className="muted small account-password-hint">
-          Masukkan kata sandi Anda saat ini untuk mengonfirmasi.
+          Masukkan kata sandi Anda saat ini untuk mengkonfirmasi.
           <br />
           Setelah tersimpan, semua perangkat lain akan keluar otomatis.
         </p>

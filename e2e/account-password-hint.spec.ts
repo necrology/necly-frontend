@@ -1,7 +1,7 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 // NEC-92: panduan pada card "Ubah kata sandi" tidak boleh memecah kata
-// "mengonfirmasi." ke baris berikutnya. Backend dimock penuh di browser.
+// "mengkonfirmasi." ke baris berikutnya. Backend dimock penuh di browser.
 function corsHeaders(route: Route) {
   return {
     "access-control-allow-origin": route.request().headers().origin ?? "*",
@@ -104,7 +104,7 @@ test("panduan ubah kata sandi tetap utuh di baris awal pada mobile", async ({ pa
   await expect(hint).toBeVisible();
 
   const fullText =
-    "Masukkan kata sandi Anda saat ini untuk mengonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.";
+    "Masukkan kata sandi Anda saat ini untuk mengkonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.";
 
   for (const width of [390, 375, 360]) {
     await page.setViewportSize({ width, height: 844 });
@@ -112,7 +112,7 @@ test("panduan ubah kata sandi tetap utuh di baris awal pada mobile", async ({ pa
     expect(lines, `paragraf panduan harus ter-render pada ${width}px`).not.toBeNull();
     expect(lines!.join(" "), `teks tidak boleh hilang pada ${width}px`).toBe(fullText);
     expect(lines![0], `kalimat pertama harus utuh pada ${width}px`).toBe(
-      "Masukkan kata sandi Anda saat ini untuk mengonfirmasi.",
+      "Masukkan kata sandi Anda saat ini untuk mengkonfirmasi.",
     );
     expect(lines![1], `kalimat kedua harus mulai di baris berikutnya pada ${width}px`).toMatch(
       /^Setelah tersimpan, semua perangkat lain/,
