@@ -1743,6 +1743,30 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .product-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .product-photo-actions .button { cursor: pointer; }
 .table-status-select { display: block; width: 124px; min-height: 30px; margin-top: 6px; padding: 4px 6px; font-size: 10px; }
+
+/* Fase 2 NEC-89 — status pembayaran/pengiriman dan pemilih akun. */
+.status-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.delivery-picker-list { display: grid; gap: 12px; margin-top: 14px; }
+.delivery-item { border: 1px solid var(--line); border-radius: 7px; padding: 14px; background: #fcfdff; }
+.delivery-item-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.account-choice-list { display: grid; gap: 8px; }
+.account-choice { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; background: #fff; cursor: pointer; }
+.account-choice:hover { border-color: var(--line-strong); background: var(--surface-2); }
+.account-choice input { width: 18px; height: 18px; accent-color: var(--blue); }
+.account-choice.disabled { opacity: .62; background: var(--surface-2); cursor: not-allowed; }
+.account-choice.selected { border-color: var(--sky); background: #f2f9ff; box-shadow: 0 0 0 3px rgb(14 165 233 / .1); }
+.account-meta { flex-wrap: wrap; gap: 3px 12px; font-size: 9px; }
+.delivery-picker-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.delivery-account-list { display: grid; gap: 8px; }
+.delivery-account-line { display: grid; gap: 3px; font-size: 10px; }
+.delivery-account-line > .badge { justify-self: start; }
+.delivery-account-line .table-secondary { font-size: 9px; }
+
+@media (max-width: 800px) {
+  .status-pair { grid-template-columns: 1fr; }
+  .delivery-picker-footer .button { flex: 1 1 150px; }
+}
+
 /* Halaman ambil OTP email akun (NEC-93). */
 .otp-page { padding: 56px 0 90px; display: grid; gap: 30px; }
 .otp-head { max-width: 720px; display: grid; gap: 12px; }
