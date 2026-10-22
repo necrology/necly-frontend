@@ -60,6 +60,17 @@ export type ApiInventoryAccount = {
   available_slots?: number;
   used_slots?: number;
   remaining_slots?: number;
+  /** Jumlah user unik yang memiliki slot pada akun ini. */
+  assigned_users?: number;
+  /**
+   * Sisa hari sampai `expires_at`. `null` berarti akun tanpa batas waktu dan
+   * `0` berarti sudah kedaluwarsa.
+   */
+  days_remaining?: number | null;
+  /** Apakah secret TOTP sudah tersimpan. Secret-nya sendiri tidak pernah dikirim. */
+  otp_configured?: boolean;
+  /** Akun lama dengan limit di atas lima pengguna; tidak boleh menambah slot. */
+  needs_review?: boolean;
   sellable?: boolean;
 };
 
@@ -74,10 +85,22 @@ export type ApiInventorySlot = {
   order_item_id?: string | null;
   order_id?: string | null;
   order_number?: string | null;
+  payment_status?: string | null;
   reserved_email?: string | null;
   reserved_name?: string | null;
+  activated_at?: string | null;
+  access_expires_at?: string | null;
+  /** Sisa masa akses pembeli; `null` bila slot belum aktif. */
+  days_remaining?: number | null;
   created_at?: string;
   updated_at?: string;
+};
+
+/** Kode TOTP aktif. Tidak pernah memuat secret maupun ciphertext. */
+export type ApiInventoryOTP = {
+  code: string;
+  expires_in: number;
+  period: number;
 };
 
 export interface AuthSessionResponse {
@@ -1041,6 +1064,13 @@ export const adminApi = {
   updateInventoryAccount: (id: string, data: Record<string, unknown>) =>
     apiRequest<ApiInventoryAccount>(`/admin/inventory/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
   // Assignment read-only: order/user yang memakai tiap slot, tanpa kredensial.
+  getInventoryAccount: (id: string) =>
+    apiRequest<ApiInventoryAccount>(`/admin/inventory/${encodeURIComponent(id)}`),
+  deleteInventoryAccount: (id: string) =>
+    apiRequest<{ message: string }>(`/admin/inventory/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  // OTP TOTP dibuat di server. Respons hanya berisi kode aktif, bukan secret.
+  generateInventoryOTP: (id: string) =>
+    apiRequest<ApiInventoryOTP>(`/admin/inventory/${encodeURIComponent(id)}/otp`, { method: "POST" }),
   listInventorySlots: (id: string, params?: { page?: number; per_page?: number; product_price_id?: string; status?: string }) =>
     apiRequest<AdminInventorySlotListResponse>(`/admin/inventory/${encodeURIComponent(id)}/slots${toQuery(params)}`),
   // Kapasitas jual sebuah paket. Inilah yang membuat produk bisa dibeli: katalog

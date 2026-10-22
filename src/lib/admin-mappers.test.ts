@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   mapApiAuditLog,
   mapApiDashboard,
+  mapApiInventoryAccountToManaged,
+  mapApiInventorySlotAssignment,
   mapApiOrderToDashboardOrder,
   mapApiUserToCustomer,
   mapApiProductToSubscriptionProduct,
 } from "./admin-mappers";
 import { ORDER_STATUS_OPTIONS, orderStatusLabel } from "./order-status";
-import type { ApiOrder, ApiUser } from "./api";
+import type { ApiInventoryAccount, ApiInventorySlot, ApiOrder, ApiUser } from "./api";
 
 const D0 = {
   total_users: 2,
@@ -262,5 +264,91 @@ describe("kontrak Coming Soon dan foto produk admin (NEC-89)", () => {
       imageUrl: "https://cdn.necly.id/canva.jpg",
       stock: 2,
     });
+  });
+});
+
+describe("kontrak Manajemen akun Fase 2 NEC-96", () => {
+  const now = new Date("2026-10-22T00:00:00Z");
+
+  it("memakai field turunan backend untuk masa aktif, sharing, pengguna, dan OTP", () => {
+    const account: ApiInventoryAccount = {
+      id: "acc-1",
+      product_id: "prd-1",
+      product: { id: "prd-1", name: "Netflix Premium", slug: "netflix-premium", description: "Streaming" },
+      label: "Akun utama",
+      status: "active",
+      expires_at: "2026-11-01T00:00:00Z",
+      days_remaining: 10,
+      sharing_limit: 5,
+      total_slots: 4,
+      available_slots: 2,
+      used_slots: 2,
+      remaining_slots: 1,
+      assigned_users: 2,
+      otp_configured: true,
+      needs_review: false,
+      sellable: true,
+    };
+
+    expect(mapApiInventoryAccountToManaged(account, undefined, now)).toMatchObject({
+      productName: "Netflix Premium",
+      daysRemaining: 10,
+      sharingLimit: 5,
+      usedSlots: 2,
+      remainingSlots: 1,
+      assignedUsers: 2,
+      otpConfigured: true,
+      needsReview: false,
+      sellable: true,
+    });
+  });
+
+  it("menandai akun lama di atas lima pengguna dan menghitung sisa hari bila field turunan absen", () => {
+    const account: ApiInventoryAccount = {
+      id: "acc-legacy",
+      product_id: "prd-1",
+      label: "Akun lama",
+      status: "active",
+      expires_at: "2026-10-25T00:00:00Z",
+      sharing_limit: 6,
+      total_slots: 6,
+      available_slots: 0,
+      used_slots: 6,
+      remaining_slots: 0,
+    };
+
+    const mapped = mapApiInventoryAccountToManaged(account, "Produk cadangan", now);
+    expect(mapped.productName).toBe("Produk cadangan");
+    expect(mapped.daysRemaining).toBe(3);
+    expect(mapped.needsReview).toBe(true);
+    expect(mapped.otpConfigured).toBe(false);
+    expect(mapped.assignedUsers).toBe(6);
+  });
+
+  it("memetakan assignment slot dengan masa akses pembeli tanpa kredensial", () => {
+    const slot: ApiInventorySlot = {
+      id: "slot-1",
+      inventory_account_id: "acc-1",
+      product_price_id: "price-1",
+      status: "used",
+      order_id: "order-1",
+      order_number: "ORD-001",
+      payment_status: "paid",
+      reserved_name: "Budi Pelanggan",
+      reserved_email: "budi@example.test",
+      activated_at: "2026-10-01T00:00:00Z",
+      access_expires_at: "2026-10-31T00:00:00Z",
+      days_remaining: 9,
+    };
+
+    expect(mapApiInventorySlotAssignment(slot, now)).toMatchObject({
+      name: "Budi Pelanggan",
+      email: "budi@example.test",
+      orderNumber: "ORD-001",
+      paymentStatus: "paid",
+      accessExpiresAt: "2026-10-31T00:00:00Z",
+      daysRemaining: 9,
+    });
+    expect(mapApiInventorySlotAssignment(slot, now)).not.toHaveProperty("credentials");
   });
 });
