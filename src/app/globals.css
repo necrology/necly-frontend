@@ -291,7 +291,11 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .summary-total { border-top: 1px solid var(--line); padding-top: 15px; color: var(--ink); font-size: 14px; font-weight: 650; }
 .voucher-form { display: grid; grid-template-columns: 1fr auto; gap: 7px; }
 .form-card { padding: 28px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.form-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 16px 18px; }
+.form-grid .field-full,
+.form-grid .field-wide { grid-column: 1 / -1; }
+.form-grid textarea { min-height: 96px; resize: vertical; }
+.form-grid .field { min-width: 0; }
 .form-section + .form-section { margin-top: 34px; padding-top: 31px; border-top: 1px solid var(--line); }
 .form-section h2 { margin: 0 0 18px; font-size: 1.1rem; font-weight: 600; }
 .demo-banner { display: flex; align-items: flex-start; gap: 11px; border: 1px solid #cce3f6; border-radius: 5px; padding: 13px 14px; color: #175c8e; background: #edf7ff; font-size: 11px; line-height: 1.55; }
@@ -389,7 +393,10 @@ body:has(.auth-form-login) { overflow: hidden; }
 .dashboard-layout.collapsed { --sidebar-width: 76px; }
 .dashboard-sidebar .brand { min-height: 70px; padding: 0 20px; border-bottom: 1px solid var(--line); }
 .dashboard-sidebar .brand img { flex: 0 0 auto; }
-.dashboard-nav-close { display: none; }
+/* Tombol X hanya untuk drawer mobile. Selector harus lebih spesifik daripada
+   `.table-action` (yang menulis display: inline-grid) agar tidak selalu tampil
+   di desktop dan terlihat tidak bereaksi. */
+.dashboard-sidebar .dashboard-nav-close { display: none; }
 .dashboard-nav { display: grid; gap: 3px; overflow-y: auto; padding: 17px 12px; }
 .dashboard-nav-label { padding: 13px 10px 6px; color: var(--faint); font-size: 9px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; white-space: nowrap; }
 .dashboard-nav-link { min-height: 41px; display: flex; align-items: center; gap: 11px; border-radius: 5px; padding: 0 11px; color: var(--muted); font-size: 11px; font-weight: 550; white-space: nowrap; }
@@ -522,7 +529,7 @@ body:has(.auth-form-login) { overflow: hidden; }
   .dashboard-layout { display: block; }
   .dashboard-sidebar { position: fixed; left: 0; width: 236px; transform: translateX(-100%); transition: transform 180ms ease; box-shadow: 20px 0 60px rgb(6 27 49 / .16); }
   .dashboard-layout.mobile-open .dashboard-sidebar { transform: translateX(0); }
-  .dashboard-nav-close { display: inline-grid; }
+  .dashboard-sidebar .dashboard-nav-close { display: inline-grid; }
   .dashboard-layout.collapsed .dashboard-sidebar { width: 236px; }
   .collapsed .dashboard-sidebar .nav-copy, .collapsed .dashboard-sidebar .dashboard-nav-label, .collapsed .dashboard-sidebar .brand-copy { display: inline; }
   .collapsed .dashboard-nav-link { justify-content: flex-start; padding: 0 11px; }
@@ -1802,6 +1809,37 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .product-photo-controls { display: grid; flex: 1; gap: 8px; min-width: 220px; }
 .product-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .product-photo-actions .button { cursor: pointer; }
+.product-icon-frame { width: 72px; height: 52px; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid var(--line); border-radius: 7px; background: #f7f9fb; }
+.product-icon-frame .product-icon-image { max-width: 100%; max-height: 100%; object-fit: contain; }
+.icon-cell { display: flex; align-items: center; justify-content: center; width: 44px; height: 32px; }
+.icon-cell .product-icon-image { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* ---------- Modal bersama dashboard ---------- */
+.modal-overlay { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; padding: 16px; background: rgb(6 27 49 / .56); }
+.modal-panel { width: min(100%, 680px); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 28px 80px rgb(6 27 49 / .28); }
+.modal-panel.modal-sm { width: min(100%, 440px); }
+.modal-panel.modal-lg { width: min(100%, 820px); }
+.modal-header { flex: 0 0 auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; border-bottom: 1px solid var(--line); padding: 17px 20px; }
+.modal-title { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: -.02em; }
+.modal-description { margin: 4px 0 0; color: var(--muted); font-size: 11px; }
+.modal-close { flex: 0 0 auto; }
+.modal-body { min-height: 0; overflow-y: auto; padding: 18px 20px 20px; overscroll-behavior: contain; }
+.modal-body > .form-grid { padding: 0 !important; }
+.modal-footer { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--line); padding: 13px 20px; background: #fbfcfd; }
+.modal-footer .button { min-height: 38px; }
+body.modal-open { overflow: hidden; }
+@media (max-width: 800px) {
+  .modal-overlay { padding: 0; align-items: end; }
+  .modal-panel, .modal-panel.modal-sm, .modal-panel.modal-lg { width: 100%; max-height: calc(100dvh - 16px); border-radius: 16px 16px 0 0; }
+}
+@media (max-width: 580px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .field-full,
+  .form-grid .field-wide { grid-column: auto; }
+  .modal-header, .modal-body { padding-inline: 16px; }
+  .modal-footer { display: grid; grid-template-columns: 1fr; padding: 12px 16px; }
+  .modal-footer .button { width: 100%; }
+}
 .table-status-select { display: block; width: 124px; min-height: 30px; margin-top: 6px; padding: 4px 6px; font-size: 10px; }
 
 /* Fase 2 NEC-89 — status pembayaran/pengiriman dan pemilih akun. */

@@ -239,6 +239,12 @@ export type ManagedAccount = {
   remainingSlots: number;
   assignedUsers: number;
   otpConfigured: boolean;
+  /** Email akun dari API, aman ditampilkan (bukan password). */
+  accountEmail: string | null;
+  /** Status inbox OTP Gmail: direct = siap, central = mailbox pusat, none = belum. */
+  otpInboxConfigured: boolean;
+  otpInboxSource: "direct" | "central" | "none";
+  mailboxAppPasswordConfigured: boolean;
   needsReview: boolean;
   sellable: boolean;
 };
@@ -288,6 +294,13 @@ export function mapApiInventoryAccountToManaged(
   const expiresAt = account.expires_at ?? null;
   const daysRemaining =
     typeof account.days_remaining === "number" ? account.days_remaining : daysUntil(expiresAt, now);
+  const rawInboxSource = account.otp_inbox_source;
+  const otpInboxSource: ManagedAccount["otpInboxSource"] =
+    rawInboxSource === "direct" || rawInboxSource === "central" || rawInboxSource === "none"
+      ? rawInboxSource
+      : account.otp_inbox_configured === true
+        ? "direct"
+        : "none";
 
   return {
     id: account.id,
@@ -304,6 +317,10 @@ export function mapApiInventoryAccountToManaged(
     remainingSlots,
     assignedUsers: account.assigned_users ?? usedSlots,
     otpConfigured: account.otp_configured === true,
+    accountEmail: account.account_email?.trim() || null,
+    otpInboxConfigured: otpInboxSource !== "none",
+    otpInboxSource,
+    mailboxAppPasswordConfigured: account.mailbox_app_password_configured === true,
     // Akun lama di atas lima pengguna tetap ditandai meskipun backend lama
     // belum mengirim `needs_review`.
     needsReview: account.needs_review === true || sharingLimit > 5 || totalSlots > 5,

@@ -3,6 +3,8 @@ export const PRODUCT_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as 
 export const PRODUCT_IMAGE_ACCEPT = PRODUCT_IMAGE_TYPES.join(",");
 export const PRODUCT_IMAGE_MAX_DIMENSION = 1000;
 export const PRODUCT_IMAGE_QUALITY = 0.82;
+export const PRODUCT_ICON_MAX_DIMENSION = 256;
+export const PRODUCT_ICON_QUALITY = 0.8;
 
 export type ProductImageLike = { type: string; size: number };
 
@@ -34,6 +36,18 @@ export function safeProductImageSrc(value?: string | null): string | undefined {
 
 export function isHttpsImageUrl(value: string) {
   return /^https:\/\/[^\s]+$/i.test(value.trim());
+}
+
+/** Path aset publik yang aman, mis. `/design-assets/logo-netflix.png`. */
+export function isPublicAssetPath(value: string) {
+  return /^\/(?!\/)[^\s]*$/.test(value.trim());
+}
+
+/** Sumber icon boleh URL https, path aset publik, atau data URL hasil kompresi. */
+export function isProductIconInput(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return isHttpsImageUrl(trimmed) || isPublicAssetPath(trimmed) || Boolean(safeProductImageSrc(trimmed));
 }
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -82,4 +96,35 @@ export async function compressProductImage(file: File): Promise<string> {
   const outputType = file.type === "image/png" ? "image/webp" : file.type;
   const compressed = canvas.toDataURL(outputType, PRODUCT_IMAGE_QUALITY);
   return compressed.startsWith("data:image/") ? compressed : original;
+}
+
+/**
+ * Kompres icon produk di browser: sisi terpanjang maksimal 256 px dan
+ * kualitas ~0,8. PNG/JPG diubah ke WebP agar payload `icon_url` tetap kecil
+ * (backend membatasi 512 KB), sedangkan WebP dipertahankan.
+ */
+export async function compressProductIcon(file: File): Promise<string> {
+  const invalid = validateProductImageFile(file);
+  if (invalid) throw new Error(invalid);
+
+  const original = await readFileAsDataUrl(file);
+  const image = await loadImage(original);
+  const longestSide = Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height);
+  if (!longestSide) throw new Error("Dimensi icon tidak valid.");
+
+  const scale = Math.min(1, PRODUCT_ICON_MAX_DIMENSION / longestSide);
+  const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+  const height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) return original;
+  context.drawImage(image, 0, 0, width, height);
+
+  // PNG dan JPG menghasilkan WebP; WebP tetap WebP. Hasilnya selalu data URL
+  // yang lolos `safeProductImageSrc`.
+  const compressed = canvas.toDataURL("image/webp", PRODUCT_ICON_QUALITY);
+  return compressed.startsWith("data:image/webp") ? compressed : original;
 }

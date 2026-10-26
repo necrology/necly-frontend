@@ -1,16 +1,25 @@
 "use client";
 
-import { Edit3, Eye, Plus, Search, Trash2, Upload, X } from "lucide-react";
+import { Edit3, Eye, Plus, Search, Trash2, Upload } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { Modal } from "@/components/modal";
 import { PageHeader } from "@/components/page-header";
+import { ProductIcon } from "@/components/product-icon";
 import { ProductPhoto } from "@/components/product-photo";
 import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
 import { formatIDR } from "@/lib/money";
 import { ApiError, adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { mapApiProductToSubscriptionProduct } from "@/lib/admin-mappers";
-import { PRODUCT_IMAGE_ACCEPT, compressProductImage, isHttpsImageUrl, validateProductImageFile } from "@/lib/product-image";
+import {
+  PRODUCT_IMAGE_ACCEPT,
+  compressProductIcon,
+  compressProductImage,
+  isHttpsImageUrl,
+  isProductIconInput,
+  validateProductImageFile,
+} from "@/lib/product-image";
 import { productStatus, productStatusPayload, type ProductStatus } from "@/lib/product-status";
 import type { SubscriptionProduct } from "@/lib/types";
 import type { ApiProduct } from "@/lib/api";
@@ -35,6 +44,10 @@ type ProductForm = {
   imageUrlInput: string;
   photoMode: PhotoMode;
   photoValue?: string;
+  iconUrl?: string;
+  iconUrlInput: string;
+  iconMode: PhotoMode;
+  iconValue?: string;
 };
 
 function slugify(value: string) {
@@ -57,6 +70,7 @@ export default function DashboardProductsPage() {
   const [form, setForm] = useState<ProductForm | null>(null);
   const [formError, setFormError] = useState("");
   const [photoError, setPhotoError] = useState("");
+  const [iconError, setIconError] = useState("");
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
@@ -137,6 +151,7 @@ export default function DashboardProductsPage() {
   const openCreate = () => {
     setFormError("");
     setPhotoError("");
+    setIconError("");
     setNotice("");
     setForm({
       mode: "create",
@@ -147,12 +162,15 @@ export default function DashboardProductsPage() {
       status: "Aktif",
       imageUrlInput: "",
       photoMode: "keep",
+      iconUrlInput: "",
+      iconMode: "keep",
     });
   };
 
   const openEdit = (product: SubscriptionProduct) => {
     setFormError("");
     setPhotoError("");
+    setIconError("");
     setNotice("");
     setForm({
       mode: "edit",
@@ -165,6 +183,9 @@ export default function DashboardProductsPage() {
       imageUrl: product.imageUrl,
       imageUrlInput: product.imageUrl && isHttpsImageUrl(product.imageUrl) ? product.imageUrl : "",
       photoMode: "keep",
+      iconUrl: product.iconUrl,
+      iconUrlInput: product.iconUrl && !product.iconUrl.startsWith("data:") ? product.iconUrl : "",
+      iconMode: "keep",
     });
   };
 
@@ -181,6 +202,22 @@ export default function DashboardProductsPage() {
       setForm((current) => current ? { ...current, photoMode: "replace", photoValue: compressed, imageUrlInput: "" } : current);
     } catch (failure) {
       setPhotoError(failure instanceof Error ? failure.message : "Foto gagal diproses.");
+    }
+  };
+
+  const handleIconFile = async (file: File | undefined) => {
+    if (!file) return;
+    setIconError("");
+    const invalid = validateProductImageFile(file);
+    if (invalid) {
+      setIconError(invalid.replace("foto", "icon"));
+      return;
+    }
+    try {
+      const compressed = await compressProductIcon(file);
+      setForm((current) => current ? { ...current, iconMode: "replace", iconValue: compressed, iconUrlInput: "" } : current);
+    } catch (failure) {
+      setIconError(failure instanceof Error ? failure.message : "Icon gagal diproses.");
     }
   };
 
@@ -222,6 +259,23 @@ export default function DashboardProductsPage() {
       }
     }
 
+    const typedIconUrl = form.iconUrlInput.trim();
+    if (typedIconUrl && !isProductIconInput(typedIconUrl)) {
+      setFormError("URL icon harus diawali https:// atau berupa path /design-assets/....");
+      return;
+    }
+
+    let iconUrlToSend: string | undefined;
+    if (form.iconMode === "remove") {
+      iconUrlToSend = "";
+    } else if (form.iconMode === "replace") {
+      iconUrlToSend = form.iconValue ?? (isProductIconInput(typedIconUrl) ? typedIconUrl : undefined);
+      if (!iconUrlToSend) {
+        setFormError("Pilih file icon atau isi URL/path icon yang valid.");
+        return;
+      }
+    }
+
     setSubmitting(true);
     try {
       const payload: Record<string, unknown> = {
@@ -231,9 +285,10 @@ export default function DashboardProductsPage() {
         description: form.description.trim(),
         ...productStatusPayload(form.status),
       };
-      // Saat edit tanpa mengganti foto, `image_url` tidak dikirim agar backend
-      // tidak menimpa foto lama. Hapus foto dikirim sebagai string kosong.
+      // Saat edit tanpa mengganti foto/icon, field terkait tidak dikirim agar
+      // backend tidak menimpa nilai lama. Hapus dikirim sebagai string kosong.
       if (imageUrlToSend !== undefined) payload.image_url = imageUrlToSend;
+      if (iconUrlToSend !== undefined) payload.icon_url = iconUrlToSend;
 
       if (form.mode === "create") {
         await adminApi.createProduct(payload);
@@ -296,6 +351,14 @@ export default function DashboardProductsPage() {
         : form.imageUrl
     : undefined;
 
+  const iconSrc = form
+    ? form.iconMode === "remove"
+      ? undefined
+      : form.iconMode === "replace"
+        ? form.iconValue ?? (isProductIconInput(form.iconUrlInput) ? form.iconUrlInput.trim() : undefined)
+        : form.iconUrl
+    : undefined;
+
   return (
     <div className="dashboard-page">
       <PageHeader
@@ -315,133 +378,203 @@ export default function DashboardProductsPage() {
       {notice && <div className="notice success" role="status">{notice}</div>}
       {statusError && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{statusError}</div>}
       {form && (
-        <form className="card panel" onSubmit={submit}>
-          <div className="panel-header">
-            <h2 className="panel-title">{form.mode === "create" ? "Produk baru" : `Edit ${form.name}`}</h2>
-            <button className="table-action" type="button" onClick={() => setForm(null)} aria-label="Tutup formulir">
-              <X size={13} />
-            </button>
-          </div>
-          <div className="form-grid" style={{ padding: 18 }}>
-            <div className="field">
-              <label className="label" htmlFor="p-name">Nama produk</label>
-              <input
-                className="input"
-                id="p-name"
-                value={form.name}
-                onChange={(event) => setForm({ ...form, name: event.target.value })}
-                required
-              />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="p-slug">Slug</label>
-              <input
-                className="input"
-                id="p-slug"
-                value={form.slug}
-                onChange={(event) => setForm({ ...form, slug: event.target.value })}
-                placeholder={slugify(form.name) || "slug-produk"}
-              />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="p-category">Kategori</label>
-              <SearchableSelect
-                inputId="p-category"
-                ariaLabel="Kategori"
-                value={form.categoryId}
-                onChange={(value) => setForm({ ...form, categoryId: value })}
-                placeholder="Pilih kategori"
-                options={categoryOptions.map((option) => ({ value: option.id, label: option.name }))}
-              />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="p-status">Status produk</label>
-              <SearchableSelect
-                inputId="p-status"
-                ariaLabel="Status produk"
-                value={form.status}
-                onChange={(value) => setForm({ ...form, status: value as ProductStatus })}
-                options={statusOptions.map((status) => ({ value: status, label: status }))}
-              />
-              <span className="table-secondary">Coming Soon tampil di katalog, tetapi tidak bisa dipesan.</span>
-            </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label className="label" htmlFor="p-description">Deskripsi</label>
-              <textarea
-                className="input"
-                id="p-description"
-                rows={3}
-                value={form.description}
-                onChange={(event) => setForm({ ...form, description: event.target.value })}
-              />
-            </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <span className="label">Foto produk</span>
-              <div className="product-photo-field">
-                <div className="product-photo-frame">
-                  <ProductPhoto src={photoSrc} alt={`Pratinjau foto ${form.name || "produk"}`} fallbackSrc={fallbackPhoto} />
-                </div>
-                <div className="product-photo-controls">
-                  <div className="product-photo-actions">
-                    <input
-                      className="sr-only"
-                      id="p-photo"
-                      type="file"
-                      accept={PRODUCT_IMAGE_ACCEPT}
-                      aria-label="Pilih foto produk"
-                      onChange={(event) => {
-                        void handlePhotoFile(event.target.files?.[0]);
-                        event.target.value = "";
-                      }}
-                    />
-                    <label className="button button-secondary button-sm" htmlFor="p-photo"><Upload size={13} /> Pilih file</label>
-                    {(photoSrc || form.imageUrl) && (
-                      <button
-                        className="button button-secondary button-sm"
-                        type="button"
-                        onClick={() => setForm({ ...form, photoMode: "remove", photoValue: undefined, imageUrlInput: "" })}
-                      >
-                        <Trash2 size={13} /> Hapus foto
-                      </button>
-                    )}
-                  </div>
-                  <p className="table-secondary" style={{ margin: 0 }}>
-                    JPG, PNG, atau WebP maksimal 2 MB. Foto dikompres otomatis di browser (sisi terpanjang 1000 px).
-                  </p>
-                  {form.photoMode === "remove" && <p className="table-secondary" style={{ margin: 0 }}>Foto akan dihapus saat produk disimpan.</p>}
-                  {photoError && <p className="field-error" role="alert" style={{ margin: 0 }}>{photoError}</p>}
-                </div>
-              </div>
-            </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label className="label" htmlFor="p-image-url">URL foto (opsional)</label>
-              <input
-                className="input"
-                id="p-image-url"
-                type="url"
-                inputMode="url"
-                placeholder="https://contoh.com/foto-produk.jpg"
-                value={form.imageUrlInput}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setForm({
-                    ...form,
-                    imageUrlInput: value,
-                    photoMode: value.trim() ? "replace" : "keep",
-                    photoValue: undefined,
-                  });
-                }}
-              />
-              <span className="table-secondary">Gunakan URL https:// bila foto sudah dihosting. Kosongkan bila tidak ingin mengganti foto.</span>
-            </div>
-            {formError && <div className="field" style={{ gridColumn: "1 / -1", color: "var(--danger)" }} role="alert">{formError}</div>}
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <button className="button button-primary" type="submit" style={{ width: "100%" }} disabled={submitting}>
+        <Modal
+          title={form.mode === "create" ? "Produk baru" : `Edit ${form.name}`}
+          description="Lengkapi data produk, foto, dan icon yang tampil di katalog."
+          onClose={() => setForm(null)}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={() => setForm(null)} disabled={submitting}>
+                Batal
+              </button>
+              <button className="button button-primary" type="submit" form="product-form" disabled={submitting}>
                 {submitting ? "Menyimpan…" : "Simpan produk"}
               </button>
+            </>
+          }
+        >
+          <form id="product-form" onSubmit={submit} aria-label={form.mode === "create" ? "Form produk baru" : "Form edit produk"}>
+            <div className="form-grid">
+              <div className="field">
+                <label className="label" htmlFor="p-name">Nama produk</label>
+                <input
+                  className="input"
+                  id="p-name"
+                  value={form.name}
+                  onChange={(event) => setForm({ ...form, name: event.target.value })}
+                  required
+                />
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="p-slug">Slug</label>
+                <input
+                  className="input"
+                  id="p-slug"
+                  value={form.slug}
+                  onChange={(event) => setForm({ ...form, slug: event.target.value })}
+                  placeholder={slugify(form.name) || "slug-produk"}
+                />
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="p-category">Kategori</label>
+                <SearchableSelect
+                  inputId="p-category"
+                  ariaLabel="Kategori"
+                  value={form.categoryId}
+                  onChange={(value) => setForm({ ...form, categoryId: value })}
+                  placeholder="Pilih kategori"
+                  options={categoryOptions.map((option) => ({ value: option.id, label: option.name }))}
+                />
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="p-status">Status produk</label>
+                <SearchableSelect
+                  inputId="p-status"
+                  ariaLabel="Status produk"
+                  value={form.status}
+                  onChange={(value) => setForm({ ...form, status: value as ProductStatus })}
+                  options={statusOptions.map((status) => ({ value: status, label: status }))}
+                />
+                <span className="table-secondary">Coming Soon tampil di katalog, tetapi tidak bisa dipesan.</span>
+              </div>
+              <div className="field field-full">
+                <label className="label" htmlFor="p-description">Deskripsi</label>
+                <textarea
+                  className="input"
+                  id="p-description"
+                  rows={3}
+                  value={form.description}
+                  onChange={(event) => setForm({ ...form, description: event.target.value })}
+                />
+              </div>
+              <div className="field field-full">
+                <span className="label">Foto produk</span>
+                <div className="product-photo-field">
+                  <div className="product-photo-frame">
+                    <ProductPhoto src={photoSrc} alt={`Pratinjau foto ${form.name || "produk"}`} fallbackSrc={fallbackPhoto} />
+                  </div>
+                  <div className="product-photo-controls">
+                    <div className="product-photo-actions">
+                      <input
+                        className="sr-only"
+                        id="p-photo"
+                        type="file"
+                        accept={PRODUCT_IMAGE_ACCEPT}
+                        aria-label="Pilih foto produk"
+                        onChange={(event) => {
+                          void handlePhotoFile(event.target.files?.[0]);
+                          event.target.value = "";
+                        }}
+                      />
+                      <label className="button button-secondary button-sm" htmlFor="p-photo"><Upload size={13} /> Pilih file</label>
+                      {(photoSrc || form.imageUrl) && (
+                        <button
+                          className="button button-secondary button-sm"
+                          type="button"
+                          onClick={() => setForm({ ...form, photoMode: "remove", photoValue: undefined, imageUrlInput: "" })}
+                        >
+                          <Trash2 size={13} /> Hapus foto
+                        </button>
+                      )}
+                    </div>
+                    <p className="table-secondary" style={{ margin: 0 }}>
+                      JPG, PNG, atau WebP maksimal 2 MB. Foto dikompres otomatis di browser (sisi terpanjang 1000 px).
+                    </p>
+                    {form.photoMode === "remove" && <p className="table-secondary" style={{ margin: 0 }}>Foto akan dihapus saat produk disimpan.</p>}
+                    {photoError && <p className="field-error" role="alert" style={{ margin: 0 }}>{photoError}</p>}
+                  </div>
+                </div>
+              </div>
+              <div className="field field-full">
+                <label className="label" htmlFor="p-image-url">URL foto (opsional)</label>
+                <input
+                  className="input"
+                  id="p-image-url"
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://contoh.com/foto-produk.jpg"
+                  value={form.imageUrlInput}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setForm({
+                      ...form,
+                      imageUrlInput: value,
+                      photoMode: value.trim() ? "replace" : "keep",
+                      photoValue: undefined,
+                    });
+                  }}
+                />
+                <span className="table-secondary">Gunakan URL https:// bila foto sudah dihosting. Kosongkan bila tidak ingin mengganti foto.</span>
+              </div>
+              <div className="field field-full">
+                <span className="label">Icon produk</span>
+                <div className="product-photo-field">
+                  <div className="product-icon-frame">
+                    <ProductIcon
+                      iconUrl={iconSrc}
+                      name={form.name || "produk"}
+                      width={64}
+                      height={44}
+                      fallback={<span className="table-secondary">Belum ada icon</span>}
+                    />
+                  </div>
+                  <div className="product-photo-controls">
+                    <div className="product-photo-actions">
+                      <input
+                        className="sr-only"
+                        id="p-icon"
+                        type="file"
+                        accept={PRODUCT_IMAGE_ACCEPT}
+                        aria-label="Pilih icon produk"
+                        onChange={(event) => {
+                          void handleIconFile(event.target.files?.[0]);
+                          event.target.value = "";
+                        }}
+                      />
+                      <label className="button button-secondary button-sm" htmlFor="p-icon"><Upload size={13} /> Pilih icon</label>
+                      {(iconSrc || form.iconUrl) && (
+                        <button
+                          className="button button-secondary button-sm"
+                          type="button"
+                          onClick={() => setForm({ ...form, iconMode: "remove", iconValue: undefined, iconUrlInput: "" })}
+                        >
+                          <Trash2 size={13} /> Hapus icon
+                        </button>
+                      )}
+                    </div>
+                    <p className="table-secondary" style={{ margin: 0 }}>
+                      JPG, PNG, atau WebP maksimal 2 MB. Icon dikompres ke sisi terpanjang 256 px (WebP) agar ringan.
+                    </p>
+                    {form.iconMode === "remove" && <p className="table-secondary" style={{ margin: 0 }}>Icon akan dihapus saat produk disimpan.</p>}
+                    {iconError && <p className="field-error" role="alert" style={{ margin: 0 }}>{iconError}</p>}
+                  </div>
+                </div>
+              </div>
+              <div className="field field-full">
+                <label className="label" htmlFor="p-icon-url">URL atau path icon (opsional)</label>
+                <input
+                  className="input"
+                  id="p-icon-url"
+                  type="text"
+                  inputMode="url"
+                  placeholder="https://contoh.com/icon.webp atau /design-assets/logo.png"
+                  value={form.iconUrlInput}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setForm({
+                      ...form,
+                      iconUrlInput: value,
+                      iconMode: value.trim() ? "replace" : "keep",
+                      iconValue: undefined,
+                    });
+                  }}
+                />
+                <span className="table-secondary">Kosongkan bila tidak ingin mengganti icon. Gunakan https:// atau path aset publik.</span>
+              </div>
+              {formError && <div className="field field-full" style={{ color: "var(--danger)" }} role="alert">{formError}</div>}
             </div>
-          </div>
-        </form>
+          </form>
+        </Modal>
       )}
       <div className="toolbar">
         <div className="input-wrap">
@@ -471,6 +604,7 @@ export default function DashboardProductsPage() {
             <thead>
               <tr>
                 <th>Foto</th>
+                <th>Icon</th>
                 <th>Produk</th>
                 <th>Status</th>
                 <th>Kategori</th>
@@ -482,7 +616,7 @@ export default function DashboardProductsPage() {
             </thead>
             <tbody>
               {rows.length === 0 && !loading ? (
-                <tr><td colSpan={8} className="muted" style={{ textAlign: "center" }}>Belum ada produk akun sharing.</td></tr>
+                <tr><td colSpan={9} className="muted" style={{ textAlign: "center" }}>Belum ada produk akun sharing.</td></tr>
               ) : rows.map((product) => {
                 const status = productStatus(product);
                 return (
@@ -494,6 +628,17 @@ export default function DashboardProductsPage() {
                         alt={`Foto ${product.name}`}
                         fallbackSrc={fallbackPhoto}
                       />
+                    </td>
+                    <td>
+                      <span className="icon-cell">
+                        <ProductIcon
+                          iconUrl={product.iconUrl}
+                          name={product.name}
+                          width={40}
+                          height={28}
+                          fallback={<span className="table-secondary">—</span>}
+                        />
+                      </span>
                     </td>
                     <td>
                       <span className="table-primary">{product.name}</span>

@@ -288,6 +288,10 @@ describe("kontrak Manajemen akun Fase 2 NEC-96", () => {
       remaining_slots: 1,
       assigned_users: 2,
       otp_configured: true,
+      account_email: "akun-utama@necly.test",
+      otp_inbox_configured: true,
+      otp_inbox_source: "central",
+      mailbox_app_password_configured: true,
       needs_review: false,
       sellable: true,
     };
@@ -300,6 +304,10 @@ describe("kontrak Manajemen akun Fase 2 NEC-96", () => {
       remainingSlots: 1,
       assignedUsers: 2,
       otpConfigured: true,
+      accountEmail: "akun-utama@necly.test",
+      otpInboxConfigured: true,
+      otpInboxSource: "central",
+      mailboxAppPasswordConfigured: true,
       needsReview: false,
       sellable: true,
     });
@@ -324,6 +332,9 @@ describe("kontrak Manajemen akun Fase 2 NEC-96", () => {
     expect(mapped.daysRemaining).toBe(3);
     expect(mapped.needsReview).toBe(true);
     expect(mapped.otpConfigured).toBe(false);
+    expect(mapped.accountEmail).toBeNull();
+    expect(mapped.otpInboxConfigured).toBe(false);
+    expect(mapped.otpInboxSource).toBe("none");
     expect(mapped.assignedUsers).toBe(6);
   });
 

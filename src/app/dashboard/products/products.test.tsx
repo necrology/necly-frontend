@@ -1,14 +1,23 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { chooseSearchableOption, searchableSelectedText } from "@/test/searchable-select";
 
-const { listProductsMock, listCategoriesMock, updateProductMock, createProductMock, bootstrapAuthMock, compressProductImageMock } = vi.hoisted(() => ({
+const {
+  listProductsMock,
+  listCategoriesMock,
+  updateProductMock,
+  createProductMock,
+  bootstrapAuthMock,
+  compressProductImageMock,
+  compressProductIconMock,
+} = vi.hoisted(() => ({
   listProductsMock: vi.fn(),
   listCategoriesMock: vi.fn(),
   updateProductMock: vi.fn(),
   createProductMock: vi.fn(),
   bootstrapAuthMock: vi.fn(),
   compressProductImageMock: vi.fn(),
+  compressProductIconMock: vi.fn(),
 }));
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -29,7 +38,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
 
 vi.mock("@/lib/product-image", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/product-image")>();
-  return { ...actual, compressProductImage: compressProductImageMock };
+  return { ...actual, compressProductImage: compressProductImageMock, compressProductIcon: compressProductIconMock };
 });
 
 import ProductsPage from "./page";
@@ -53,6 +62,7 @@ const CATEGORIES = [
 ];
 
 const COMPRESSED_PHOTO = "data:image/jpeg;base64,Zm90bw==";
+const COMPRESSED_ICON = "data:image/webp;base64,aWNvbg==";
 
 describe("produk admin (W18)", () => {
   beforeEach(() => {
@@ -62,6 +72,7 @@ describe("produk admin (W18)", () => {
     createProductMock.mockReset().mockResolvedValue(PRODUCT);
     bootstrapAuthMock.mockReset().mockResolvedValue({ id: "admin-1", role: "admin" });
     compressProductImageMock.mockReset().mockResolvedValue(COMPRESSED_PHOTO);
+    compressProductIconMock.mockReset().mockResolvedValue(COMPRESSED_ICON);
   });
 
   it("mempertahankan category_id asli saat edit tanpa memilih kategori lagi", async () => {
@@ -82,8 +93,9 @@ describe("produk admin (W18)", () => {
       active: true,
       coming_soon: false,
     });
-    // Foto tidak diganti: image_url tidak boleh dikirim agar tidak menimpa foto lama.
+    // Foto/icon tidak diganti: field terkait tidak boleh dikirim agar nilai lama tetap.
     expect(updateProductMock.mock.calls[0]?.[1]).not.toHaveProperty("image_url");
+    expect(updateProductMock.mock.calls[0]?.[1]).not.toHaveProperty("icon_url");
   });
 
   it("menolak mengosongkan deskripsi saat edit karena backend mempertahankan nilai lama", async () => {
@@ -163,6 +175,44 @@ describe("produk admin (W18)", () => {
       active: true,
       coming_soon: false,
     });
+  });
+
+  it("mengompres icon yang dipilih dan mengirim data URL icon_url", async () => {
+    render(<ProductsPage />);
+    await screen.findByText("Spotify Premium");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Premium" }));
+    const file = new File(["icon"], "icon.png", { type: "image/png" });
+    fireEvent.change(screen.getByLabelText("Pilih icon produk"), { target: { files: [file] } });
+
+    await waitFor(() => expect(compressProductIconMock).toHaveBeenCalledWith(file));
+    await waitFor(() => expect(within(screen.getByRole("dialog")).getByAltText("Icon Spotify Premium")).toHaveAttribute("src", COMPRESSED_ICON));
+
+    fireEvent.click(screen.getByRole("button", { name: "Simpan produk" }));
+
+    await waitFor(() => expect(updateProductMock).toHaveBeenCalledTimes(1));
+    expect(updateProductMock.mock.calls[0]?.[1]).toMatchObject({ icon_url: COMPRESSED_ICON });
+  });
+
+  it("mengirim icon_url kosong saat icon dihapus dan menerima URL manual", async () => {
+    listProductsMock.mockResolvedValue({
+      products: [{ ...PRODUCT, icon_url: "/design-assets/logo-spotify.png" }],
+      page: 1,
+      per_page: 100,
+      total: 1,
+    });
+
+    render(<ProductsPage />);
+    await screen.findByText("Spotify Premium");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Premium" }));
+    expect(within(screen.getByRole("dialog")).getByAltText("Icon Spotify Premium").getAttribute("src")).toContain("/design-assets/logo-spotify.png");
+    fireEvent.click(screen.getByRole("button", { name: "Hapus icon" }));
+    expect(screen.getByText("Icon akan dihapus saat produk disimpan.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Simpan produk" }));
+
+    await waitFor(() => expect(updateProductMock).toHaveBeenCalledTimes(1));
+    expect(updateProductMock.mock.calls[0]?.[1]).toMatchObject({ icon_url: "" });
   });
 
   it("mengirim image_url kosong saat foto dihapus", async () => {

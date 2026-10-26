@@ -74,6 +74,10 @@ const ACCOUNT = {
   remaining_slots: 2,
   assigned_users: 1,
   otp_configured: true,
+  account_email: "akun-utama@necly.test",
+  otp_inbox_configured: true,
+  otp_inbox_source: "direct",
+  mailbox_app_password_configured: true,
   needs_review: false,
   sellable: true,
 };
@@ -89,6 +93,10 @@ const LEGACY_ACCOUNT = {
   remaining_slots: 3,
   assigned_users: 3,
   otp_configured: false,
+  account_email: null,
+  otp_inbox_configured: false,
+  otp_inbox_source: "none",
+  mailbox_app_password_configured: false,
   needs_review: true,
 };
 
@@ -161,15 +169,14 @@ describe("Halaman Manajemen akun (NEC-98)", () => {
     expect(screen.getAllByText("10 hari lagi").length).toBeGreaterThan(0);
   });
 
-  it("membuat akun dengan payload benar dan menolak limit di luar 1–5", async () => {
+  it("membuat akun dengan email dan kata sandi terpisah serta menolak limit di luar 1–5", async () => {
     render(<AccountsPage />);
     await screen.findByText("Akun utama");
 
     fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
     fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun baru" } });
-    fireEvent.change(screen.getByLabelText("Kredensial akun"), {
-      target: { value: "akun-baru@necly.id:kata-sandi" },
-    });
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "akun-baru@necly.id" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi akun"), { target: { value: "kata-sandi" } });
     fireEvent.change(screen.getByLabelText("Limit sharing"), { target: { value: "6" } });
     // Submit programatis agar validasi aplikasi (bukan constraint HTML max=5) yang diuji.
     fireEvent.submit(screen.getByRole("form", { name: "Form tambah akun" }));
@@ -184,11 +191,71 @@ describe("Halaman Manajemen akun (NEC-98)", () => {
     expect(createAccountMock).toHaveBeenCalledWith({
       product_id: "prd-1",
       label: "Akun baru",
-      credentials: "akun-baru@necly.id:kata-sandi",
+      account_email: "akun-baru@necly.id",
+      account_password: "kata-sandi",
       sharing_limit: 2,
     });
+    expect(createAccountMock.mock.calls[0]?.[0]).not.toHaveProperty("imap_host");
     await screen.findByText(/Akun "Akun baru" dibuat/);
-    expect(screen.queryByDisplayValue("akun-baru@necly.id:kata-sandi")).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue("kata-sandi")).not.toBeInTheDocument();
+  });
+
+  it("menampilkan host IMAP Gmail sebagai informasi read-only dan tidak mengirim imap_host", async () => {
+    render(<AccountsPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
+    const hostField = screen.getByLabelText("Host IMAP");
+    expect(hostField).toHaveValue("imap.gmail.com:993 (hanya Gmail yang didukung)");
+    expect(hostField).toHaveAttribute("readonly");
+    expect(hostField).toHaveAttribute("aria-readonly", "true");
+    expect(hostField).not.toHaveAttribute("name");
+
+    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun Gmail" } });
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "gmail@necly.id" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi akun"), { target: { value: "sandi-gmail" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
+
+    await waitFor(() => expect(createAccountMock).toHaveBeenCalledTimes(1));
+    expect(createAccountMock.mock.calls[0]?.[0]).not.toHaveProperty("imap_host");
+  });
+
+  it("menampilkan pesan 400 invalid_input terkait host tanpa menelannya", async () => {
+    createAccountMock.mockRejectedValueOnce(
+      new ApiError("Host IMAP harus imap.gmail.com atau imap.googlemail.com.", 400, { code: "invalid_input" }),
+    );
+
+    render(<AccountsPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
+    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun host salah" } });
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "host@necly.id" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi akun"), { target: { value: "sandi-host" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
+
+    expect(await screen.findByText("Host IMAP harus imap.gmail.com atau imap.googlemail.com.")).toBeInTheDocument();
+    expect(createAccountMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("mengirim app password Gmail hanya bila diisi", async () => {
+    render(<AccountsPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
+    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun OTP" } });
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "otp@necly.id" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi akun"), { target: { value: "sandi-akun" } });
+    fireEvent.change(screen.getByLabelText("App password Gmail untuk OTP"), { target: { value: "abcd efgh ijkl mnop" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
+
+    await waitFor(() => expect(createAccountMock).toHaveBeenCalledTimes(1));
+    expect(createAccountMock.mock.calls[0]?.[0]).toMatchObject({
+      account_email: "otp@necly.id",
+      account_password: "sandi-akun",
+      mailbox_app_password: "abcd efgh ijkl mnop",
+    });
+    expect(createAccountMock.mock.calls[0]?.[0]).not.toHaveProperty("credentials");
   });
 
   it("memperbarui label dan limit akun lewat PATCH", async () => {
@@ -196,7 +263,9 @@ describe("Halaman Manajemen akun (NEC-98)", () => {
     await screen.findByText("Akun utama");
 
     fireEvent.click(screen.getByRole("button", { name: "Edit akun Akun utama" }));
-    expect(screen.getByLabelText("Kredensial baru (opsional)")).toHaveValue("");
+    expect(screen.getByLabelText("Email akun")).toHaveValue("akun-utama@necly.test");
+    expect(screen.getByLabelText("Kata sandi akun")).toHaveValue("");
+    expect(screen.getByLabelText("App password Gmail untuk OTP")).toHaveValue("");
     fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun keluarga" } });
     fireEvent.change(screen.getByLabelText("Limit sharing"), { target: { value: "3" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
@@ -208,6 +277,42 @@ describe("Halaman Manajemen akun (NEC-98)", () => {
       }),
     );
     expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("credentials");
+    expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("account_password");
+    expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("mailbox_app_password");
+    expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("imap_host");
+  });
+
+  it("memperbarui email tanpa mengirim password kosong", async () => {
+    render(<AccountsPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit akun Akun utama" }));
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "email-baru@necly.test" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
+
+    await waitFor(() =>
+      expect(updateAccountMock).toHaveBeenCalledWith("acc-1", {
+        account_email: "email-baru@necly.test",
+      }),
+    );
+  });
+
+  it("menampilkan status OTP Gmail per akun: langsung, mailbox pusat, dan belum siap", async () => {
+    mockAccounts([
+      ACCOUNT,
+      { ...ACCOUNT, id: "acc-central", label: "Akun pusat", otp_inbox_configured: true, otp_inbox_source: "central" },
+      { ...ACCOUNT, id: "acc-none", label: "Akun tanpa OTP", otp_inbox_configured: false, otp_inbox_source: "none" },
+    ]);
+
+    render(<AccountsPage />);
+    await screen.findByText("Akun utama");
+
+    const directRow = screen.getByText("Akun utama").closest("tr");
+    expect(within(directRow as HTMLElement).getByText("Siap")).toBeInTheDocument();
+    const centralRow = screen.getByText("Akun pusat").closest("tr");
+    expect(within(centralRow as HTMLElement).getByText("Mailbox pusat")).toBeInTheDocument();
+    const noneRow = screen.getByText("Akun tanpa OTP").closest("tr");
+    expect(within(noneRow as HTMLElement).getByText("Belum siap")).toBeInTheDocument();
   });
 
   it("menampilkan kode OTP dan hitung mundur tanpa secret", async () => {
