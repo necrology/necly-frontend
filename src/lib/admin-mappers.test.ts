@@ -255,6 +255,7 @@ describe("kontrak Coming Soon dan foto produk admin (NEC-89)", () => {
       active: true,
       coming_soon: true,
       image_url: "https://cdn.necly.id/canva.jpg",
+      icon_url: "/design-assets/logo-canva.svg",
       prices: [{ id: "price-1", amount: 50_000, active: true, duration: { name: "1 Bulan", days: 30 }, available_slots: 2 }],
     });
 
@@ -262,6 +263,7 @@ describe("kontrak Coming Soon dan foto produk admin (NEC-89)", () => {
       comingSoon: true,
       active: true,
       imageUrl: "https://cdn.necly.id/canva.jpg",
+      iconUrl: "/design-assets/logo-canva.svg",
       stock: 2,
     });
   });

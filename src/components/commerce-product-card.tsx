@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { CommerceProduct } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { safeProductImageSrc } from "@/lib/product-image";
+import { ComingSoonRibbon } from "@/components/coming-soon-ribbon";
 import { ProductBrand } from "@/components/product-brand";
 
 type CommerceProductCardProps = {
@@ -27,6 +28,7 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
 
   return (
     <article className={`commerce-product-card ${compact ? "is-compact" : ""} ${comingSoon ? "is-coming-soon" : ""}`}>
+      {comingSoon && <ComingSoonRibbon />}
       {showPhoto && (
         <div className="commerce-card-photo">
           {/* eslint-disable-next-line @next/next/no-img-element */}

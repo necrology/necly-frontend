@@ -1,5 +1,7 @@
 import { CheckCircle2, Eye } from "lucide-react";
 import Link from "next/link";
+import { ComingSoonRibbon } from "@/components/coming-soon-ribbon";
+import { ProductIcon } from "@/components/product-icon";
 import { ServiceVisual } from "@/components/service-visual";
 import { formatIDR } from "@/lib/money";
 import type { SubscriptionProduct } from "@/lib/types";
@@ -20,11 +22,21 @@ export function ServiceCard({ product }: { product: SubscriptionProduct }) {
   const comingSoon = product.comingSoon === true;
 
   return (
-    <article className="catalog-card">
+    <article className={`catalog-card ${comingSoon ? "is-coming-soon" : ""}`}>
+      {comingSoon && <ComingSoonRibbon />}
       <ServiceVisual service={product} />
       <div className="catalog-card-content">
         <div className="catalog-card-topline">
-          <span className="catalog-category">{product.category}</span>
+          <span className="catalog-card-meta">
+            <ProductIcon
+              iconUrl={product.iconUrl}
+              name={product.name}
+              className="catalog-product-icon"
+              width={48}
+              height={22}
+            />
+            <span className="catalog-category">{product.category}</span>
+          </span>
           {badge && <span className={`catalog-badge ${badge.className}`}>{badge.label}</span>}
         </div>
         <h3>{product.name}</h3>

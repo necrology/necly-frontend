@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { chooseSearchableOption, searchableSelectedText } from "@/test/searchable-select";
 
 const { listProductsMock } = vi.hoisted(() => ({ listProductsMock: vi.fn() }));
 
@@ -53,14 +54,15 @@ describe("katalog live", () => {
     expect(await screen.findByText("Netflix Premium")).toBeInTheDocument();
     expect(listProductsMock).toHaveBeenCalledWith({ per_page: 100 });
     expect(screen.getAllByRole("link", { name: "Pesan" })[0]).toHaveAttribute("href", "/products/netflix-premium");
-    expect(screen.getByRole("combobox", { name: "Pilih kategori" })).toHaveTextContent("Streaming");
+    expect(screen.getByRole("combobox", { name: "Pilih kategori" })).toBeInTheDocument();
+    expect(searchableSelectedText("Pilih kategori")).toBe("Semua Kategori");
   });
 
   it("memfilter hasil memakai kategori turunan katalog", async () => {
     render(<ProductSearchBar />);
     await screen.findByText("Netflix Premium");
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Pilih kategori" }), { target: { value: "Produktivitas" } });
+    chooseSearchableOption("Pilih kategori", "Produktivitas");
 
     expect(screen.getByText("Apple Music")).toBeInTheDocument();
     expect(screen.queryByText("Netflix Premium")).not.toBeInTheDocument();

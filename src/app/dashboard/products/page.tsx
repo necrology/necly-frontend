@@ -5,6 +5,7 @@ import Link from "next/link";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ProductPhoto } from "@/components/product-photo";
+import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
 import { formatIDR } from "@/lib/money";
 import { ApiError, adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
@@ -344,28 +345,24 @@ export default function DashboardProductsPage() {
             </div>
             <div className="field">
               <label className="label" htmlFor="p-category">Kategori</label>
-              <select
-                className="select"
-                id="p-category"
+              <SearchableSelect
+                inputId="p-category"
+                ariaLabel="Kategori"
                 value={form.categoryId}
-                onChange={(event) => setForm({ ...form, categoryId: event.target.value })}
-              >
-                <option value="">Pilih kategori</option>
-                {categoryOptions.map((option) => (
-                  <option key={option.id} value={option.id}>{option.name}</option>
-                ))}
-              </select>
+                onChange={(value) => setForm({ ...form, categoryId: value })}
+                placeholder="Pilih kategori"
+                options={categoryOptions.map((option) => ({ value: option.id, label: option.name }))}
+              />
             </div>
             <div className="field">
               <label className="label" htmlFor="p-status">Status produk</label>
-              <select
-                className="select"
-                id="p-status"
+              <SearchableSelect
+                inputId="p-status"
+                ariaLabel="Status produk"
                 value={form.status}
-                onChange={(event) => setForm({ ...form, status: event.target.value as ProductStatus })}
-              >
-                {statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
-              </select>
+                onChange={(value) => setForm({ ...form, status: value as ProductStatus })}
+                options={statusOptions.map((status) => ({ value: status, label: status }))}
+              />
               <span className="table-secondary">Coming Soon tampil di katalog, tetapi tidak bisa dipesan.</span>
             </div>
             <div className="field" style={{ gridColumn: "1 / -1" }}>
@@ -451,18 +448,20 @@ export default function DashboardProductsPage() {
           <Search size={14} />
           <input className="input" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari produk…" />
         </div>
-        <select className="select" style={{ width: 170 }} value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter kategori">
-          {categories.map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <select
-          className="select"
-          style={{ width: 160 }}
+        <SearchableSelect
+          className="toolbar-select"
+          ariaLabel="Filter kategori"
+          options={categories.map((item) => ({ value: item, label: item }))}
+          value={category}
+          onChange={setCategory}
+        />
+        <SearchableSelect
+          className="toolbar-select"
+          ariaLabel="Filter status"
+          options={statusFilters.map((item) => ({ value: item, label: item }))}
           value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value as (typeof statusFilters)[number])}
-          aria-label="Filter status"
-        >
-          {statusFilters.map((item) => <option key={item}>{item}</option>)}
-        </select>
+          onChange={(value) => setStatusFilter(value as (typeof statusFilters)[number])}
+        />
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} hasil</span>
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>
@@ -503,16 +502,14 @@ export default function DashboardProductsPage() {
                     </td>
                     <td>
                       <StatusBadge status={status} />
-                      <select
-                        className="select table-status-select"
+                      <SearchableSelect
+                        className="table-status-select"
+                        ariaLabel={`Ubah status ${product.name}`}
                         value={status}
-                        aria-label={`Ubah status ${product.name}`}
-                        disabled={DEMO_MODE || statusUpdatingId === product.id}
-                        onChange={(event) => void changeStatus(product, event.target.value as ProductStatus)}
-                        title={DEMO_MODE ? "Mode demo tidak menyimpan perubahan" : undefined}
-                      >
-                        {statusOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-                      </select>
+                        onChange={(value) => void changeStatus(product, value as ProductStatus)}
+                        options={statusOptions.map((item) => ({ value: item, label: item }))}
+                        isDisabled={DEMO_MODE || statusUpdatingId === product.id}
+                      />
                       {statusUpdatingId === product.id && <span className="table-secondary" style={{ marginLeft: 6 }}>Menyimpan…</span>}
                     </td>
                     <td>{product.category}</td>

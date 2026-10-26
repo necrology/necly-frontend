@@ -4,6 +4,7 @@ import { Plus, Search, TicketCheck, X } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
+import { SearchableSelect } from "@/components/searchable-select";
 import { formatIDR } from "@/lib/money";
 import { vouchers as seedVouchers, type Voucher } from "@/data/seed";
 import { ApiError, adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
@@ -20,6 +21,7 @@ export default function VouchersPage() {
   const [items, setItems] = useState<Voucher[]>(seedVouchers);
   const [query, setQuery] = useState("");
   const [creating, setCreating] = useState(false);
+  const [voucherType, setVoucherType] = useState<"Persen" | "Nominal">("Persen");
   const [notice, setNotice] = useState("");
   const [actionError, setActionError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -241,10 +243,14 @@ export default function VouchersPage() {
             </div>
             <div className="field">
               <label className="label" htmlFor="v-type">Tipe</label>
-              <select className="select" id="v-type" name="type">
-                <option value="Persen">Persen</option>
-                <option value="Nominal">Nominal</option>
-              </select>
+              <SearchableSelect
+                inputId="v-type"
+                name="type"
+                ariaLabel="Tipe"
+                value={voucherType}
+                onChange={(value) => setVoucherType(value as "Persen" | "Nominal")}
+                options={[{ value: "Persen", label: "Persen" }, { value: "Nominal", label: "Nominal" }]}
+              />
             </div>
             <div className="field">
               <label className="label" htmlFor="v-value">Nilai</label>

@@ -9,7 +9,8 @@ describe("CommerceProductCard Coming Soon", () => {
   it("menampilkan badge Coming Soon tanpa tautan aktif", () => {
     render(<CommerceProductCard product={{ ...product, comingSoon: true }} />);
 
-    expect(screen.getByText("Coming Soon")).toBeInTheDocument();
+    expect(screen.getAllByText("Coming Soon").length).toBeGreaterThan(0);
+    expect(screen.getByTestId("coming-soon-ribbon")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Lihat Skema Harga/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Pesan" })).not.toBeInTheDocument();
     expect(screen.getByText("Pesan")).toHaveAttribute("aria-disabled", "true");

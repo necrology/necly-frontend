@@ -1,10 +1,11 @@
 "use client";
 
-import { ChevronDown, RefreshCw, Search } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { previewProductSlugs, productCategories, products, type CommerceProduct } from "@/data/products";
 import { CommerceOfferBanner } from "@/components/commerce-offer-banner";
 import { CommerceProductCard } from "@/components/commerce-product-card";
+import { SearchableSelect } from "@/components/searchable-select";
 import { catalogApi, DEMO_MODE } from "@/lib/api";
 import { mapApiCommerceProduct } from "@/lib/commerce-product";
 
@@ -100,7 +101,14 @@ export function ProductSearchBar({ mode = "catalog", limit }: ProductSearchBarPr
     <section className={`commerce-catalog ${mode === "preview" ? "is-preview" : ""}`}>
       <div className="commerce-catalog-controls">
         <label className="commerce-search-field"><Search size={22} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari Produk..." type="search" aria-label="Cari Produk" /></label>
-        <label className="commerce-category-field"><span>{activeCategory === "Semua" ? "Semua Kategori" : activeCategory}</span><select aria-label="Pilih kategori" value={activeCategory} onChange={(event) => setCategory(event.target.value)}>{categoryOptions.map((item) => <option key={item} value={item}>{item === "Semua" ? "Semua Kategori" : item}</option>)}</select><ChevronDown size={20} /></label>
+        <div className="commerce-category-field is-searchable">
+          <SearchableSelect
+            ariaLabel="Pilih kategori"
+            options={categoryOptions.map((item) => ({ value: item, label: item === "Semua" ? "Semua Kategori" : item }))}
+            value={activeCategory}
+            onChange={setCategory}
+          />
+        </div>
       </div>
       <CommerceOfferBanner />
       <div className={`commerce-product-grid ${mode === "preview" ? "preview-grid" : ""}`} aria-live="polite" aria-busy={loading}>

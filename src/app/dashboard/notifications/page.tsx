@@ -3,6 +3,7 @@
 import { Download, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
+import { SearchableSelect } from "@/components/searchable-select";
 import { initialNotifications as seedNotifications, type NotificationItem } from "@/data/seed";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { downloadCsv } from "@/lib/csv";
@@ -191,13 +192,16 @@ export default function NotificationsPage() {
             placeholder="Cari notifikasi…"
           />
         </div>
-        <select className="select" style={{ width: 150 }} value={type} onChange={(event) => setType(event.target.value)}>
-          {["Semua", "order", "inventory", "payment", "system"].map((value) => (
-            <option key={value} value={value}>
-              {value === "Semua" ? "Semua jenis" : typeLabels[value] ?? value}
-            </option>
-          ))}
-        </select>
+        <SearchableSelect
+          className="toolbar-select"
+          ariaLabel="Filter jenis notifikasi"
+          options={["Semua", "order", "inventory", "payment", "system"].map((value) => ({
+            value,
+            label: value === "Semua" ? "Semua jenis" : typeLabels[value] ?? value,
+          }))}
+          value={type}
+          onChange={setType}
+        />
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} aktivitas</span>
         {!DEMO_MODE && total > 0 && (
           <span className="muted" style={{ fontSize: 9 }}>

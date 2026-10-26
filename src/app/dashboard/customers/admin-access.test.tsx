@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { chooseSearchableOption } from "@/test/searchable-select";
 
 const { listUsersMock, updateUserMock, bootstrapAuthMock } = vi.hoisted(() => ({
   listUsersMock: vi.fn(),
@@ -107,7 +108,7 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
     const initialListCalls = listUsersMock.mock.calls.length;
 
     fireEvent.click(screen.getByRole("button", { name: "Kelola akses Budi Pelanggan" }));
-    fireEvent.change(screen.getByLabelText("Peran"), { target: { value: "admin" } });
+    chooseSearchableOption("Peran", "Admin");
 
     // Klik pertama hanya menampilkan ringkasan konfirmasi.
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
@@ -126,7 +127,7 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
     await screen.findByText("Sari Penjual");
 
     fireEvent.click(screen.getByRole("button", { name: "Kelola akses Sari Penjual" }));
-    fireEvent.change(screen.getByLabelText("Status akun"), { target: { value: "nonaktif" } });
+    chooseSearchableOption("Status akun", "Nonaktif");
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
 
     expect(screen.getByText(/Konfirmasi: Anda akan mengubah menonaktifkan akun/)).toBeInTheDocument();
@@ -150,7 +151,7 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
     await screen.findByText("Admin Kedua");
 
     fireEvent.click(screen.getByRole("button", { name: "Kelola akses Admin Kedua" }));
-    fireEvent.change(screen.getByLabelText("Peran"), { target: { value: "customer" } });
+    chooseSearchableOption("Peran", "Pelanggan");
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
     fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
 
@@ -171,7 +172,7 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
     await screen.findByText("Budi Pelanggan");
 
     fireEvent.click(screen.getByRole("button", { name: "Kelola akses Budi Pelanggan" }));
-    fireEvent.change(screen.getByLabelText("Status akun"), { target: { value: "nonaktif" } });
+    chooseSearchableOption("Status akun", "Nonaktif");
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
     fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
 
@@ -190,7 +191,7 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
     await screen.findByText("Budi Pelanggan");
 
     fireEvent.click(screen.getByRole("button", { name: "Kelola akses Budi Pelanggan" }));
-    fireEvent.change(screen.getByLabelText("Peran"), { target: { value: "admin" } });
+    chooseSearchableOption("Peran", "Admin");
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
     fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
 
@@ -212,7 +213,7 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
     await screen.findByText("Budi Pelanggan");
 
     fireEvent.click(screen.getByRole("button", { name: "Kelola akses Budi Pelanggan" }));
-    fireEvent.change(screen.getByLabelText("Status akun"), { target: { value: "nonaktif" } });
+    chooseSearchableOption("Status akun", "Nonaktif");
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
     fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
 
@@ -223,11 +224,11 @@ describe("manajemen akses pengguna di /dashboard/customers", () => {
     render(<CustomersPage />);
     await screen.findByText("Budi Pelanggan");
 
-    fireEvent.change(screen.getByLabelText("Filter peran"), { target: { value: "admin" } });
+    chooseSearchableOption("Filter peran", "Admin");
     expect(screen.getByText("Admin Saya")).toBeInTheDocument();
     expect(screen.queryByText("Budi Pelanggan")).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("Filter peran"), { target: { value: "Semua" } });
+    chooseSearchableOption("Filter peran", "Semua peran");
     fireEvent.change(screen.getByPlaceholderText("Cari nama atau email pengguna…"), { target: { value: "sari" } });
     expect(screen.getByText("Sari Penjual")).toBeInTheDocument();
     expect(screen.queryByText("Admin Saya")).not.toBeInTheDocument();

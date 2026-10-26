@@ -60,6 +60,9 @@ export const services: SubscriptionProduct[] = [
     id: "prd-cinemax",
     slug: "cinemax-family-member",
     name: "CineMax Anggota Keluarga",
+    // Data demo: satu layanan ditandai Coming Soon agar list demo punya
+    // contoh status. Data live berasal dari kolom `coming_soon` API.
+    comingSoon: true,
     eyebrow: "Satu kursi, profil milik Anda",
     category: "Streaming",
     price: 32_000,

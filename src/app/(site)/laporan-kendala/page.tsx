@@ -4,6 +4,7 @@ import { AlertCircle, ArrowLeft, Home } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { SearchableSelect } from "@/components/searchable-select";
 import { DEMO_MODE, ReportApiError, reportsApi, type ReportFieldErrors } from "@/lib/api";
 
 const categories = ["Pembayaran", "Akses layanan", "Pesanan", "Lainnya"];
@@ -17,6 +18,7 @@ export default function IssueReportPage() {
   const [submitError, setSubmitError] = useState("");
   const [cooldown, setCooldown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [category, setCategory] = useState("");
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -130,10 +132,17 @@ export default function IssueReportPage() {
                 </label>
                 <label className="field">
                   <span className="label">Kategori kendala <span className="commerce-required" aria-hidden="true">*</span></span>
-                  <select className="select" required name="category" defaultValue="" aria-invalid={Boolean(errors.category)}>
-                    <option value="">Pilih kategori</option>
-                    {categories.map((category) => <option value={category} key={category}>{category}</option>)}
-                  </select>
+                  <SearchableSelect
+                    className="issue-category-select"
+                    ariaLabel="Kategori kendala"
+                    name="category"
+                    required
+                    aria-invalid={Boolean(errors.category)}
+                    placeholder="Pilih kategori"
+                    options={categories.map((item) => ({ value: item, label: item }))}
+                    value={category}
+                    onChange={setCategory}
+                  />
                   {errors.category && <span className="field-error" role="alert">{errors.category}</span>}
                 </label>
               </div>

@@ -4,6 +4,7 @@ import { Download, Eye, Search } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
+import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
 import { dashboardOrders } from "@/data/seed";
 import { formatIDR, formatDateID } from "@/lib/money";
@@ -150,9 +151,13 @@ export default function OrdersAdminPage() {
       />
       <div className="toolbar">
         <div className="input-wrap"><Search size={14} /><input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari pesanan, pelanggan, atau produk…" /></div>
-        <select className="select" style={{ width: 170 }} value={status} onChange={(e) => setStatus(e.target.value as StatusType)}>
-          {statuses.map((item) => <option key={item}>{item}</option>)}
-        </select>
+        <SearchableSelect
+          className="toolbar-select"
+          ariaLabel="Filter status pesanan"
+          options={statuses.map((item) => ({ value: item, label: item }))}
+          value={status}
+          onChange={(value) => setStatus(value as StatusType)}
+        />
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} pesanan</span>
         {!DEMO_MODE && sourceOrders.length > 0 && (
           <span className="muted" style={{ fontSize: 9 }}>

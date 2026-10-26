@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { chooseSearchableOption, searchableSelectedText } from "@/test/searchable-select";
 
 const {
   bootstrapAuthMock,
@@ -149,7 +150,7 @@ describe("Halaman Inventaris akun", () => {
     expect(credentials).toHaveValue("");
 
     fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun cadangan baru" } });
-    fireEvent.change(screen.getByLabelText("Status akun"), { target: { value: "inactive" } });
+    chooseSearchableOption("Status akun", "Nonaktif");
     fireEvent.change(screen.getByLabelText("Limit sharing"), { target: { value: "4" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
 
@@ -197,8 +198,8 @@ describe("Halaman Inventaris akun", () => {
     await screen.findByText("Akun utama");
 
     fireEvent.click(screen.getByRole("button", { name: "Tambah akses ke Akun utama" }));
-    expect(screen.getByLabelText("Akun")).toHaveValue("acc-1");
-    expect(screen.getByLabelText("Paket")).toHaveValue("price-1");
+    expect(searchableSelectedText("Akun")).toContain("Akun utama");
+    expect(searchableSelectedText("Paket")).toBe("1 Bulan");
 
     fireEvent.change(screen.getByLabelText("Jumlah akses"), { target: { value: "2" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan akses" }));
@@ -296,7 +297,7 @@ describe("Halaman Inventaris akun", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
     fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun nonaktif" } });
     fireEvent.change(screen.getByLabelText("Kredensial akun"), { target: { value: "akun@necly.id:sandi" } });
-    fireEvent.change(screen.getByLabelText("Status akun"), { target: { value: "inactive" } });
+    chooseSearchableOption("Status akun", "Nonaktif");
     fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
 
     await waitFor(() => expect(createAccountMock).toHaveBeenCalledTimes(1));

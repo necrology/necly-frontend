@@ -13,6 +13,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
+import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
 import { inventoryAccounts as seedInventoryAccounts, services } from "@/data/seed";
 import { ApiError, adminApi, apiErrorCode, bootstrapAuth, DEMO_MODE } from "@/lib/api";
@@ -1024,18 +1025,15 @@ export default function InventoryPage() {
             {accountForm.mode === "create" && (
               <div className="field">
                 <label className="label" htmlFor="inv-product">Produk</label>
-                <select
-                  className="input"
-                  id="inv-product"
+                <SearchableSelect
+                  inputId="inv-product"
+                  ariaLabel="Produk"
                   value={accountForm.productId}
-                  onChange={(event) => setAccountForm({ ...accountForm, productId: event.target.value })}
+                  onChange={(value) => setAccountForm({ ...accountForm, productId: value })}
+                  placeholder="Pilih produk"
                   required
-                >
-                  <option value="">Pilih produk</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>{product.name}</option>
-                  ))}
-                </select>
+                  options={products.map((product) => ({ value: product.id, label: product.name }))}
+                />
               </div>
             )}
             <div className="field">
@@ -1070,16 +1068,13 @@ export default function InventoryPage() {
             </div>
             <div className="field">
               <label className="label" htmlFor="inv-status">Status akun</label>
-              <select
-                className="input"
-                id="inv-status"
+              <SearchableSelect
+                inputId="inv-status"
+                ariaLabel="Status akun"
                 value={accountForm.status}
-                onChange={(event) => setAccountForm({ ...accountForm, status: event.target.value as InventoryStatus })}
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
+                onChange={(value) => setAccountForm({ ...accountForm, status: value as InventoryStatus })}
+                options={STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+              />
             </div>
             <div className="field">
               <label className="label" htmlFor="inv-sharing-limit">Limit sharing</label>
@@ -1147,37 +1142,32 @@ export default function InventoryPage() {
           <div className="form-grid" style={{ padding: 18 }}>
             <div className="field">
               <label className="label" htmlFor="inv-slot-account">Akun</label>
-              <select
-                className="input"
-                id="inv-slot-account"
+              <SearchableSelect
+                inputId="inv-slot-account"
+                ariaLabel="Akun"
                 value={slotForm.accountId}
-                onChange={(event) => handleSlotAccountChange(event.target.value)}
+                onChange={handleSlotAccountChange}
                 required
-              >
-                {accounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.productName} · {account.label} · sisa {account.remainingSlots} slot
-                  </option>
-                ))}
-              </select>
+                options={accounts.map((account) => ({
+                  value: account.id,
+                  label: `${account.productName} · ${account.label} · sisa ${account.remainingSlots} slot`,
+                }))}
+              />
             </div>
             <div className="field">
               <label className="label" htmlFor="inv-slot-price">Paket</label>
-              <select
-                className="input"
-                id="inv-slot-price"
+              <SearchableSelect
+                inputId="inv-slot-price"
+                ariaLabel="Paket"
                 value={slotForm.priceId}
-                onChange={(event) => {
-                  setSlotForm({ ...slotForm, priceId: event.target.value });
+                onChange={(value) => {
+                  setSlotForm({ ...slotForm, priceId: value });
                   setPendingSlot(null);
                 }}
+                placeholder="Pilih paket"
                 required
-              >
-                <option value="">Pilih paket</option>
-                {(slotProduct?.prices ?? []).map((price) => (
-                  <option key={price.id} value={price.id}>{price.label}</option>
-                ))}
-              </select>
+                options={(slotProduct?.prices ?? []).map((price) => ({ value: price.id, label: price.label }))}
+              />
               {slotProduct && slotProduct.prices.length === 0 && (
                 <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>Produk ini belum memiliki paket aktif.</p>
               )}

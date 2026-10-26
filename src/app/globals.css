@@ -84,6 +84,40 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .input, .select, .textarea { width: 100%; min-height: 44px; border: 1px solid var(--line-strong); border-radius: 5px; color: var(--ink); background: #fff; padding: 10px 12px; transition: border-color 150ms, box-shadow 150ms; }
 .input::placeholder, .textarea::placeholder { color: #94a1b1; }
 .input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 3px rgb(14 165 233 / .12); }
+
+/* ---------- SearchableSelect (react-select) ---------- */
+.searchable-select { min-width: 0; width: 100%; }
+.searchable-select .necly-select__control { min-height: 44px; border: 1px solid var(--line-strong); border-radius: 5px; background: #fff; box-shadow: none; font-size: 12px; transition: border-color 150ms, box-shadow 150ms; }
+.searchable-select .necly-select__control:hover { border-color: var(--line-strong); }
+.searchable-select .necly-select__control--is-focused { border-color: var(--sky); box-shadow: 0 0 0 3px rgb(14 165 233 / .12); }
+.searchable-select .necly-select__control--is-disabled { background: var(--surface-2); opacity: .7; }
+.searchable-select .necly-select__value-container { min-height: 42px; padding: 4px 10px; }
+.searchable-select .necly-select__single-value { color: var(--ink); }
+.searchable-select .necly-select__placeholder { color: #94a1b1; }
+.searchable-select .necly-select__input-container { color: var(--ink); margin: 0; padding: 0; }
+.searchable-select .necly-select__indicator-separator { display: none; }
+.searchable-select .necly-select__indicator { padding: 6px; color: var(--faint); }
+.searchable-select .necly-select__clear-indicator { cursor: pointer; }
+.searchable-select .necly-select__menu { border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-md); font-size: 12px; overflow: hidden; }
+.searchable-select .necly-select__menu-list { max-height: 260px; padding: 4px; }
+.searchable-select .necly-select__option { border-radius: 5px; cursor: pointer; }
+.searchable-select .necly-select__option--is-focused { background: #eef6ff; color: var(--ink); }
+.searchable-select .necly-select__option--is-selected { background: var(--blue); color: #fff; }
+.searchable-select .necly-select__option--is-disabled { color: var(--faint); cursor: not-allowed; }
+.searchable-select .necly-select__no-options-message { color: var(--muted); padding: 8px 10px; }
+.searchable-select:has(input[aria-invalid="true"]) .necly-select__control { border-color: #e5484d; }
+.searchable-select input:focus-visible { outline: none; }
+.searchable-select.toolbar-select { flex: 0 1 170px; width: 170px; }
+.searchable-select.toolbar-select.toolbar-select-wide { flex-basis: 220px; width: 220px; }
+.searchable-select.table-status-select { width: 124px; margin-top: 6px; }
+.searchable-select.table-status-select .necly-select__control { min-height: 30px; font-size: 10px; }
+.searchable-select.table-status-select .necly-select__value-container { min-height: 28px; padding: 2px 6px; }
+.searchable-select.table-status-select .necly-select__indicator { padding: 3px; }
+.issue-page .issue-form .issue-category-select .necly-select__control { min-height: 58px; border-radius: 5px; padding-block: 12px; font-size: 14px; }
+@media (max-width: 580px) {
+  .searchable-select.toolbar-select,
+  .searchable-select.toolbar-select.toolbar-select-wide { flex-basis: 100%; width: 100%; }
+}
 .textarea { min-height: 120px; resize: vertical; }
 .input-wrap { position: relative; }
 .input-wrap > svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--faint); pointer-events: none; }
@@ -769,6 +803,8 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .catalog-search input::placeholder { color: #9699a8; }
 .catalog-select { width: 238px; position: relative; justify-content: space-between; padding: 0 13px; font-size: 13px; }
 .catalog-select select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.catalog-select.is-searchable { padding: 0; border: 0; background: transparent; box-shadow: none; }
+.catalog-select.is-searchable .searchable-select .necly-select__control { min-height: 44px; border-color: #e3e5f2; border-radius: 10px; padding: 0 13px; box-shadow: 0 3px 10px rgb(54 57 120 / .04); font-size: 13px; }
 .offer-banner { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 26px; margin-top: 15px; border-radius: 13px; padding: 11px 22px; color: #fff; background: #4c1ef9; box-shadow: 0 10px 21px -18px #351895; }
 .offer-copy, .offer-timer { display: flex; align-items: center; gap: 12px; }
 .offer-copy > svg { color: #ffd14a; }
@@ -1032,6 +1068,8 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .commerce-search-field input::placeholder { color: #9d98b3; }
 .commerce-category-field { position: relative; height: 50px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid var(--commerce-line); border-radius: 999px; padding: 0 18px; color: var(--commerce-ink); background: #fff; font-size: 13px; font-weight: 600; }
 .commerce-category-field select { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.commerce-category-field.is-searchable { padding: 0; border: 0; background: transparent; }
+.commerce-category-field.is-searchable .searchable-select .necly-select__control { min-height: 50px; border-color: var(--commerce-line); border-radius: 999px; padding: 0 18px; font-size: 13px; font-weight: 600; }
 .commerce-category-field svg { flex: 0 0 auto; color: var(--commerce-muted); }
 .commerce-offer-banner { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 16px; border-radius: 20px; padding: 16px 24px; color: #fff; background: #4c1ef9; }
 .commerce-offer-copy { display: flex; align-items: center; gap: 13px; }
@@ -1712,6 +1750,28 @@ body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, s
 .testimonial-meta time { color: var(--commerce-muted); font-size: 10px; }
 
 /* ---------- Coming Soon + foto produk (NEC-89) ---------- */
+.catalog-card,
+.commerce-product-card { position: relative; }
+.commerce-product-card { overflow: hidden; }
+.catalog-card.is-coming-soon { border-color: #f0d59a; }
+/* Pita diagonal di pojok kanan atas. Pembungkusnya yang memotong (overflow),
+   jadi bayangan kartu tetap utuh dan pita tidak menutupi tombol aksi. */
+.coming-soon-ribbon { position: absolute; inset: 0 0 auto auto; z-index: 4; width: 124px; height: 124px; overflow: hidden; pointer-events: none; }
+.coming-soon-ribbon-text { position: absolute; top: 25px; right: -42px; width: 176px; transform: rotate(45deg); padding: 7px 0; color: #fff; background: linear-gradient(135deg, #f59e0b, #b45309); box-shadow: 0 6px 16px rgb(120 53 15 / .28); font-size: 10px; font-weight: 800; letter-spacing: .08em; line-height: 1; text-align: center; text-transform: uppercase; }
+.catalog-card-meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.catalog-product-icon { flex: 0 0 auto; border: 1px solid #ececf4; border-radius: 7px; padding: 2px 5px; background: #fff; }
+.product-icon { display: inline-flex; align-items: center; justify-content: center; min-width: 0; }
+.product-icon-image { display: block; max-width: 100%; object-fit: contain; }
+.product-brand-icon { max-width: 100%; }
+.product-brand-icon .product-icon-image { max-height: 40px; width: auto !important; height: auto !important; }
+.product-brand.compact .product-brand-icon .product-icon-image { max-height: 30px; }
+@media (max-width: 580px) {
+  .coming-soon-ribbon { width: 104px; height: 104px; }
+  .coming-soon-ribbon-text { top: 21px; right: -36px; width: 148px; font-size: 9px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coming-soon-ribbon-text { transition: none; }
+}
 .service-visual .service-photo { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .catalog-badge.coming-soon { background: #b45309; }
 .commerce-badge.coming-soon { background: #b45309; }

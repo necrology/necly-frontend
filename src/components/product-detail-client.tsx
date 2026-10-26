@@ -181,10 +181,10 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
         <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration} disabled={comingSoon}>Ubah</button></span><strong>{selectedDuration !== null ? option.label : "Belum dipilih"}</strong></div>
         <div className="commerce-summary-line"><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
         <div className="commerce-summary-total"><span>Total Biaya</span><b>{estimated ? formatRupiahLabel(option.price) : "—"}</b></div>
-        <button className="commerce-primary-button" type="button" disabled={comingSoon || (selectedDuration !== null && !inStock)} onClick={addToCart}>{added ? "Lanjut ke checkout…" : selectedDuration !== null && !inStock && !comingSoon ? "Stok habis" : <>Pesan <span>→</span></>}</button>
+        <button className="commerce-primary-button" type="button" disabled={comingSoon || (selectedDuration !== null && !inStock)} onClick={addToCart}>{comingSoon ? "Segera hadir" : added ? "Lanjut ke checkout…" : selectedDuration !== null && !inStock ? "Stok habis" : <>Pesan <span>→</span></>}</button>
       </aside>
       <aside className="commerce-buy-reasons"><h2>Kenapa Beli di Sini?</h2>{purchaseReasons.map(([title, detail, Icon]) => <article key={title}><span><Icon size={25} /></span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</aside>
-      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{estimated ? formatRupiahLabel(option.price) : "Lengkapi pilihan"}</b></span><button type="button" disabled={comingSoon || (selectedDuration !== null && !inStock)} onClick={addToCart}>{added ? "Memproses…" : selectedDuration !== null && !inStock && !comingSoon ? "Stok habis" : "Pesan"}</button></div>
+      <div className="commerce-mobile-order-bar"><span><small>Total Biaya</small><b>{estimated ? formatRupiahLabel(option.price) : "Lengkapi pilihan"}</b></span><button type="button" disabled={comingSoon || (selectedDuration !== null && !inStock)} onClick={addToCart}>{comingSoon ? "Segera hadir" : added ? "Memproses…" : selectedDuration !== null && !inStock ? "Stok habis" : "Pesan"}</button></div>
       <Link className="commerce-detail-backlink" href="/products">Kembali ke Produk</Link>
     </div>
   );

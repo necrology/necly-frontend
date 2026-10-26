@@ -4,6 +4,7 @@ import { Search, UserCog, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
+import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
 import { customers } from "@/data/seed";
 import { formatDateID, formatIDR } from "@/lib/money";
@@ -346,39 +347,34 @@ export default function CustomersPage() {
             <div className="form-grid" style={{ padding: 18 }}>
               <div className="field">
                 <label className="label" htmlFor="access-role">Peran</label>
-                <select
-                  className="select"
-                  id="access-role"
+                <SearchableSelect
+                  inputId="access-role"
+                  ariaLabel="Peran"
                   value={draftRole}
-                  onChange={(event) => {
-                    setDraftRole(event.target.value as UserRole);
+                  onChange={(value) => {
+                    setDraftRole(value as UserRole);
                     setConfirming(false);
                   }}
-                  disabled={submitting}
-                >
-                  {ROLE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
+                  isDisabled={submitting}
+                  options={ROLE_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+                />
                 <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>
                   Role menentukan menu dashboard yang dapat diakses pengguna.
                 </p>
               </div>
               <div className="field">
                 <label className="label" htmlFor="access-active">Status akun</label>
-                <select
-                  className="select"
-                  id="access-active"
+                <SearchableSelect
+                  inputId="access-active"
+                  ariaLabel="Status akun"
                   value={draftActive ? "aktif" : "nonaktif"}
-                  onChange={(event) => {
-                    setDraftActive(event.target.value === "aktif");
+                  onChange={(value) => {
+                    setDraftActive(value === "aktif");
                     setConfirming(false);
                   }}
-                  disabled={submitting}
-                >
-                  <option value="aktif">Aktif</option>
-                  <option value="nonaktif">Nonaktif</option>
-                </select>
+                  isDisabled={submitting}
+                  options={[{ value: "aktif", label: "Aktif" }, { value: "nonaktif", label: "Nonaktif" }]}
+                />
                 <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>
                   Akun nonaktif tidak dapat masuk sampai diaktifkan kembali oleh admin.
                 </p>
@@ -426,13 +422,23 @@ export default function CustomersPage() {
 
       <div className="toolbar">
         <div className="input-wrap"><Search size={14} /><input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari nama atau email pengguna…" /></div>
-        <select className="select" aria-label="Filter status akun" style={{ width: 150 }} value={status} onChange={(e) => setStatus(e.target.value as StatusFilter)}>
-          {STATUS_FILTERS.map((value) => <option key={value}>{value}</option>)}
-        </select>
-        <select className="select" aria-label="Filter peran" style={{ width: 150 }} value={role} onChange={(e) => setRole(e.target.value as "Semua" | UserRole)}>
-          <option value="Semua">Semua peran</option>
-          {ROLE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-        </select>
+        <SearchableSelect
+          className="toolbar-select"
+          ariaLabel="Filter status akun"
+          value={status}
+          onChange={(value) => setStatus(value as StatusFilter)}
+          options={STATUS_FILTERS.map((value) => ({ value, label: value }))}
+        />
+        <SearchableSelect
+          className="toolbar-select"
+          ariaLabel="Filter peran"
+          value={role}
+          onChange={(value) => setRole(value as "Semua" | UserRole)}
+          options={[
+            { value: "Semua", label: "Semua peran" },
+            ...ROLE_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+          ]}
+        />
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} pengguna</span>
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>
