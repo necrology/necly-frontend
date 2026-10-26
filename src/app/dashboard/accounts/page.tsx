@@ -47,7 +47,6 @@ type AccountFormState = {
   accountPassword: string;
   /** Write-only: app password Gmail untuk membaca OTP langsung dari mailbox. */
   mailboxAppPassword: string;
-  imapHost: string;
   status: AccountStatus;
   expires: string;
   sharingLimit: string;
@@ -147,7 +146,7 @@ function otpInboxBadge(account: ManagedAccount) {
 function shouldRetryWithLegacyCredentials(error: unknown) {
   if (!(error instanceof ApiError) || error.status !== 400) return false;
   const message = error.message.toLowerCase();
-  return /account_email|account_password|mailbox_app_password|imap_host|unknown field|field.*tidak/.test(message);
+  return /account_email|account_password|mailbox_app_password|unknown field|field.*tidak/.test(message);
 }
 
 function daysLabel(days: number | null) {
@@ -263,7 +262,6 @@ function buildDemoAccounts(): ManagedAccount[] {
       otpInboxConfigured: index % 3 !== 2,
       otpInboxSource: index % 3 === 0 ? "direct" : index % 3 === 1 ? "central" : "none",
       mailboxAppPasswordConfigured: index % 3 === 0,
-      imapHost: index % 3 === 0 ? "imap.gmail.com" : null,
       needsReview: sharingLimit > 5,
       sellable: index !== 4,
     };
@@ -517,7 +515,6 @@ export default function AccountsPage() {
       accountEmail: "",
       accountPassword: "",
       mailboxAppPassword: "",
-      imapHost: "",
       status: "active",
       expires: "",
       sharingLimit: "1",
@@ -539,7 +536,6 @@ export default function AccountsPage() {
       accountEmail: account.accountEmail ?? "",
       accountPassword: "",
       mailboxAppPassword: "",
-      imapHost: account.imapHost ?? "",
       status: (account.status as AccountStatus) ?? "active",
       expires: toDateInput(account.expiresAt),
       sharingLimit: String(account.sharingLimit),
@@ -578,7 +574,6 @@ export default function AccountsPage() {
     const accountEmail = form.accountEmail.trim();
     const accountPassword = form.accountPassword;
     const mailboxAppPassword = form.mailboxAppPassword;
-    const imapHost = form.imapHost.trim();
     if (form.mode === "create" && !accountEmail) {
       setFormError("Email akun wajib diisi saat membuat akun.");
       return;
@@ -603,7 +598,6 @@ export default function AccountsPage() {
           sharing_limit: sharingLimit,
         };
         if (mailboxAppPassword) payload.mailbox_app_password = mailboxAppPassword;
-        if (imapHost) payload.imap_host = imapHost;
         if (form.expires) payload.expires_at = toExpiresAt(form.expires);
         if (form.otpSecret.trim()) payload.otp_secret = form.otpSecret.trim();
 
@@ -629,7 +623,6 @@ export default function AccountsPage() {
               otpInboxConfigured: Boolean(mailboxAppPassword),
               otpInboxSource: mailboxAppPassword ? "direct" : "none",
               mailboxAppPasswordConfigured: Boolean(mailboxAppPassword),
-              imapHost: imapHost || null,
               needsReview: false,
               sellable: true,
             },
@@ -694,7 +687,6 @@ export default function AccountsPage() {
       // Hanya kirim password/app password bila diisi; kosong berarti pertahankan.
       if (accountPassword) changes.account_password = accountPassword;
       if (mailboxAppPassword) changes.mailbox_app_password = mailboxAppPassword;
-      if (imapHost && imapHost !== (account.imapHost ?? "")) changes.imap_host = imapHost;
       if (form.clearOtp) {
         changes.otp_secret = "";
       } else if (form.otpSecret.trim()) {
@@ -723,7 +715,6 @@ export default function AccountsPage() {
                     changes.mailbox_app_password ? "direct" : item.otpInboxSource,
                   mailboxAppPasswordConfigured:
                     Boolean(changes.mailbox_app_password) || item.mailboxAppPasswordConfigured,
-                  imapHost: (changes.imap_host as string) ?? item.imapHost,
                   otpConfigured:
                     changes.otp_secret === ""
                       ? false
@@ -737,7 +728,7 @@ export default function AccountsPage() {
           await adminApi.updateInventoryAccount(account.id, changes);
         } catch (error) {
           const hasSeparateCredential = Boolean(
-            changes.account_email || changes.account_password || changes.mailbox_app_password || changes.imap_host,
+            changes.account_email || changes.account_password || changes.mailbox_app_password,
           );
           if (!hasSeparateCredential || !shouldRetryWithLegacyCredentials(error)) throw error;
           const legacyChanges: Record<string, unknown> = { ...changes };
@@ -746,7 +737,6 @@ export default function AccountsPage() {
           delete legacyChanges.account_email;
           delete legacyChanges.account_password;
           delete legacyChanges.mailbox_app_password;
-          delete legacyChanges.imap_host;
           if (fallbackEmail && fallbackPassword) {
             legacyChanges.credentials = `${fallbackEmail}:${fallbackPassword}`;
           }
@@ -1096,6 +1086,7 @@ export default function AccountsPage() {
                 />
                 <p className="muted" style={{ margin: 0, fontSize: 11 }}>
                   Buat App Password Google setelah 2FA aktif. Backend memakainya untuk membaca OTP langsung dari mailbox akun.
+                  Tanpa app password, sistem memakai mailbox pusat.
                   {form.mode === "edit" && form.accountId && accounts.find((item) => item.id === form.accountId)?.mailboxAppPasswordConfigured
                     ? " App password sudah tersimpan; isi hanya bila ingin mengganti."
                     : ""}
@@ -1103,17 +1094,16 @@ export default function AccountsPage() {
               </div>
 
               <div className="field">
-                <label className="label" htmlFor="account-imap-host">Host IMAP (opsional)</label>
+                <label className="label" htmlFor="account-imap-host">Host IMAP</label>
                 <input
                   className="input"
                   id="account-imap-host"
-                  name="imap_host"
-                  value={form.imapHost}
-                  onChange={(event) => setForm({ ...form, imapHost: event.target.value })}
-                  placeholder="imap.gmail.com"
+                  value="imap.gmail.com:993 (hanya Gmail yang didukung)"
+                  readOnly
+                  aria-readonly="true"
                 />
                 <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                  Biarkan default untuk Gmail. Ubah hanya bila backend memakai penyedia mailbox lain.
+                  Host dikunci oleh backend. Hanya mailbox Gmail pada port 993 yang didukung.
                 </p>
               </div>
 

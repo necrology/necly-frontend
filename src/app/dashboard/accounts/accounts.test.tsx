@@ -78,7 +78,6 @@ const ACCOUNT = {
   otp_inbox_configured: true,
   otp_inbox_source: "direct",
   mailbox_app_password_configured: true,
-  imap_host: "imap.gmail.com",
   needs_review: false,
   sellable: true,
 };
@@ -98,7 +97,6 @@ const LEGACY_ACCOUNT = {
   otp_inbox_configured: false,
   otp_inbox_source: "none",
   mailbox_app_password_configured: false,
-  imap_host: null,
   needs_review: true,
 };
 
@@ -197,8 +195,47 @@ describe("Halaman Manajemen akun (NEC-98)", () => {
       account_password: "kata-sandi",
       sharing_limit: 2,
     });
+    expect(createAccountMock.mock.calls[0]?.[0]).not.toHaveProperty("imap_host");
     await screen.findByText(/Akun "Akun baru" dibuat/);
     expect(screen.queryByDisplayValue("kata-sandi")).not.toBeInTheDocument();
+  });
+
+  it("menampilkan host IMAP Gmail sebagai informasi read-only dan tidak mengirim imap_host", async () => {
+    render(<AccountsPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
+    const hostField = screen.getByLabelText("Host IMAP");
+    expect(hostField).toHaveValue("imap.gmail.com:993 (hanya Gmail yang didukung)");
+    expect(hostField).toHaveAttribute("readonly");
+    expect(hostField).toHaveAttribute("aria-readonly", "true");
+    expect(hostField).not.toHaveAttribute("name");
+
+    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun Gmail" } });
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "gmail@necly.id" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi akun"), { target: { value: "sandi-gmail" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
+
+    await waitFor(() => expect(createAccountMock).toHaveBeenCalledTimes(1));
+    expect(createAccountMock.mock.calls[0]?.[0]).not.toHaveProperty("imap_host");
+  });
+
+  it("menampilkan pesan 400 invalid_input terkait host tanpa menelannya", async () => {
+    createAccountMock.mockRejectedValueOnce(
+      new ApiError("Host IMAP harus imap.gmail.com atau imap.googlemail.com.", 400, { code: "invalid_input" }),
+    );
+
+    render(<AccountsPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
+    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun host salah" } });
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "host@necly.id" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi akun"), { target: { value: "sandi-host" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
+
+    expect(await screen.findByText("Host IMAP harus imap.gmail.com atau imap.googlemail.com.")).toBeInTheDocument();
+    expect(createAccountMock).toHaveBeenCalledTimes(1);
   });
 
   it("mengirim app password Gmail hanya bila diisi", async () => {
@@ -242,6 +279,7 @@ describe("Halaman Manajemen akun (NEC-98)", () => {
     expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("credentials");
     expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("account_password");
     expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("mailbox_app_password");
+    expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("imap_host");
   });
 
   it("memperbarui email tanpa mengirim password kosong", async () => {

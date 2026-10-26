@@ -292,7 +292,6 @@ describe("kontrak Manajemen akun Fase 2 NEC-96", () => {
       otp_inbox_configured: true,
       otp_inbox_source: "central",
       mailbox_app_password_configured: true,
-      imap_host: "imap.gmail.com",
       needs_review: false,
       sellable: true,
     };
@@ -309,7 +308,6 @@ describe("kontrak Manajemen akun Fase 2 NEC-96", () => {
       otpInboxConfigured: true,
       otpInboxSource: "central",
       mailboxAppPasswordConfigured: true,
-      imapHost: "imap.gmail.com",
       needsReview: false,
       sellable: true,
     });

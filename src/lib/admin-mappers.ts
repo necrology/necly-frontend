@@ -245,7 +245,6 @@ export type ManagedAccount = {
   otpInboxConfigured: boolean;
   otpInboxSource: "direct" | "central" | "none";
   mailboxAppPasswordConfigured: boolean;
-  imapHost: string | null;
   needsReview: boolean;
   sellable: boolean;
 };
@@ -322,7 +321,6 @@ export function mapApiInventoryAccountToManaged(
     otpInboxConfigured: otpInboxSource !== "none",
     otpInboxSource,
     mailboxAppPasswordConfigured: account.mailbox_app_password_configured === true,
-    imapHost: account.imap_host?.trim() || null,
     // Akun lama di atas lima pengguna tetap ditandai meskipun backend lama
     // belum mengirim `needs_review`.
     needsReview: account.needs_review === true || sharingLimit > 5 || totalSlots > 5,
