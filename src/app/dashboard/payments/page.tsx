@@ -4,6 +4,7 @@ import { Download, Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
+import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
 import { payments as seedPayments, formatIDR } from "@/data/seed";
 import { adminApi, bootstrapAuth, DEMO_MODE, type ApiOrder } from "@/lib/api";
@@ -206,14 +207,13 @@ export default function PaymentsPage() {
             placeholder="Cari pembayaran, pesanan, atau pelanggan…"
           />
         </div>
-        <select
-          className="select"
-          style={{ width: 150 }}
+        <SearchableSelect
+          className="toolbar-select"
+          ariaLabel="Filter status pembayaran"
+          options={STATUS_FILTERS.map((value) => ({ value, label: value }))}
           value={status}
-          onChange={(event) => setStatus(event.target.value as (typeof STATUS_FILTERS)[number])}
-        >
-          {STATUS_FILTERS.map((value) => <option key={value}>{value}</option>)}
-        </select>
+          onChange={(value) => setStatus(value as (typeof STATUS_FILTERS)[number])}
+        />
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} pembayaran</span>
         {!DEMO_MODE && totalOrders > 0 && (
           <span className="muted" style={{ fontSize: 9 }}>

@@ -41,6 +41,8 @@ export type SubscriptionProduct = {
   featured?: boolean;
   /** Foto produk dari `image_url`; kosong berarti pakai ilustrasi bawaan. */
   imageUrl?: string;
+  /** Icon/logo produk dari `icon_url`; kosong berarti pakai brand bawaan. */
+  iconUrl?: string;
   /** Produk tetap tampil di katalog, tetapi tidak dapat dipesan. */
   comingSoon?: boolean;
   /** Status publikasi dari API. Dihilangkan hanya untuk data demo lama. */

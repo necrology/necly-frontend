@@ -1,9 +1,10 @@
 import Image from "next/image";
 import type { CommerceProduct } from "@/data/products";
+import { ProductIcon } from "@/components/product-icon";
 import { cn } from "@/lib/utils";
 
 type ProductBrandProps = {
-  product: Pick<CommerceProduct, "brand" | "logoTone">;
+  product: Pick<CommerceProduct, "brand" | "logoTone" | "iconUrl">;
   compact?: boolean;
   className?: string;
 };
@@ -31,12 +32,26 @@ function ProductLogoAssets({ product }: Pick<ProductBrandProps, "product">) {
 export function ProductBrand({ product, compact = false, className }: ProductBrandProps) {
   const isBundle = product.logoTone === "disney" && product.brand.toLocaleLowerCase("id-ID").includes("netflix");
 
-  return (
-    <div className={cn("product-brand", `product-brand-${product.logoTone}`, compact && "compact", className)} aria-label={product.brand}>
+  const fallback = (
+    <>
       <span className="product-brand-fallback">
         {product.logoTone === "disney" ? <><span className="disney-word">Disney+ Hotstar</span>{isBundle && <><span className="brand-cross">×</span><span className="netflix-word">NETFLIX</span></>}</> : product.logoTone === "apple" ? <><span className="apple-mark">●</span><span>One</span></> : product.logoTone === "viu" ? <><span className="viu-mark">›</span><span>viu</span></> : product.logoTone === "nord" ? <><span className="nord-mark">▲</span><span>NordVPN</span></> : product.logoTone === "netflix" ? <span className="netflix-word">NETFLIX</span> : product.logoTone === "spotify" ? <><span className="spotify-mark">●</span><span>Spotify</span></> : product.logoTone === "youtube" ? <><span className="youtube-mark">▶</span><span>YouTube <b>Premium</b></span></> : product.logoTone === "microsoft" ? <><span className="microsoft-mark"><i /><i /><i /><i /></span><span>Microsoft 365</span></> : <span>{product.brand}</span>}
       </span>
       <span className={`figma-desktop-product-assets asset-${product.logoTone}`} aria-hidden="true"><ProductLogoAssets product={product} /></span>
+    </>
+  );
+
+  return (
+    <div className={cn("product-brand", `product-brand-${product.logoTone}`, compact && "compact", className)} aria-label={product.brand}>
+      {/* `icon_url` dari backend diprioritaskan; brand hardcoded tetap menjadi fallback. */}
+      <ProductIcon
+        iconUrl={product.iconUrl}
+        name={product.brand}
+        className="product-brand-icon"
+        width={compact ? 72 : 96}
+        height={compact ? 30 : 40}
+        fallback={fallback}
+      />
     </div>
   );
 }

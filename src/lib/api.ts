@@ -163,6 +163,8 @@ export type ApiProduct = {
   slug: string;
   description: string;
   image_url?: string;
+  /** Logo/icon produk; path aset publik atau URL http(s). */
+  icon_url?: string;
   /** Produk tampil di katalog tetapi tidak dapat dipesan. */
   coming_soon?: boolean;
   active?: boolean;

@@ -147,6 +147,7 @@ export function mapApiProduct(product: ApiProduct): SubscriptionProduct {
     accent: category === "Streaming" ? "indigo" : category === "Kreatif" ? "violet" : category === "Keamanan" ? "blue" : "sky",
     featured: false,
     imageUrl: product.image_url?.trim() || undefined,
+    iconUrl: product.icon_url?.trim() || undefined,
     comingSoon: product.coming_soon === true,
     active: product.active !== false,
     priceOptions,

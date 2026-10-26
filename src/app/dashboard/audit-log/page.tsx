@@ -3,6 +3,7 @@
 import { Download, Search, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/page-header";
+import { SearchableSelect } from "@/components/searchable-select";
 import { auditRecords } from "@/data/seed";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { downloadCsv } from "@/lib/csv";
@@ -108,9 +109,13 @@ export default function AuditLogPage() {
       <div className="demo-banner"><ShieldCheck size={15} /><span>Log ini didemonstrasikan untuk traceability. Audit log produksi seharusnya immutable, berizin, dan disimpan sesuai kebijakan.</span></div>
       <div className="toolbar">
         <div className="input-wrap"><Search size={14} /><input className="input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari pelaku, aksi, sumber daya, atau IP…" /></div>
-        <select className="select" style={{ width: 155 }} value={actor} onChange={(e) => setActor(e.target.value)}>
-          {actors.map((value) => <option key={value}>{value}</option>)}
-        </select>
+        <SearchableSelect
+          className="toolbar-select"
+          ariaLabel="Filter pelaku audit"
+          options={actors.map((value) => ({ value, label: value }))}
+          value={actor}
+          onChange={setActor}
+        />
         <span className="muted" style={{ fontSize: 9 }}>{rows.length} peristiwa</span>
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>

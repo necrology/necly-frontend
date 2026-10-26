@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronDown, Clock3, Flame, Search } from "lucide-react";
+import { Clock3, Flame, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { SearchableSelect } from "@/components/searchable-select";
 import { ServiceCard } from "@/components/service-card";
 import { categories, services, type SubscriptionProduct } from "@/data/seed";
 import { filterProducts } from "@/lib/catalog";
@@ -47,7 +48,14 @@ export function ProductsClient({ initialCategory = "Semua" }: ProductsClientProp
     <div className="catalog-reference-shell">
       <div className="container catalog-controls">
         <label className="catalog-search"><Search size={18} /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari Produk..." aria-label="Cari produk" /></label>
-        <label className="catalog-select"><span>{category === "Semua" ? "Semua Kategori" : category}</span><select value={category} onChange={(event) => setCategory(event.target.value)} aria-label="Filter kategori">{categories.map((item) => <option key={item} value={item}>{item === "Semua" ? "Semua Kategori" : item}</option>)}</select><ChevronDown size={17} /></label>
+        <div className="catalog-select is-searchable">
+          <SearchableSelect
+            ariaLabel="Filter kategori"
+            options={categories.map((item) => ({ value: item, label: item === "Semua" ? "Semua Kategori" : item }))}
+            value={category}
+            onChange={setCategory}
+          />
+        </div>
       </div>
       <section className="container offer-banner" aria-label="Penawaran spesial">
         <div className="offer-copy"><Flame size={30} fill="currentColor" /><div><strong>Penawaran Spesial Hari Ini!</strong><span>Dapatkan harga terbaik untuk berbagai layanan premium favorit kamu.</span></div></div>

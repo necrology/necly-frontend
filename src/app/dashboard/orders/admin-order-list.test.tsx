@@ -1,5 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { openSearchableOptions } from "@/test/searchable-select";
 
 const { listOrdersMock, bootstrapAuthMock } = vi.hoisted(() => ({
   listOrdersMock: vi.fn(),
@@ -77,8 +78,8 @@ describe("daftar pesanan admin — seluruh status backend", () => {
     await waitFor(() => expect(screen.getByText("ORD-W8-0")).toBeInTheDocument());
     expect(screen.queryByText("Status lainnya")).not.toBeInTheDocument();
 
-    const filter = screen.getAllByRole("combobox")[0];
-    const optionLabels = Array.from(filter.querySelectorAll("option")).map((option) => option.textContent);
+    const filter = openSearchableOptions("Filter status pesanan");
+    const optionLabels = within(filter).getAllByRole("option").map((option) => option.textContent);
     for (const label of ORDER_STATUS_OPTIONS) {
       expect(optionLabels).toContain(label);
     }

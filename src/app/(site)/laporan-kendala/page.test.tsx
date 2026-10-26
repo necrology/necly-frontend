@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { chooseSearchableOption } from "@/test/searchable-select";
 import IssueReportPage from "./page";
 
 const { createMock, ReportApiErrorMock } = vi.hoisted(() => {
@@ -39,7 +40,7 @@ function fillForm(overrides: Record<string, string> = {}) {
   fireEvent.change(screen.getByLabelText(/^Nama/), { target: { value: values.name } });
   fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: values.email } });
   fireEvent.change(screen.getByLabelText(/^Nomor pesanan/), { target: { value: values.order } });
-  fireEvent.change(screen.getByLabelText(/^Kategori kendala/), { target: { value: values.category } });
+  chooseSearchableOption(/^Kategori kendala/, values.category);
   fireEvent.change(screen.getByLabelText(/^Jelaskan kendala/), { target: { value: values.message } });
 }
 

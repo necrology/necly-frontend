@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { chooseSearchableOption, searchableSelectedText } from "@/test/searchable-select";
 
 const { listProductsMock, listCategoriesMock, updateProductMock, createProductMock, bootstrapAuthMock, compressProductImageMock } = vi.hoisted(() => ({
   listProductsMock: vi.fn(),
@@ -69,8 +70,7 @@ describe("produk admin (W18)", () => {
     expect(await screen.findByText("Spotify Premium")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Premium" }));
 
-    const category = screen.getByLabelText("Kategori") as HTMLSelectElement;
-    expect(category.value).toBe("cat-music");
+    expect(searchableSelectedText("Kategori")).toBe("Streaming Musik");
 
     fireEvent.change(screen.getByLabelText("Nama produk"), { target: { value: "Spotify Premium Baru" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan produk" }));
@@ -105,8 +105,7 @@ describe("produk admin (W18)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Tambah produk" }));
     fireEvent.change(screen.getByLabelText("Nama produk"), { target: { value: "Produk Baru" } });
 
-    const category = screen.getByLabelText("Kategori") as HTMLSelectElement;
-    expect(category.value).toBe("");
+    expect(searchableSelectedText("Kategori")).toBe("");
 
     fireEvent.click(screen.getByRole("button", { name: "Simpan produk" }));
     expect(await screen.findByText("Pilih kategori produk terlebih dahulu.")).toBeInTheDocument();
@@ -117,12 +116,12 @@ describe("produk admin (W18)", () => {
     render(<ProductsPage />);
     await screen.findByText("Spotify Premium");
 
-    fireEvent.change(screen.getByLabelText("Ubah status Spotify Premium"), { target: { value: "Coming Soon" } });
+    chooseSearchableOption("Ubah status Spotify Premium", "Coming Soon");
 
     await waitFor(() => expect(updateProductMock).toHaveBeenCalledTimes(1));
     expect(updateProductMock).toHaveBeenCalledWith("prd-music", { active: true, coming_soon: true });
 
-    fireEvent.change(screen.getByLabelText("Ubah status Spotify Premium"), { target: { value: "Nonaktif" } });
+    chooseSearchableOption("Ubah status Spotify Premium", "Nonaktif");
 
     await waitFor(() => expect(updateProductMock).toHaveBeenCalledTimes(2));
     expect(updateProductMock).toHaveBeenLastCalledWith("prd-music", { active: false, coming_soon: false });
@@ -139,7 +138,7 @@ describe("produk admin (W18)", () => {
     render(<ProductsPage />);
     expect(await screen.findByText("Canva Teams")).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("Filter status"), { target: { value: "Coming Soon" } });
+    chooseSearchableOption("Filter status", "Coming Soon");
 
     expect(screen.getByText("Canva Teams")).toBeInTheDocument();
     expect(screen.queryByText("Spotify Premium")).not.toBeInTheDocument();

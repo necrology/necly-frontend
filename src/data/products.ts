@@ -99,6 +99,10 @@ export const products: CommerceProduct[] = [
     packageName: "Bulanan",
     badge: "Trending",
     logoTone: "viu",
+    // Data demo: salah satu produk sengaja ditandai Coming Soon agar pita di
+    // beranda terlihat. Data live memakai `coming_soon` dari API.
+    comingSoon: true,
+    iconUrl: "/design-assets/logo-viu.png",
     eyebrow: "Viu Premium",
     category: "Streaming",
     price: 27_500,
@@ -160,6 +164,7 @@ export const products: CommerceProduct[] = [
     brand: "NETFLIX",
     packageName: "Reguler Bulanan",
     logoTone: "netflix",
+    iconUrl: "/design-assets/logo-netflix.png",
     eyebrow: "Netflix Premium",
     category: "Streaming",
     price: 27_500,

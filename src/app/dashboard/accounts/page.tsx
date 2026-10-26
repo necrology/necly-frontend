@@ -15,6 +15,7 @@ import {
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
+import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
 import { services } from "@/data/seed";
 import { ApiError, adminApi, apiErrorCode, bootstrapAuth, DEMO_MODE } from "@/lib/api";
@@ -888,18 +889,15 @@ export default function AccountsPage() {
             <div className="field">
               <label className="label" htmlFor="account-product">Produk</label>
               {form.mode === "create" ? (
-                <select
-                  className="input"
-                  id="account-product"
+                <SearchableSelect
+                  inputId="account-product"
+                  ariaLabel="Produk"
                   value={form.productId}
-                  onChange={(event) => setForm({ ...form, productId: event.target.value })}
+                  onChange={(value) => setForm({ ...form, productId: value })}
+                  placeholder="Pilih produk"
                   required
-                >
-                  <option value="">Pilih produk</option>
-                  {products.map((product) => (
-                    <option key={product.id} value={product.id}>{product.name}</option>
-                  ))}
-                </select>
+                  options={products.map((product) => ({ value: product.id, label: product.name }))}
+                />
               ) : (
                 <input
                   className="input"
@@ -952,16 +950,13 @@ export default function AccountsPage() {
 
             <div className="field">
               <label className="label" htmlFor="account-status">Status akun</label>
-              <select
-                className="input"
-                id="account-status"
+              <SearchableSelect
+                inputId="account-status"
+                ariaLabel="Status akun"
                 value={form.status}
-                onChange={(event) => setForm({ ...form, status: event.target.value as AccountStatus })}
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
+                onChange={(value) => setForm({ ...form, status: value as AccountStatus })}
+                options={STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+              />
             </div>
 
             <div className="field">
@@ -1140,20 +1135,17 @@ export default function AccountsPage() {
           <div className="form-grid" style={{ padding: 18 }}>
             <div className="field">
               <label className="label" htmlFor="slot-price">Paket</label>
-              <select
-                className="input"
-                id="slot-price"
+              <SearchableSelect
+                inputId="slot-price"
+                ariaLabel="Paket"
                 value={slotForm.priceId}
-                onChange={(event) => setSlotForm({ ...slotForm, priceId: event.target.value, error: "" })}
+                onChange={(value) => setSlotForm({ ...slotForm, priceId: value, error: "" })}
+                placeholder="Pilih paket"
                 required
-              >
-                <option value="">Pilih paket</option>
-                {(detailProduct?.prices ?? products.find((product) => product.id === slotAccount?.productId)?.prices ?? []).map(
-                  (price) => (
-                    <option key={price.id} value={price.id}>{price.label}</option>
-                  ),
+                options={(detailProduct?.prices ?? products.find((product) => product.id === slotAccount?.productId)?.prices ?? []).map(
+                  (price) => ({ value: price.id, label: price.label }),
                 )}
-              </select>
+              />
               {slotAccount && slotAccount.remainingSlots === 0 && (
                 <p className="muted" style={{ margin: 0, fontSize: 11 }}>
                   Sisa kapasitas akun ini 0. Naikkan limit sharing terlebih dahulu.
@@ -1207,30 +1199,26 @@ export default function AccountsPage() {
             aria-label="Cari akun"
           />
         </div>
-        <select
-          className="input"
+        <SearchableSelect
+          className="toolbar-select"
+          ariaLabel="Filter status akun"
           value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-          aria-label="Filter status akun"
-          style={{ maxWidth: 180 }}
-        >
-          <option value="all">Semua status</option>
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
-          ))}
-        </select>
-        <select
-          className="input"
+          onChange={setStatusFilter}
+          options={[
+            { value: "all", label: "Semua status" },
+            ...STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+          ]}
+        />
+        <SearchableSelect
+          className="toolbar-select toolbar-select-wide"
+          ariaLabel="Filter produk akun"
           value={productFilter}
-          onChange={(event) => setProductFilter(event.target.value)}
-          aria-label="Filter produk akun"
-          style={{ maxWidth: 220 }}
-        >
-          <option value="all">Semua produk</option>
-          {productOptions.map((product) => (
-            <option key={product.id} value={product.id}>{product.name}</option>
-          ))}
-        </select>
+          onChange={setProductFilter}
+          options={[
+            { value: "all", label: "Semua produk" },
+            ...productOptions.map((product) => ({ value: product.id, label: product.name })),
+          ]}
+        />
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>
 

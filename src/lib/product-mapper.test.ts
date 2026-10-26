@@ -151,10 +151,12 @@ describe("mapApiProduct", () => {
       ...apiProduct,
       coming_soon: true,
       image_url: "https://cdn.necly.id/produk/netflix.jpg",
+      icon_url: "/design-assets/logo-netflix.png",
     });
 
     expect(product.comingSoon).toBe(true);
     expect(product.imageUrl).toBe("https://cdn.necly.id/produk/netflix.jpg");
+    expect(product.iconUrl).toBe("/design-assets/logo-netflix.png");
     expect(product.active).toBe(true);
     expect(product.stock).toBe(6);
   });
@@ -165,6 +167,7 @@ describe("mapApiProduct", () => {
     expect(product.active).toBe(true);
     expect(product.comingSoon).toBe(false);
     expect(product.imageUrl).toBeUndefined();
+    expect(product.iconUrl).toBeUndefined();
   });
 
   it("tidak membuat bukti sosial dari data API", () => {

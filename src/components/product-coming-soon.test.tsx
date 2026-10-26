@@ -20,20 +20,22 @@ describe("halaman detail produk Coming Soon", () => {
   it("menonaktifkan pemilihan paket, durasi, perangkat, dan tombol pesan", () => {
     render(<ProductDetailClient product={comingSoonProduct} />);
 
-    expect(screen.getByRole("status")).toHaveTextContent(/Produk ini segera hadir/);
+    expect(screen.getByText("Produk ini segera hadir. Pemesanan dibuka setelah tanggal rilis.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: new RegExp(comingSoonProduct.packageName) })).toBeDisabled();
     expect(screen.getAllByRole("button", { name: /1 Bulan/ })[0]).toBeDisabled();
     expect(screen.getByRole("button", { name: "1 Perangkat" })).toBeDisabled();
 
-    const orderButtons = screen.getAllByRole("button", { name: "Pesan" });
+    // CTA pemesanan diganti pesan "Segera hadir" dan tidak dapat diklik.
+    const orderButtons = screen.getAllByRole("button", { name: "Segera hadir" });
     expect(orderButtons.length).toBeGreaterThan(0);
     orderButtons.forEach((button) => expect(button).toBeDisabled());
+    expect(screen.queryByRole("button", { name: "Pesan" })).not.toBeInTheDocument();
   });
 
   it("tidak pernah mendorong produk Coming Soon ke keranjang", () => {
     render(<ProductDetailClient product={comingSoonProduct} />);
 
-    const orderButtons = screen.getAllByRole("button", { name: "Pesan" });
+    const orderButtons = screen.getAllByRole("button", { name: "Segera hadir" });
     orderButtons.forEach((button) => fireEvent.click(button));
 
     expect(addItemMock).not.toHaveBeenCalled();

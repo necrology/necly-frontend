@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CategoryChart, OrdersChart } from "@/components/dashboard-charts";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
+import { SearchableSelect } from "@/components/searchable-select";
 import { categoryPerformance } from "@/data/seed";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 
@@ -71,30 +72,26 @@ export default function ReportsPage() {
         </div>
       )}
       <div className="toolbar">
-        <select
-          className="select"
-          style={{ width: 170 }}
-          value={period}
-          onChange={(event) => setPeriod(event.target.value)}
-          disabled={!DEMO_MODE}
-          title={DEMO_MODE ? undefined : "Filter periode belum tersedia dari API"}
-        >
-          <option>7 hari terakhir</option>
-          <option>30 hari terakhir</option>
-          <option>Kuartal ini</option>
-        </select>
-        <select
-          className="select"
-          style={{ width: 150 }}
-          value={metric}
-          onChange={(event) => setMetric(event.target.value)}
-          disabled={!DEMO_MODE}
-          title={DEMO_MODE ? undefined : "Pilihan metrik belum tersedia dari API"}
-        >
-          <option>Pendapatan</option>
-          <option>Pesanan</option>
-          <option>Konversi</option>
-        </select>
+        <div title={DEMO_MODE ? undefined : "Filter periode belum tersedia dari API"}>
+          <SearchableSelect
+            className="toolbar-select"
+            ariaLabel="Filter periode laporan"
+            options={["7 hari terakhir", "30 hari terakhir", "Kuartal ini"].map((value) => ({ value, label: value }))}
+            value={period}
+            onChange={setPeriod}
+            isDisabled={!DEMO_MODE}
+          />
+        </div>
+        <div title={DEMO_MODE ? undefined : "Pilihan metrik belum tersedia dari API"}>
+          <SearchableSelect
+            className="toolbar-select"
+            ariaLabel="Pilih metrik laporan"
+            options={["Pendapatan", "Pesanan", "Konversi"].map((value) => ({ value, label: value }))}
+            value={metric}
+            onChange={setMetric}
+            isDisabled={!DEMO_MODE}
+          />
+        </div>
         <span className="muted" style={{ fontSize: 9 }}>
           {DEMO_MODE ? `Melihat ${metric.toLowerCase()} · ${period.toLowerCase()}` : "Data laporan belum tersedia"}
         </span>
