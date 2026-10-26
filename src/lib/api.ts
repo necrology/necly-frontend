@@ -69,6 +69,14 @@ export type ApiInventoryAccount = {
   days_remaining?: number | null;
   /** Apakah secret TOTP sudah tersimpan. Secret-nya sendiri tidak pernah dikirim. */
   otp_configured?: boolean;
+  /** Email akun (bukan secret) untuk ditampilkan pada form edit. */
+  account_email?: string | null;
+  /** Ringkasan kesiapan inbox OTP Gmail: direct, central, atau none. */
+  otp_inbox_configured?: boolean;
+  otp_inbox_source?: "direct" | "central" | "none" | string | null;
+  /** Apakah app password Gmail sudah tersimpan. Nilainya tidak pernah dikirim. */
+  mailbox_app_password_configured?: boolean;
+  imap_host?: string | null;
   /** Akun lama dengan limit di atas lima pengguna; tidak boleh menambah slot. */
   needs_review?: boolean;
   sellable?: boolean;

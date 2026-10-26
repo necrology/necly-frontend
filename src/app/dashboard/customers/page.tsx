@@ -1,8 +1,9 @@
 "use client";
 
-import { Search, UserCog, X } from "lucide-react";
+import { Search, UserCog } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
+import { Modal } from "@/components/modal";
 import { PageHeader } from "@/components/page-header";
 import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
@@ -333,18 +334,34 @@ export default function CustomersPage() {
       {notice && <div className="notice success" role="status">{notice}</div>}
 
       {selectedRow && (
-        <section className="card panel" aria-labelledby="access-panel-title">
-          <div className="panel-header">
-            <div>
-              <h2 className="panel-title" id="access-panel-title">Kelola akses — {selectedRow.name}</h2>
-              <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>{selectedRow.email}</p>
-            </div>
-            <button className="table-action" type="button" onClick={closeManage} aria-label="Tutup form kelola akses" disabled={submitting}>
-              <X size={13} />
-            </button>
-          </div>
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="form-grid" style={{ padding: 18 }}>
+        <Modal
+          title={`Kelola akses — ${selectedRow.name}`}
+          description={selectedRow.email}
+          onClose={closeManage}
+          footer={
+            confirming ? (
+              <>
+                <button className="button button-secondary" type="button" onClick={() => setConfirming(false)} disabled={submitting}>
+                  Periksa lagi
+                </button>
+                <button className="button button-primary" type="submit" form="access-form" disabled={submitting}>
+                  {submitting ? "Menyimpan…" : "Ya, terapkan perubahan"}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="button button-secondary" type="button" onClick={closeManage} disabled={submitting}>
+                  Batal
+                </button>
+                <button className="button button-primary" type="submit" form="access-form" disabled={submitting}>
+                  Simpan perubahan
+                </button>
+              </>
+            )
+          }
+        >
+          <form id="access-form" onSubmit={handleSubmit} noValidate>
+            <div className="form-grid">
               <div className="field">
                 <label className="label" htmlFor="access-role">Peran</label>
                 <SearchableSelect
@@ -358,7 +375,7 @@ export default function CustomersPage() {
                   isDisabled={submitting}
                   options={ROLE_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
                 />
-                <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
                   Role menentukan menu dashboard yang dapat diakses pengguna.
                 </p>
               </div>
@@ -375,49 +392,29 @@ export default function CustomersPage() {
                   isDisabled={submitting}
                   options={[{ value: "aktif", label: "Aktif" }, { value: "nonaktif", label: "Nonaktif" }]}
                 />
-                <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
                   Akun nonaktif tidak dapat masuk sampai diaktifkan kembali oleh admin.
                 </p>
               </div>
 
               {actionError && (
                 <div
-                  className="notice"
+                  className="notice field-full"
                   role="alert"
-                  style={{ gridColumn: "1 / -1", color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}
+                  style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}
                 >
                   {actionError}
                 </div>
               )}
 
               {confirming && changeSummary && (
-                <div className="notice" role="status" style={{ gridColumn: "1 / -1" }}>
+                <div className="notice field-full" role="status">
                   Konfirmasi: Anda akan mengubah {changeSummary} untuk <strong>{selectedRow.name}</strong>. Perubahan langsung berlaku.
                 </div>
               )}
-
-              <div className="field" style={{ gridColumn: "1 / -1", display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {confirming ? (
-                  <>
-                    <button className="button button-primary" type="submit" disabled={submitting}>
-                      {submitting ? "Menyimpan…" : "Ya, terapkan perubahan"}
-                    </button>
-                    <button className="button button-secondary" type="button" onClick={() => setConfirming(false)} disabled={submitting}>
-                      Periksa lagi
-                    </button>
-                  </>
-                ) : (
-                  <button className="button button-primary" type="submit" disabled={submitting}>
-                    Simpan perubahan
-                  </button>
-                )}
-                <button className="button button-ghost" type="button" onClick={closeManage} disabled={submitting}>
-                  Batal
-                </button>
-              </div>
             </div>
           </form>
-        </section>
+        </Modal>
       )}
 
       <div className="toolbar">

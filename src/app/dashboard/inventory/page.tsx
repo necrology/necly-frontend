@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
+import { Modal } from "@/components/modal";
 import { PageHeader } from "@/components/page-header";
 import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
@@ -989,249 +990,262 @@ export default function InventoryPage() {
       {actionError && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{actionError}</div>}
 
       {pendingStatus && (
-        <div className="card panel" role="alertdialog" aria-label="Konfirmasi status akun">
-          <div className="panel-header">
-            <h2 className="panel-title">
-              Konfirmasi: {pendingStatus.nextStatus === "active" ? "aktifkan" : "nonaktifkan"} akun {pendingStatus.label}?
-            </h2>
-          </div>
-          <p className="muted" style={{ margin: "0 0 14px", fontSize: 11 }}>
+        <Modal
+          title={`Konfirmasi: ${pendingStatus.nextStatus === "active" ? "aktifkan" : "nonaktifkan"} akun ${pendingStatus.label}?`}
+          size="sm"
+          role="alertdialog"
+          onClose={() => setPendingStatus(null)}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={() => setPendingStatus(null)} disabled={submitting}>
+                Batal
+              </button>
+              <button className="button button-primary" type="button" onClick={applyStatusChange} disabled={submitting}>
+                {submitting ? "Menyimpan…" : pendingStatus.nextStatus === "active" ? "Ya, aktifkan" : "Ya, nonaktifkan"}
+              </button>
+            </>
+          }
+        >
+          <p className="muted" style={{ margin: 0, fontSize: 12 }}>
             {pendingStatus.nextStatus === "active"
               ? "Akun akan bisa dipakai kembali untuk akses baru."
               : "Slot yang sudah ada tetap terpakai, tetapi akun tidak akan dipilih untuk kapasitas baru."}
           </p>
-          <div className="table-actions" style={{ justifyContent: "flex-start" }}>
-            <button className="button button-primary button-sm" type="button" onClick={applyStatusChange} disabled={submitting}>
-              {submitting ? "Menyimpan…" : pendingStatus.nextStatus === "active" ? "Ya, aktifkan" : "Ya, nonaktifkan"}
-            </button>
-            <button className="button button-secondary button-sm" type="button" onClick={() => setPendingStatus(null)} disabled={submitting}>
-              Batal
-            </button>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {accountForm && (
-        <form className="card panel" onSubmit={submitAccount}>
-          <div className="panel-header">
-            <h2 className="panel-title">
-              {accountForm.mode === "create" ? "Tambah akun inventaris" : `Kelola akun — ${accountForm.label || "akun"}`}
-            </h2>
-            <button className="table-action" type="button" onClick={closeAccountForm} aria-label="Tutup formulir akun">
-              <X size={13} />
-            </button>
-          </div>
-          <div className="form-grid" style={{ padding: 18 }}>
-            {accountForm.mode === "create" && (
-              <div className="field">
-                <label className="label" htmlFor="inv-product">Produk</label>
-                <SearchableSelect
-                  inputId="inv-product"
-                  ariaLabel="Produk"
-                  value={accountForm.productId}
-                  onChange={(value) => setAccountForm({ ...accountForm, productId: value })}
-                  placeholder="Pilih produk"
-                  required
-                  options={products.map((product) => ({ value: product.id, label: product.name }))}
-                />
-              </div>
-            )}
-            <div className="field">
-              <label className="label" htmlFor="inv-label">Label akun</label>
-              <input
-                className="input"
-                id="inv-label"
-                value={accountForm.label}
-                onChange={(event) => setAccountForm({ ...accountForm, label: event.target.value })}
-                placeholder="Contoh: Akun utama"
-                maxLength={120}
-                required
-              />
-            </div>
-            <div className="field" style={{ gridColumn: accountForm.mode === "create" ? undefined : "1 / -1" }}>
-              <label className="label" htmlFor="inv-credentials">
-                {accountForm.mode === "create" ? "Kredensial akun" : "Kredensial baru (opsional)"}
-              </label>
-              <textarea
-                className="input"
-                id="inv-credentials"
-                name="credentials"
-                rows={3}
-                value={accountForm.credentials}
-                onChange={(event) => setAccountForm({ ...accountForm, credentials: event.target.value })}
-                placeholder={accountForm.mode === "create" ? "Email dan kata sandi akun" : "Kosongkan bila tidak ingin mengganti kredensial"}
-                autoComplete="off"
-              />
-              <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>
-                Kredensial disimpan terenkripsi dan tidak pernah ditampilkan kembali setelah disimpan.
-              </p>
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="inv-status">Status akun</label>
-              <SearchableSelect
-                inputId="inv-status"
-                ariaLabel="Status akun"
-                value={accountForm.status}
-                onChange={(value) => setAccountForm({ ...accountForm, status: value as InventoryStatus })}
-                options={STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
-              />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="inv-sharing-limit">Limit sharing</label>
-              <input
-                className="input"
-                id="inv-sharing-limit"
-                type="number"
-                min="1"
-                max="1000"
-                value={accountForm.sharingLimit}
-                onChange={(event) => setAccountForm({ ...accountForm, sharingLimit: event.target.value })}
-                required
-              />
-              <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>1 sampai 1000 akses per akun.</p>
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="inv-expiry">Kedaluwarsa</label>
-              <input
-                className="input"
-                id="inv-expiry"
-                type="date"
-                value={accountForm.expires}
-                onChange={(event) => setAccountForm({ ...accountForm, expires: event.target.value })}
-              />
-              <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>
-                Opsional. Tanggal yang sudah tersimpan tidak dapat dihapus dari form ini.
-              </p>
-            </div>
-            <div className="field" style={{ alignSelf: "end" }}>
-              <button className="button button-primary" type="submit" disabled={submitting}>
+        <Modal
+          title={accountForm.mode === "create" ? "Tambah akun inventaris" : `Kelola akun — ${accountForm.label || "akun"}`}
+          description="Kredensial disimpan terenkripsi dan tidak pernah ditampilkan kembali."
+          size="lg"
+          onClose={closeAccountForm}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={closeAccountForm} disabled={submitting}>
+                Batal
+              </button>
+              <button className="button button-primary" type="submit" form="inventory-account-form" disabled={submitting}>
                 {submitting ? "Menyimpan…" : accountForm.mode === "create" ? "Simpan akun" : "Simpan perubahan"}
               </button>
-            </div>
-            {formError && (
-              <p className="field" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
-                {formError}
-              </p>
-            )}
-          </div>
-
-          {pendingSave && (
-            <div className="notice" role="alertdialog" aria-label="Konfirmasi perubahan akun" style={{ margin: "0 18px 18px" }}>
-              <p style={{ margin: "0 0 12px" }}>{pendingSave.summary}</p>
-              <div className="table-actions" style={{ justifyContent: "flex-start" }}>
-                <button className="button button-primary button-sm" type="button" onClick={applyAccountUpdate} disabled={submitting}>
-                  {submitting ? "Menyimpan…" : "Ya, terapkan perubahan"}
-                </button>
-                <button className="button button-secondary button-sm" type="button" onClick={() => setPendingSave(null)} disabled={submitting}>
-                  Batal
-                </button>
+            </>
+          }
+        >
+          <form id="inventory-account-form" onSubmit={submitAccount} aria-label="Form akun inventaris">
+            <div className="form-grid">
+              {accountForm.mode === "create" && (
+                <div className="field">
+                  <label className="label" htmlFor="inv-product">Produk</label>
+                  <SearchableSelect
+                    inputId="inv-product"
+                    ariaLabel="Produk"
+                    value={accountForm.productId}
+                    onChange={(value) => setAccountForm({ ...accountForm, productId: value })}
+                    placeholder="Pilih produk"
+                    required
+                    options={products.map((product) => ({ value: product.id, label: product.name }))}
+                  />
+                </div>
+              )}
+              <div className="field">
+                <label className="label" htmlFor="inv-label">Label akun</label>
+                <input
+                  className="input"
+                  id="inv-label"
+                  value={accountForm.label}
+                  onChange={(event) => setAccountForm({ ...accountForm, label: event.target.value })}
+                  placeholder="Contoh: Akun utama"
+                  maxLength={120}
+                  required
+                />
               </div>
+              <div className={accountForm.mode === "create" ? "field" : "field field-full"}>
+                <label className="label" htmlFor="inv-credentials">
+                  {accountForm.mode === "create" ? "Kredensial akun" : "Kredensial baru (opsional)"}
+                </label>
+                <textarea
+                  className="input"
+                  id="inv-credentials"
+                  name="credentials"
+                  rows={3}
+                  value={accountForm.credentials}
+                  onChange={(event) => setAccountForm({ ...accountForm, credentials: event.target.value })}
+                  placeholder={accountForm.mode === "create" ? "Email dan kata sandi akun" : "Kosongkan bila tidak ingin mengganti kredensial"}
+                  autoComplete="off"
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  Kredensial disimpan terenkripsi dan tidak pernah ditampilkan kembali setelah disimpan.
+                </p>
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="inv-status">Status akun</label>
+                <SearchableSelect
+                  inputId="inv-status"
+                  ariaLabel="Status akun"
+                  value={accountForm.status}
+                  onChange={(value) => setAccountForm({ ...accountForm, status: value as InventoryStatus })}
+                  options={STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+                />
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="inv-sharing-limit">Limit sharing</label>
+                <input
+                  className="input"
+                  id="inv-sharing-limit"
+                  type="number"
+                  min="1"
+                  max="1000"
+                  value={accountForm.sharingLimit}
+                  onChange={(event) => setAccountForm({ ...accountForm, sharingLimit: event.target.value })}
+                  required
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>1 sampai 1000 akses per akun.</p>
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="inv-expiry">Kedaluwarsa</label>
+                <input
+                  className="input"
+                  id="inv-expiry"
+                  type="date"
+                  value={accountForm.expires}
+                  onChange={(event) => setAccountForm({ ...accountForm, expires: event.target.value })}
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  Opsional. Tanggal yang sudah tersimpan tidak dapat dihapus dari form ini.
+                </p>
+              </div>
+              {formError && (
+                <p className="field field-full" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
+                  {formError}
+                </p>
+              )}
+
+              {pendingSave && (
+                <div className="notice field-full" role="alertdialog" aria-label="Konfirmasi perubahan akun">
+                  <p style={{ margin: "0 0 12px" }}>{pendingSave.summary}</p>
+                  <div className="table-actions" style={{ justifyContent: "flex-start" }}>
+                    <button className="button button-primary button-sm" type="button" onClick={applyAccountUpdate} disabled={submitting}>
+                      {submitting ? "Menyimpan…" : "Ya, terapkan perubahan"}
+                    </button>
+                    <button className="button button-secondary button-sm" type="button" onClick={() => setPendingSave(null)} disabled={submitting}>
+                      Batal
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </form>
+          </form>
+        </Modal>
       )}
 
       {slotForm && (
-        <form className="card panel" onSubmit={submitSlots}>
-          <div className="panel-header">
-            <h2 className="panel-title">Tambah akses akun</h2>
-            <button className="table-action" type="button" onClick={closeSlotForm} aria-label="Tutup formulir akses">
-              <X size={13} />
-            </button>
-          </div>
-          <div className="form-grid" style={{ padding: 18 }}>
-            <div className="field">
-              <label className="label" htmlFor="inv-slot-account">Akun</label>
-              <SearchableSelect
-                inputId="inv-slot-account"
-                ariaLabel="Akun"
-                value={slotForm.accountId}
-                onChange={handleSlotAccountChange}
-                required
-                options={accounts.map((account) => ({
-                  value: account.id,
-                  label: `${account.productName} · ${account.label} · sisa ${account.remainingSlots} slot`,
-                }))}
-              />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="inv-slot-price">Paket</label>
-              <SearchableSelect
-                inputId="inv-slot-price"
-                ariaLabel="Paket"
-                value={slotForm.priceId}
-                onChange={(value) => {
-                  setSlotForm({ ...slotForm, priceId: value });
-                  setPendingSlot(null);
-                }}
-                placeholder="Pilih paket"
-                required
-                options={(slotProduct?.prices ?? []).map((price) => ({ value: price.id, label: price.label }))}
-              />
-              {slotProduct && slotProduct.prices.length === 0 && (
-                <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>Produk ini belum memiliki paket aktif.</p>
-              )}
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="inv-slot-quantity">Jumlah akses</label>
-              <input
-                className="input"
-                id="inv-slot-quantity"
-                type="number"
-                min="1"
-                max="100"
-                value={slotForm.quantity}
-                onChange={(event) => {
-                  setSlotForm({ ...slotForm, quantity: event.target.value });
-                  setPendingSlot(null);
-                }}
-                required
-              />
-              {selectedSlotAccount && (
-                <p className="muted" style={{ margin: "6px 0 0", fontSize: 11 }}>
-                  Sisa kapasitas {selectedSlotAccount.label}: {selectedSlotAccount.remainingSlots} slot
-                  {" "}(limit {selectedSlotAccount.sharingLimit}, terprovisi {selectedSlotAccount.totalSlots}).
-                </p>
-              )}
-              {selectedSlotAccount && selectedSlotAccount.remainingSlots === 0 && (
-                <p role="alert" style={{ margin: "6px 0 0", color: "var(--danger)", fontSize: 11 }}>
-                  Limit sharing akun ini sudah tercapai. Naikkan limit atau pilih akun lain.
-                </p>
-              )}
-            </div>
-            <div className="field" style={{ alignSelf: "end" }}>
+        <Modal
+          title="Tambah akses akun"
+          description="Tambahkan kapasitas jual pada akun inventaris yang masih memiliki sisa slot."
+          size="lg"
+          onClose={closeSlotForm}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={closeSlotForm} disabled={submitting}>
+                Batal
+              </button>
               <button
                 className="button button-primary"
                 type="submit"
+                form="inventory-slot-form"
                 disabled={submitting || !selectedSlotAccount || selectedSlotAccount.remainingSlots === 0}
               >
                 {submitting ? "Menyimpan…" : "Simpan akses"}
               </button>
-            </div>
-            {slotError && (
-              <p className="field" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
-                {slotError}
-              </p>
-            )}
-          </div>
-
-          {pendingSlot && (
-            <div className="notice" role="alertdialog" aria-label="Konfirmasi tambah akses" style={{ margin: "0 18px 18px" }}>
-              <p style={{ margin: "0 0 12px" }}>
-                Konfirmasi tambah akses: {pendingSlot.quantity} akses pada akun {`"${pendingSlot.accountLabel}"`} untuk paket{" "}
-                {pendingSlot.priceLabel}. Sisa kapasitas setelah ditambahkan: {pendingSlot.remainingAfter} akses.
-              </p>
-              <div className="table-actions" style={{ justifyContent: "flex-start" }}>
-                <button className="button button-primary button-sm" type="button" onClick={applySlotCreation} disabled={submitting}>
-                  {submitting ? "Menyimpan…" : "Ya, tambahkan akses"}
-                </button>
-                <button className="button button-secondary button-sm" type="button" onClick={() => setPendingSlot(null)} disabled={submitting}>
-                  Batal
-                </button>
+            </>
+          }
+        >
+          <form id="inventory-slot-form" onSubmit={submitSlots} aria-label="Form tambah akses">
+            <div className="form-grid">
+              <div className="field">
+                <label className="label" htmlFor="inv-slot-account">Akun</label>
+                <SearchableSelect
+                  inputId="inv-slot-account"
+                  ariaLabel="Akun"
+                  value={slotForm.accountId}
+                  onChange={handleSlotAccountChange}
+                  required
+                  options={accounts.map((account) => ({
+                    value: account.id,
+                    label: `${account.productName} · ${account.label} · sisa ${account.remainingSlots} slot`,
+                  }))}
+                />
               </div>
+              <div className="field">
+                <label className="label" htmlFor="inv-slot-price">Paket</label>
+                <SearchableSelect
+                  inputId="inv-slot-price"
+                  ariaLabel="Paket"
+                  value={slotForm.priceId}
+                  onChange={(value) => {
+                    setSlotForm({ ...slotForm, priceId: value });
+                    setPendingSlot(null);
+                  }}
+                  placeholder="Pilih paket"
+                  required
+                  options={(slotProduct?.prices ?? []).map((price) => ({ value: price.id, label: price.label }))}
+                />
+                {slotProduct && slotProduct.prices.length === 0 && (
+                  <p className="muted" style={{ margin: 0, fontSize: 11 }}>Produk ini belum memiliki paket aktif.</p>
+                )}
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="inv-slot-quantity">Jumlah akses</label>
+                <input
+                  className="input"
+                  id="inv-slot-quantity"
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={slotForm.quantity}
+                  onChange={(event) => {
+                    setSlotForm({ ...slotForm, quantity: event.target.value });
+                    setPendingSlot(null);
+                  }}
+                  required
+                />
+                {selectedSlotAccount && (
+                  <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                    Sisa kapasitas {selectedSlotAccount.label}: {selectedSlotAccount.remainingSlots} slot
+                    {" "}(limit {selectedSlotAccount.sharingLimit}, terprovisi {selectedSlotAccount.totalSlots}).
+                  </p>
+                )}
+                {selectedSlotAccount && selectedSlotAccount.remainingSlots === 0 && (
+                  <p role="alert" style={{ margin: 0, color: "var(--danger)", fontSize: 11 }}>
+                    Limit sharing akun ini sudah tercapai. Naikkan limit atau pilih akun lain.
+                  </p>
+                )}
+              </div>
+              {slotError && (
+                <p className="field field-full" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
+                  {slotError}
+                </p>
+              )}
+
+              {pendingSlot && (
+                <div className="notice field-full" role="alertdialog" aria-label="Konfirmasi tambah akses">
+                  <p style={{ margin: "0 0 12px" }}>
+                    Konfirmasi tambah akses: {pendingSlot.quantity} akses pada akun {`"${pendingSlot.accountLabel}"`} untuk paket{" "}
+                    {pendingSlot.priceLabel}. Sisa kapasitas setelah ditambahkan: {pendingSlot.remainingAfter} akses.
+                  </p>
+                  <div className="table-actions" style={{ justifyContent: "flex-start" }}>
+                    <button className="button button-primary button-sm" type="button" onClick={applySlotCreation} disabled={submitting}>
+                      {submitting ? "Menyimpan…" : "Ya, tambahkan akses"}
+                    </button>
+                    <button className="button button-secondary button-sm" type="button" onClick={() => setPendingSlot(null)} disabled={submitting}>
+                      Batal
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </form>
+          </form>
+        </Modal>
       )}
 
       <div className="toolbar">

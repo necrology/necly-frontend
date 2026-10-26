@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
+import { Modal } from "@/components/modal";
 import { PageHeader } from "@/components/page-header";
 import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
@@ -40,8 +41,13 @@ type AccountFormState = {
   accountId?: string;
   productId: string;
   label: string;
-  // Write-only: never prefilled from the API.
-  credentials: string;
+  /** Email akun, aman ditampilkan. Bukan secret. */
+  accountEmail: string;
+  /** Write-only: tidak pernah diprefill dari API. */
+  accountPassword: string;
+  /** Write-only: app password Gmail untuk membaca OTP langsung dari mailbox. */
+  mailboxAppPassword: string;
+  imapHost: string;
   status: AccountStatus;
   expires: string;
   sharingLimit: string;
@@ -120,6 +126,28 @@ function toExpiresAt(value: string) {
 
 function statusLabel(value: string) {
   return STATUS_OPTIONS.find((option) => option.value === value)?.label ?? value;
+}
+
+function otpInboxBadge(account: ManagedAccount) {
+  switch (account.otpInboxSource) {
+    case "direct":
+      return { label: "Siap", tone: "status-success", detail: "OTP dibaca langsung dari mailbox akun." };
+    case "central":
+      return { label: "Mailbox pusat", tone: "status-warning", detail: "OTP memakai mailbox pusat, bukan mailbox akun ini." };
+    default:
+      return { label: "Belum siap", tone: "status-danger", detail: "Belum ada inbox OTP yang siap untuk akun ini." };
+  }
+}
+
+/**
+ * Backend NEC-121 menerima field kredensial terpisah. Bila endpoint lama
+ * menolak field baru, permintaan diulang sekali dengan `credentials` gabungan
+ * supaya dashboard tetap kompatibel selama masa transisi.
+ */
+function shouldRetryWithLegacyCredentials(error: unknown) {
+  if (!(error instanceof ApiError) || error.status !== 400) return false;
+  const message = error.message.toLowerCase();
+  return /account_email|account_password|mailbox_app_password|imap_host|unknown field|field.*tidak/.test(message);
 }
 
 function daysLabel(days: number | null) {
@@ -231,6 +259,11 @@ function buildDemoAccounts(): ManagedAccount[] {
       remainingSlots: Math.max(sharingLimit - totalSlots, 0),
       assignedUsers: usedSlots,
       otpConfigured: index % 2 === 0,
+      accountEmail: `akun${index + 1}@necly.test`,
+      otpInboxConfigured: index % 3 !== 2,
+      otpInboxSource: index % 3 === 0 ? "direct" : index % 3 === 1 ? "central" : "none",
+      mailboxAppPasswordConfigured: index % 3 === 0,
+      imapHost: index % 3 === 0 ? "imap.gmail.com" : null,
       needsReview: sharingLimit > 5,
       sellable: index !== 4,
     };
@@ -465,7 +498,7 @@ export default function AccountsPage() {
 
   const metrics = useMemo(() => {
     const linkedUsers = accounts.reduce((sum, account) => sum + account.assignedUsers, 0);
-    const otpReady = accounts.filter((account) => account.otpConfigured).length;
+    const otpReady = accounts.filter((account) => account.otpInboxConfigured).length;
     const needsReview = accounts.filter((account) => account.needsReview).length;
     const expiring = accounts.filter(
       (account) => account.daysRemaining !== null && account.daysRemaining > 0 && account.daysRemaining <= 7,
@@ -481,7 +514,10 @@ export default function AccountsPage() {
       mode: "create",
       productId: products[0]?.id ?? "",
       label: "",
-      credentials: "",
+      accountEmail: "",
+      accountPassword: "",
+      mailboxAppPassword: "",
+      imapHost: "",
       status: "active",
       expires: "",
       sharingLimit: "1",
@@ -499,8 +535,11 @@ export default function AccountsPage() {
       accountId: account.id,
       productId: account.productId,
       label: account.label,
-      // Write-only: leave empty so credentials are never exposed in the UI.
-      credentials: "",
+      // Email bukan secret dan boleh ditampilkan; password/app password selalu kosong.
+      accountEmail: account.accountEmail ?? "",
+      accountPassword: "",
+      mailboxAppPassword: "",
+      imapHost: account.imapHost ?? "",
       status: (account.status as AccountStatus) ?? "active",
       expires: toDateInput(account.expiresAt),
       sharingLimit: String(account.sharingLimit),
@@ -536,8 +575,20 @@ export default function AccountsPage() {
       setFormError("Pilih produk untuk akun ini.");
       return;
     }
-    if (form.mode === "create" && !form.credentials.trim()) {
-      setFormError("Kredensial akun wajib diisi saat membuat akun.");
+    const accountEmail = form.accountEmail.trim();
+    const accountPassword = form.accountPassword;
+    const mailboxAppPassword = form.mailboxAppPassword;
+    const imapHost = form.imapHost.trim();
+    if (form.mode === "create" && !accountEmail) {
+      setFormError("Email akun wajib diisi saat membuat akun.");
+      return;
+    }
+    if (accountEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(accountEmail)) {
+      setFormError("Format email akun tidak valid.");
+      return;
+    }
+    if (form.mode === "create" && !accountPassword.trim()) {
+      setFormError("Kata sandi akun wajib diisi saat membuat akun.");
       return;
     }
 
@@ -547,9 +598,12 @@ export default function AccountsPage() {
         const payload: Record<string, unknown> = {
           product_id: form.productId,
           label,
-          credentials: form.credentials.trim(),
+          account_email: accountEmail,
+          account_password: accountPassword,
           sharing_limit: sharingLimit,
         };
+        if (mailboxAppPassword) payload.mailbox_app_password = mailboxAppPassword;
+        if (imapHost) payload.imap_host = imapHost;
         if (form.expires) payload.expires_at = toExpiresAt(form.expires);
         if (form.otpSecret.trim()) payload.otp_secret = form.otpSecret.trim();
 
@@ -571,13 +625,32 @@ export default function AccountsPage() {
               remainingSlots: sharingLimit,
               assignedUsers: 0,
               otpConfigured: Boolean(form.otpSecret.trim()),
+              accountEmail,
+              otpInboxConfigured: Boolean(mailboxAppPassword),
+              otpInboxSource: mailboxAppPassword ? "direct" : "none",
+              mailboxAppPasswordConfigured: Boolean(mailboxAppPassword),
+              imapHost: imapHost || null,
               needsReview: false,
               sellable: true,
             },
             ...current,
           ]);
         } else {
-          const created = await adminApi.createInventoryAccount(payload);
+          let created: ApiInventoryAccount;
+          try {
+            created = await adminApi.createInventoryAccount(payload);
+          } catch (error) {
+            if (!shouldRetryWithLegacyCredentials(error)) throw error;
+            // Fallback untuk backend lama yang belum mengenal field terpisah.
+            created = await adminApi.createInventoryAccount({
+              product_id: form.productId,
+              label,
+              sharing_limit: sharingLimit,
+              credentials: `${accountEmail}:${accountPassword}`,
+              ...(form.expires ? { expires_at: toExpiresAt(form.expires) } : {}),
+              ...(form.otpSecret.trim() ? { otp_secret: form.otpSecret.trim() } : {}),
+            });
+          }
           // POST selalu membuat akun aktif; kontrak tidak menerima `status`.
           if (form.status !== "active" && created?.id) {
             try {
@@ -605,6 +678,11 @@ export default function AccountsPage() {
         return;
       }
 
+      if (!accountEmail && account.accountEmail) {
+        setFormError("Email akun tidak boleh dikosongkan saat edit.");
+        return;
+      }
+
       const changes: Record<string, unknown> = {};
       if (label !== account.label) changes.label = label;
       if (form.status !== account.status) changes.status = form.status;
@@ -612,7 +690,11 @@ export default function AccountsPage() {
       if (form.expires && form.expires !== toDateInput(account.expiresAt)) {
         changes.expires_at = toExpiresAt(form.expires);
       }
-      if (form.credentials.trim()) changes.credentials = form.credentials.trim();
+      if (accountEmail && accountEmail !== (account.accountEmail ?? "")) changes.account_email = accountEmail;
+      // Hanya kirim password/app password bila diisi; kosong berarti pertahankan.
+      if (accountPassword) changes.account_password = accountPassword;
+      if (mailboxAppPassword) changes.mailbox_app_password = mailboxAppPassword;
+      if (imapHost && imapHost !== (account.imapHost ?? "")) changes.imap_host = imapHost;
       if (form.clearOtp) {
         changes.otp_secret = "";
       } else if (form.otpSecret.trim()) {
@@ -634,6 +716,14 @@ export default function AccountsPage() {
                   status: (changes.status as string) ?? item.status,
                   sharingLimit: (changes.sharing_limit as number) ?? item.sharingLimit,
                   expiresAt: (changes.expires_at as string) ?? item.expiresAt,
+                  accountEmail: (changes.account_email as string) ?? item.accountEmail,
+                  otpInboxConfigured:
+                    Boolean(changes.mailbox_app_password) || item.otpInboxConfigured,
+                  otpInboxSource:
+                    changes.mailbox_app_password ? "direct" : item.otpInboxSource,
+                  mailboxAppPasswordConfigured:
+                    Boolean(changes.mailbox_app_password) || item.mailboxAppPasswordConfigured,
+                  imapHost: (changes.imap_host as string) ?? item.imapHost,
                   otpConfigured:
                     changes.otp_secret === ""
                       ? false
@@ -643,7 +733,25 @@ export default function AccountsPage() {
           ),
         );
       } else {
-        await adminApi.updateInventoryAccount(account.id, changes);
+        try {
+          await adminApi.updateInventoryAccount(account.id, changes);
+        } catch (error) {
+          const hasSeparateCredential = Boolean(
+            changes.account_email || changes.account_password || changes.mailbox_app_password || changes.imap_host,
+          );
+          if (!hasSeparateCredential || !shouldRetryWithLegacyCredentials(error)) throw error;
+          const legacyChanges: Record<string, unknown> = { ...changes };
+          const fallbackEmail = (changes.account_email as string | undefined) ?? account.accountEmail ?? "";
+          const fallbackPassword = (changes.account_password as string | undefined) ?? "";
+          delete legacyChanges.account_email;
+          delete legacyChanges.account_password;
+          delete legacyChanges.mailbox_app_password;
+          delete legacyChanges.imap_host;
+          if (fallbackEmail && fallbackPassword) {
+            legacyChanges.credentials = `${fallbackEmail}:${fallbackPassword}`;
+          }
+          await adminApi.updateInventoryAccount(account.id, legacyChanges);
+        }
       }
 
       setNotice(`Akun "${label}" diperbarui. Kredensial dan secret OTP tidak pernah ditampilkan kembali.`);
@@ -876,206 +984,275 @@ export default function AccountsPage() {
       )}
 
       {form && (
-        <form className="card panel" onSubmit={submitAccount} aria-label={form.mode === "create" ? "Form tambah akun" : "Form edit akun"}>
-          <div className="panel-header">
-            <h2 className="panel-title">
-              {form.mode === "create" ? "Tambah akun" : `Edit akun — ${form.label || "akun"}`}
-            </h2>
-            <button className="table-action" type="button" onClick={closeForm} aria-label="Tutup formulir akun">
-              <X size={13} />
-            </button>
-          </div>
-          <div className="form-grid" style={{ padding: 18 }}>
-            <div className="field">
-              <label className="label" htmlFor="account-product">Produk</label>
-              {form.mode === "create" ? (
-                <SearchableSelect
-                  inputId="account-product"
-                  ariaLabel="Produk"
-                  value={form.productId}
-                  onChange={(value) => setForm({ ...form, productId: value })}
-                  placeholder="Pilih produk"
-                  required
-                  options={products.map((product) => ({ value: product.id, label: product.name }))}
-                />
-              ) : (
-                <input
-                  className="input"
-                  id="account-product"
-                  value={productOptions.find((product) => product.id === form.productId)?.name ?? "Produk akun"}
-                  readOnly
-                  aria-readonly="true"
-                />
-              )}
-              <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                Produk akun tidak dapat diganti setelah dibuat.
-              </p>
-            </div>
-
-            <div className="field">
-              <label className="label" htmlFor="account-label">Label akun</label>
-              <input
-                className="input"
-                id="account-label"
-                value={form.label}
-                onChange={(event) => setForm({ ...form, label: event.target.value })}
-                placeholder="Contoh: Akun utama keluarga"
-                maxLength={120}
-                required
-              />
-            </div>
-
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <label className="label" htmlFor="account-credentials">
-                {form.mode === "create" ? "Kredensial akun" : "Kredensial baru (opsional)"}
-              </label>
-              <textarea
-                className="input"
-                id="account-credentials"
-                name="credentials"
-                rows={3}
-                value={form.credentials}
-                onChange={(event) => setForm({ ...form, credentials: event.target.value })}
-                placeholder={
-                  form.mode === "create"
-                    ? "Email dan kata sandi akun"
-                    : "Kosongkan bila tidak ingin mengganti kredensial"
-                }
-                autoComplete="off"
-              />
-              <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                Write-only: kredensial disimpan terenkripsi dan tidak pernah ditampilkan kembali.
-              </p>
-            </div>
-
-            <div className="field">
-              <label className="label" htmlFor="account-status">Status akun</label>
-              <SearchableSelect
-                inputId="account-status"
-                ariaLabel="Status akun"
-                value={form.status}
-                onChange={(value) => setForm({ ...form, status: value as AccountStatus })}
-                options={STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
-              />
-            </div>
-
-            <div className="field">
-              <label className="label" htmlFor="account-sharing-limit">Limit sharing</label>
-              <input
-                className="input"
-                id="account-sharing-limit"
-                type="number"
-                min="1"
-                max="5"
-                value={form.sharingLimit}
-                onChange={(event) => setForm({ ...form, sharingLimit: event.target.value })}
-                required
-              />
-              <p className="muted" style={{ margin: 0, fontSize: 11 }}>Satu akun maksimal untuk 5 pengguna.</p>
-            </div>
-
-            <div className="field">
-              <label className="label" htmlFor="account-expiry">Kedaluwarsa akun</label>
-              <input
-                className="input"
-                id="account-expiry"
-                type="date"
-                value={form.expires}
-                onChange={(event) => setForm({ ...form, expires: event.target.value })}
-              />
-              <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                Opsional. Tanggal yang sudah tersimpan tidak dapat dihapus dari formulir ini.
-              </p>
-            </div>
-
-            <div className="field">
-              <label className="label" htmlFor="account-otp-secret">
-                {form.mode === "create" ? "Secret OTP (opsional)" : "Secret OTP baru (opsional)"}
-              </label>
-              <input
-                className="input"
-                id="account-otp-secret"
-                type="password"
-                value={form.otpSecret}
-                onChange={(event) => setForm({ ...form, otpSecret: event.target.value, clearOtp: false })}
-                placeholder="Base32 TOTP, mis. JBSWY3DPEHPK3PXP"
-                autoComplete="new-password"
-                disabled={form.clearOtp}
-              />
-              <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                Secret hanya untuk ditulis dan tidak pernah ditampilkan kembali.
-              </p>
-              {form.mode === "edit" && accounts.find((item) => item.id === form.accountId)?.otpConfigured && (
-                <label className="muted" style={{ display: "flex", gap: 7, alignItems: "center", fontSize: 11 }}>
-                  <input
-                    type="checkbox"
-                    checked={form.clearOtp}
-                    onChange={(event) => setForm({ ...form, clearOtp: event.target.checked, otpSecret: "" })}
-                  />
-                  Hapus secret OTP yang tersimpan
-                </label>
-              )}
-            </div>
-
-            <div className="field" style={{ alignSelf: "end" }}>
-              <button className="button button-primary" type="submit" disabled={submitting}>
+        <Modal
+          title={form.mode === "create" ? "Tambah akun" : `Edit akun — ${form.label || "akun"}`}
+          description="Email dan kata sandi disimpan terpisah. Password tidak pernah ditampilkan kembali."
+          size="lg"
+          onClose={closeForm}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={closeForm} disabled={submitting}>
+                Batal
+              </button>
+              <button className="button button-primary" type="submit" form="account-form" disabled={submitting}>
                 {submitting ? "Menyimpan…" : form.mode === "create" ? "Simpan akun" : "Simpan perubahan"}
               </button>
-            </div>
+            </>
+          }
+        >
+          <form
+            id="account-form"
+            onSubmit={submitAccount}
+            aria-label={form.mode === "create" ? "Form tambah akun" : "Form edit akun"}
+          >
+            <div className="form-grid">
+              <div className="field">
+                <label className="label" htmlFor="account-product">Produk</label>
+                {form.mode === "create" ? (
+                  <SearchableSelect
+                    inputId="account-product"
+                    ariaLabel="Produk"
+                    value={form.productId}
+                    onChange={(value) => setForm({ ...form, productId: value })}
+                    placeholder="Pilih produk"
+                    required
+                    options={products.map((product) => ({ value: product.id, label: product.name }))}
+                  />
+                ) : (
+                  <input
+                    className="input"
+                    id="account-product"
+                    value={productOptions.find((product) => product.id === form.productId)?.name ?? "Produk akun"}
+                    readOnly
+                    aria-readonly="true"
+                  />
+                )}
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  Produk akun tidak dapat diganti setelah dibuat.
+                </p>
+              </div>
 
-            {formError && (
-              <p className="field" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
-                {formError}
-              </p>
-            )}
-          </div>
-        </form>
+              <div className="field">
+                <label className="label" htmlFor="account-label">Label akun</label>
+                <input
+                  className="input"
+                  id="account-label"
+                  value={form.label}
+                  onChange={(event) => setForm({ ...form, label: event.target.value })}
+                  placeholder="Contoh: Akun utama keluarga"
+                  maxLength={120}
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="account-email">Email akun</label>
+                <input
+                  className="input"
+                  id="account-email"
+                  name="account_email"
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={form.accountEmail}
+                  onChange={(event) => setForm({ ...form, accountEmail: event.target.value })}
+                  placeholder="akun@example.com"
+                  required={form.mode === "create"}
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  Email login akun yang dibagikan. Bukan secret, aman ditampilkan saat edit.
+                </p>
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="account-password">Kata sandi akun</label>
+                <input
+                  className="input"
+                  id="account-password"
+                  name="account_password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.accountPassword}
+                  onChange={(event) => setForm({ ...form, accountPassword: event.target.value })}
+                  placeholder={form.mode === "create" ? "Wajib diisi" : "Kosongkan bila tidak diganti"}
+                  required={form.mode === "create"}
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  Write-only. Kosongkan saat edit agar kata sandi lama dipertahankan.
+                </p>
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="account-mailbox-password">App password Gmail untuk OTP</label>
+                <input
+                  className="input"
+                  id="account-mailbox-password"
+                  name="mailbox_app_password"
+                  type="password"
+                  autoComplete="new-password"
+                  value={form.mailboxAppPassword}
+                  onChange={(event) => setForm({ ...form, mailboxAppPassword: event.target.value })}
+                  placeholder="Opsional, 16 karakter"
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  Buat App Password Google setelah 2FA aktif. Backend memakainya untuk membaca OTP langsung dari mailbox akun.
+                  {form.mode === "edit" && form.accountId && accounts.find((item) => item.id === form.accountId)?.mailboxAppPasswordConfigured
+                    ? " App password sudah tersimpan; isi hanya bila ingin mengganti."
+                    : ""}
+                </p>
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="account-imap-host">Host IMAP (opsional)</label>
+                <input
+                  className="input"
+                  id="account-imap-host"
+                  name="imap_host"
+                  value={form.imapHost}
+                  onChange={(event) => setForm({ ...form, imapHost: event.target.value })}
+                  placeholder="imap.gmail.com"
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  Biarkan default untuk Gmail. Ubah hanya bila backend memakai penyedia mailbox lain.
+                </p>
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="account-status">Status akun</label>
+                <SearchableSelect
+                  inputId="account-status"
+                  ariaLabel="Status akun"
+                  value={form.status}
+                  onChange={(value) => setForm({ ...form, status: value as AccountStatus })}
+                  options={STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+                />
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="account-sharing-limit">Limit sharing</label>
+                <input
+                  className="input"
+                  id="account-sharing-limit"
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={form.sharingLimit}
+                  onChange={(event) => setForm({ ...form, sharingLimit: event.target.value })}
+                  required
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>Satu akun maksimal untuk 5 pengguna.</p>
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="account-expiry">Kedaluwarsa akun</label>
+                <input
+                  className="input"
+                  id="account-expiry"
+                  type="date"
+                  value={form.expires}
+                  onChange={(event) => setForm({ ...form, expires: event.target.value })}
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  Opsional. Tanggal yang sudah tersimpan tidak dapat dihapus dari formulir ini.
+                </p>
+              </div>
+
+              <div className="field">
+                <label className="label" htmlFor="account-otp-secret">
+                  {form.mode === "create" ? "Secret TOTP (opsional)" : "Secret TOTP baru (opsional)"}
+                </label>
+                <input
+                  className="input"
+                  id="account-otp-secret"
+                  type="password"
+                  value={form.otpSecret}
+                  onChange={(event) => setForm({ ...form, otpSecret: event.target.value, clearOtp: false })}
+                  placeholder="Base32 TOTP, mis. JBSWY3DPEHPK3PXP"
+                  autoComplete="new-password"
+                  disabled={form.clearOtp}
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  Secret hanya untuk ditulis dan tidak pernah ditampilkan kembali.
+                </p>
+                {form.mode === "edit" && accounts.find((item) => item.id === form.accountId)?.otpConfigured && (
+                  <label className="muted" style={{ display: "flex", gap: 7, alignItems: "center", fontSize: 11 }}>
+                    <input
+                      type="checkbox"
+                      checked={form.clearOtp}
+                      onChange={(event) => setForm({ ...form, clearOtp: event.target.checked, otpSecret: "" })}
+                    />
+                    Hapus secret TOTP yang tersimpan
+                  </label>
+                )}
+              </div>
+
+              {form.mode === "edit" && form.accountId && (() => {
+                const current = accounts.find((item) => item.id === form.accountId);
+                if (!current) return null;
+                const badge = otpInboxBadge(current);
+                return (
+                  <div className="notice field-full" role="status">
+                    <strong>Status OTP Gmail saat ini: {badge.label}.</strong> {badge.detail}
+                  </div>
+                );
+              })()}
+
+              {formError && (
+                <p className="field field-full" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
+                  {formError}
+                </p>
+              )}
+            </div>
+          </form>
+        </Modal>
       )}
 
       {deleteTarget && (
-        <div className="card panel" role="alertdialog" aria-modal="true" aria-label="Konfirmasi hapus akun">
-          <div className="panel-header">
-            <h2 className="panel-title">Hapus akun “{deleteTarget.account.label}”?</h2>
-          </div>
-          <p className="muted" style={{ margin: "0 0 14px", fontSize: 11 }}>
+        <Modal
+          title="Konfirmasi hapus akun"
+          description={`Akun “${deleteTarget.account.label}” akan dihapus permanen.`}
+          size="sm"
+          role="alertdialog"
+          onClose={() => setDeleteTarget(null)}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={() => setDeleteTarget(null)} disabled={submitting}>
+                Batal
+              </button>
+              <button
+                className="button button-danger"
+                type="button"
+                onClick={confirmDelete}
+                disabled={submitting}
+              >
+                {submitting ? "Menghapus…" : "Ya, hapus akun"}
+              </button>
+            </>
+          }
+        >
+          <p className="muted" style={{ margin: 0, fontSize: 12 }}>
             Akun yang masih memiliki slot terpakai, dipesan, atau tertaut pesanan akan ditolak server (409).
             Tindakan ini tidak dapat dibatalkan.
           </p>
           {deleteTarget.error && (
-            <p role="alert" style={{ margin: "0 0 12px", color: "var(--danger)", fontSize: 11 }}>
+            <p role="alert" style={{ margin: "12px 0 0", color: "var(--danger)", fontSize: 11 }}>
               {deleteTarget.error}
             </p>
           )}
-          <div className="table-actions" style={{ justifyContent: "flex-start" }}>
-            <button
-              className="button button-primary button-sm"
-              type="button"
-              onClick={confirmDelete}
-              disabled={submitting}
-              style={{ background: "var(--danger)", borderColor: "var(--danger)" }}
-            >
-              {submitting ? "Menghapus…" : "Ya, hapus akun"}
-            </button>
-            <button
-              className="button button-secondary button-sm"
-              type="button"
-              onClick={() => setDeleteTarget(null)}
-              disabled={submitting}
-            >
-              Batal
-            </button>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {otp && (
-        <div className="card panel" role="dialog" aria-modal="true" aria-label={`Kode OTP akun ${otp.label}`}>
-          <div className="panel-header">
-            <h2 className="panel-title">Kode OTP — {otp.label}</h2>
-            <button className="table-action" type="button" onClick={() => setOtp(null)} aria-label="Tutup kode OTP">
-              <X size={13} />
+        <Modal
+          title={`Kode OTP — ${otp.label}`}
+          size="sm"
+          onClose={() => setOtp(null)}
+          footer={
+            <button className="button button-secondary" type="button" onClick={() => setOtp(null)}>
+              Tutup
             </button>
-          </div>
+          }
+        >
           {otp.loading ? (
             <p className="muted" style={{ margin: 0, fontSize: 12 }}>Membuat kode OTP…</p>
           ) : otp.error ? (
@@ -1121,71 +1298,77 @@ export default function AccountsPage() {
           <p className="muted" style={{ margin: "12px 0 0", fontSize: 10 }}>
             Kode hanya ditampilkan di sini. Secret TOTP tidak pernah dikirim ke browser.
           </p>
-        </div>
+        </Modal>
       )}
 
       {slotForm && (
-        <form className="card panel" onSubmit={submitSlot} aria-label={`Form tambah slot ${slotForm.label}`}>
-          <div className="panel-header">
-            <h2 className="panel-title">Tambah slot — {slotForm.label}</h2>
-            <button className="table-action" type="button" onClick={() => setSlotForm(null)} aria-label="Tutup form slot">
-              <X size={13} />
-            </button>
-          </div>
-          <div className="form-grid" style={{ padding: 18 }}>
-            <div className="field">
-              <label className="label" htmlFor="slot-price">Paket</label>
-              <SearchableSelect
-                inputId="slot-price"
-                ariaLabel="Paket"
-                value={slotForm.priceId}
-                onChange={(value) => setSlotForm({ ...slotForm, priceId: value, error: "" })}
-                placeholder="Pilih paket"
-                required
-                options={(detailProduct?.prices ?? products.find((product) => product.id === slotAccount?.productId)?.prices ?? []).map(
-                  (price) => ({ value: price.id, label: price.label }),
-                )}
-              />
-              {slotAccount && slotAccount.remainingSlots === 0 && (
-                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                  Sisa kapasitas akun ini 0. Naikkan limit sharing terlebih dahulu.
-                </p>
-              )}
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="slot-quantity">Jumlah slot</label>
-              <input
-                className="input"
-                id="slot-quantity"
-                type="number"
-                min="1"
-                max={slotAccount?.remainingSlots ?? 1}
-                value={slotForm.quantity}
-                onChange={(event) => setSlotForm({ ...slotForm, quantity: event.target.value, error: "" })}
-                required
-              />
-              {slotAccount && (
-                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                  Sisa kapasitas: {slotAccount.remainingSlots} slot dari limit {slotAccount.sharingLimit}.
-                </p>
-              )}
-            </div>
-            <div className="field" style={{ alignSelf: "end" }}>
+        <Modal
+          title={`Tambah slot — ${slotForm.label}`}
+          size="sm"
+          onClose={() => setSlotForm(null)}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={() => setSlotForm(null)} disabled={submitting}>
+                Batal
+              </button>
               <button
                 className="button button-primary"
                 type="submit"
+                form="slot-form"
                 disabled={submitting || !slotAccount || slotAccount.remainingSlots === 0}
               >
                 {submitting ? "Menyimpan…" : "Simpan slot"}
               </button>
+            </>
+          }
+        >
+          <form id="slot-form" onSubmit={submitSlot} aria-label={`Form tambah slot ${slotForm.label}`}>
+            <div className="form-grid">
+              <div className="field">
+                <label className="label" htmlFor="slot-price">Paket</label>
+                <SearchableSelect
+                  inputId="slot-price"
+                  ariaLabel="Paket"
+                  value={slotForm.priceId}
+                  onChange={(value) => setSlotForm({ ...slotForm, priceId: value, error: "" })}
+                  placeholder="Pilih paket"
+                  required
+                  options={(detailProduct?.prices ?? products.find((product) => product.id === slotAccount?.productId)?.prices ?? []).map(
+                    (price) => ({ value: price.id, label: price.label }),
+                  )}
+                />
+                {slotAccount && slotAccount.remainingSlots === 0 && (
+                  <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                    Sisa kapasitas akun ini 0. Naikkan limit sharing terlebih dahulu.
+                  </p>
+                )}
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="slot-quantity">Jumlah slot</label>
+                <input
+                  className="input"
+                  id="slot-quantity"
+                  type="number"
+                  min="1"
+                  max={slotAccount?.remainingSlots ?? 1}
+                  value={slotForm.quantity}
+                  onChange={(event) => setSlotForm({ ...slotForm, quantity: event.target.value, error: "" })}
+                  required
+                />
+                {slotAccount && (
+                  <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                    Sisa kapasitas: {slotAccount.remainingSlots} slot dari limit {slotAccount.sharingLimit}.
+                  </p>
+                )}
+              </div>
+              {slotForm.error && (
+                <p className="field field-full" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
+                  {slotForm.error}
+                </p>
+              )}
             </div>
-            {slotForm.error && (
-              <p className="field" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
-                {slotForm.error}
-              </p>
-            )}
-          </div>
-        </form>
+          </form>
+        </Modal>
       )}
 
       <div className="toolbar">
@@ -1221,6 +1404,10 @@ export default function AccountsPage() {
         />
         {loading && <span className="skeleton" style={{ width: 60, height: 16 }} />}
       </div>
+      <p className="muted" style={{ margin: 0, fontSize: 10 }}>
+        Status OTP Gmail: <strong>Siap</strong> berarti OTP dibaca langsung dari mailbox akun;{" "}
+        <strong>Mailbox pusat</strong> memakai mailbox pusat; <strong>Belum siap</strong> berarti belum ada inbox OTP.
+      </p>
 
       <section className="card table-panel">
         <div className="table-scroll">
@@ -1233,7 +1420,7 @@ export default function AccountsPage() {
                 <th>Masa aktif</th>
                 <th>Sharing</th>
                 <th>Pengguna</th>
-                <th>OTP</th>
+                <th>OTP Gmail</th>
                 <th aria-label="Aksi" />
               </tr>
             </thead>
@@ -1296,9 +1483,14 @@ export default function AccountsPage() {
                     </td>
                     <td className="tabular">{account.assignedUsers}</td>
                     <td>
-                      <span className={`badge badge-dot ${account.otpConfigured ? "status-success" : "status-warning"}`}>
-                        {account.otpConfigured ? "Siap" : "Belum"}
-                      </span>
+                      {(() => {
+                        const inbox = otpInboxBadge(account);
+                        return (
+                          <span className={`badge badge-dot ${inbox.tone}`} title={inbox.detail}>
+                            {inbox.label}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td>
                       <div className="table-actions">
@@ -1428,10 +1620,20 @@ export default function AccountsPage() {
                   </span>
                 </div>
                 <div>
-                  <div className="muted" style={{ fontSize: 10 }}>OTP</div>
-                  <span className={`badge badge-dot ${detailAccount.otpConfigured ? "status-success" : "status-warning"}`}>
-                    {detailAccount.otpConfigured ? "Siap" : "Belum dikonfigurasi"}
-                  </span>
+                  <div className="muted" style={{ fontSize: 10 }}>Email akun</div>
+                  <div className="table-primary">{detailAccount.accountEmail ?? "—"}</div>
+                </div>
+                <div>
+                  <div className="muted" style={{ fontSize: 10 }}>OTP Gmail</div>
+                  {(() => {
+                    const inbox = otpInboxBadge(detailAccount);
+                    return (
+                      <>
+                        <span className={`badge badge-dot ${inbox.tone}`}>{inbox.label}</span>
+                        <div className="muted" style={{ fontSize: 10 }}>{inbox.detail}</div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 

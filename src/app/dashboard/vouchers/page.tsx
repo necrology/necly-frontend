@@ -1,8 +1,9 @@
 "use client";
 
-import { Plus, Search, TicketCheck, X } from "lucide-react";
+import { Plus, Search, TicketCheck } from "lucide-react";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
+import { Modal } from "@/components/modal";
 import { PageHeader } from "@/components/page-header";
 import { SearchableSelect } from "@/components/searchable-select";
 import { formatIDR } from "@/lib/money";
@@ -227,50 +228,58 @@ export default function VouchersPage() {
         />
       </section>
       {notice && <div className="notice success" role="status">{notice}</div>}
-      {actionError && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{actionError}</div>}
+      {actionError && !creating && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{actionError}</div>}
       {creating && (
-        <form className="card panel" onSubmit={create}>
-          <div className="panel-header">
-            <h2 className="panel-title">Voucher baru</h2>
-            <button className="table-action" type="button" onClick={() => setCreating(false)} aria-label="Tutup formulir">
-              <X size={13} />
-            </button>
-          </div>
-          <div className="form-grid" style={{ padding: 18 }}>
-            <div className="field">
-              <label className="label" htmlFor="v-code">Kode</label>
-              <input className="input" id="v-code" name="code" placeholder="HEMAT20K" required />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="v-type">Tipe</label>
-              <SearchableSelect
-                inputId="v-type"
-                name="type"
-                ariaLabel="Tipe"
-                value={voucherType}
-                onChange={(value) => setVoucherType(value as "Persen" | "Nominal")}
-                options={[{ value: "Persen", label: "Persen" }, { value: "Nominal", label: "Nominal" }]}
-              />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="v-value">Nilai</label>
-              <input className="input" id="v-value" name="value" type="number" min="1" placeholder="10" required />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="v-limit">Batas penggunaan</label>
-              <input className="input" id="v-limit" name="limit" type="number" min="1" placeholder="50" />
-            </div>
-            <div className="field">
-              <label className="label" htmlFor="v-expires">Berakhir</label>
-              <input className="input" id="v-expires" name="expires" type="date" defaultValue={defaultExpiry()} />
-            </div>
-            <div className="field" style={{ gridColumn: "1 / -1" }}>
-              <button className="button button-primary" type="submit" style={{ width: "100%" }} disabled={submitting}>
+        <Modal
+          title="Voucher baru"
+          description="Voucher aktif langsung dapat dipakai pelanggan setelah disimpan."
+          onClose={() => setCreating(false)}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={() => setCreating(false)} disabled={submitting}>
+                Batal
+              </button>
+              <button className="button button-primary" type="submit" form="voucher-form" disabled={submitting}>
                 {submitting ? "Menyimpan…" : "Simpan voucher"}
               </button>
+            </>
+          }
+        >
+          <form id="voucher-form" onSubmit={create} aria-label="Form voucher baru">
+            <div className="form-grid">
+              <div className="field">
+                <label className="label" htmlFor="v-code">Kode</label>
+                <input className="input" id="v-code" name="code" placeholder="HEMAT20K" required />
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="v-type">Tipe</label>
+                <SearchableSelect
+                  inputId="v-type"
+                  name="type"
+                  ariaLabel="Tipe"
+                  value={voucherType}
+                  onChange={(value) => setVoucherType(value as "Persen" | "Nominal")}
+                  options={[{ value: "Persen", label: "Persen" }, { value: "Nominal", label: "Nominal" }]}
+                />
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="v-value">Nilai</label>
+                <input className="input" id="v-value" name="value" type="number" min="1" placeholder="10" required />
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="v-limit">Batas penggunaan</label>
+                <input className="input" id="v-limit" name="limit" type="number" min="1" placeholder="50" />
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="v-expires">Berakhir</label>
+                <input className="input" id="v-expires" name="expires" type="date" defaultValue={defaultExpiry()} />
+              </div>
+              {actionError && (
+                <div className="notice field-full" role="alert" style={{ color: "var(--danger)" }}>{actionError}</div>
+              )}
             </div>
-          </div>
-        </form>
+          </form>
+        </Modal>
       )}
       <div className="toolbar">
         <div className="input-wrap">

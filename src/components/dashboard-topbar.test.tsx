@@ -1,4 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -55,6 +57,16 @@ describe("navigasi dashboard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Tutup navigasi" }));
     expect(useDashboardUiStore.getState().mobileSidebarOpen).toBe(false);
+  });
+
+  it("menyembunyikan tombol X sidebar di desktop lewat selector yang lebih spesifik", () => {
+    // jsdom tidak menerapkan stylesheet Next, jadi aturan CSS diperiksa dari
+    // sumbernya. Regresi NEC-120 terjadi karena `.table-action` setelah
+    // `.dashboard-nav-close` menimpa `display: none` di desktop.
+    const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+    expect(css).toContain(".dashboard-sidebar .dashboard-nav-close { display: none; }");
+    expect(css).toContain(".dashboard-sidebar .dashboard-nav-close { display: inline-grid; }");
+    expect(css).not.toMatch(/(^|\n)\.dashboard-nav-close\s*\{\s*display:\s*none/);
   });
 
   it("menampilkan menu profil admin dan menutupnya saat klik di luar atau Escape", () => {
