@@ -86,13 +86,26 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   const durationMissing = showWarnings && selectedDuration === null;
   const deviceMissing = showWarnings && selectedDevice === null;
   const stockMissing = showWarnings && selectedDuration !== null && !inStock;
-  const perMember = formatRupiahLabel(Math.round(product.providerPrice / product.groupMembers));
+  // Rincian harga dari admin dipakai bila ada. Produk lama yang belum punya
+  // base_amount/admin_fee tetap memakai angka katalog supaya tidak menampilkan
+  // "Harga Provider Rp0".
+  const hasBreakdown = (option.baseAmount ?? 0) > 0 || (option.adminFee ?? 0) > 0;
+  const baseAmount = hasBreakdown ? option.baseAmount ?? 0 : product.providerPrice;
+  const adminFee = hasBreakdown ? option.adminFee ?? 0 : 0;
+  const memberSlots = hasBreakdown ? option.memberSlots ?? product.groupMembers : product.groupMembers;
+  const adminIncluded = hasBreakdown ? option.adminIncluded ?? false : false;
+  const priceDivisor = Math.max(1, memberSlots + (adminIncluded ? 1 : 0));
+  const totalCost = baseAmount + adminFee;
+  const perMemberAmount = totalCost > 0
+    ? Math.ceil(totalCost / priceDivisor / 1000) * 1000
+    : option.price;
+  const perMember = formatRupiahLabel(perMemberAmount);
   const priceRows: Array<[string, string]> = [
     ["Nama Paket", product.packageName],
-    ["Harga Provider", formatRupiahLabel(product.providerPrice)],
-    ["Jumlah Member Per Grup", `${product.groupMembers} orang`],
-    ["Harga Patungan", `${formatRupiahLabel(product.providerPrice)} ÷ ${product.groupMembers} = ${perMember}`],
-    ["Biaya Admin Akunmu", "Rp 0"],
+    ["Harga Provider", formatRupiahLabel(baseAmount)],
+    ["Jumlah Member Per Grup", `${memberSlots} orang${adminIncluded ? " + admin" : ""}`],
+    ["Harga Patungan", `${formatRupiahLabel(totalCost)} ÷ ${priceDivisor} = ${perMember}`],
+    ["Biaya Admin Akunmu", formatRupiahLabel(adminFee)],
     [product.discount > 0 ? "Diskon 8%" : "Diskon", formatRupiahLabel(product.discount)],
     ["Harga Paket", formatRupiahLabel(option.price)],
   ];

@@ -22,8 +22,9 @@ import {
 } from "@/lib/product-image";
 import { productCategoryLabel } from "@/lib/product-category";
 import { productStatus, productStatusPayload, type ProductStatus } from "@/lib/product-status";
+import { calculatePriceBreakdown } from "@/lib/pricing";
 import type { SubscriptionProduct } from "@/lib/types";
-import type { ApiProduct } from "@/lib/api";
+import type { ApiProduct, ApiProductDuration } from "@/lib/api";
 
 const statusOptions: ProductStatus[] = ["Aktif", "Coming Soon", "Nonaktif"];
 const statusFilters = ["Semua status", ...statusOptions] as const;
@@ -31,6 +32,35 @@ const fallbackPhoto = "/illustrations/product-workspace.svg";
 
 type CategoryOption = { id: string; name: string; active: boolean };
 type PhotoMode = "keep" | "replace" | "remove";
+
+/** Satu baris harga di form produk. Angka disimpan sebagai string input. */
+type PriceDraft = {
+  key: string;
+  id?: string;
+  durationId: string;
+  baseAmount: string;
+  adminFee: string;
+  memberSlots: string;
+  adminIncluded: boolean;
+  active: boolean;
+};
+
+function newPriceDraft(durationId = ""): PriceDraft {
+  return {
+    key: `price-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    durationId,
+    baseAmount: "",
+    adminFee: "",
+    memberSlots: "5",
+    adminIncluded: false,
+    active: true,
+  };
+}
+
+function parseDraftAmount(value: string) {
+  const parsed = Number(value.replace(/\D/g, ""));
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 0;
+}
 
 type ProductForm = {
   mode: "create" | "edit";
@@ -75,6 +105,10 @@ export default function DashboardProductsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState("");
+  const [durations, setDurations] = useState<ApiProductDuration[]>([]);
+  const [priceDrafts, setPriceDrafts] = useState<PriceDraft[]>([]);
+  const [deletedPriceIds, setDeletedPriceIds] = useState<string[]>([]);
+  const [priceError, setPriceError] = useState("");
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -90,9 +124,10 @@ export default function DashboardProductsPage() {
         return;
       }
 
-      const [productsResponse, categoriesResponse] = await Promise.all([
+      const [productsResponse, categoriesResponse, durationsResponse] = await Promise.all([
         adminApi.listProducts({ page: 1, per_page: 100 }),
         adminApi.listCategories({ page: 1, per_page: 100 }),
+        adminApi.listProductDurations(),
       ]);
       if (!Array.isArray(productsResponse.products)) {
         setError("Respons produk dari server tidak sesuai kontrak");
@@ -114,6 +149,7 @@ export default function DashboardProductsPage() {
           }))
           .filter((item) => item.id && item.name),
       );
+      setDurations(Array.isArray(durationsResponse.durations) ? durationsResponse.durations : []);
     } catch {
       setError("Gagal memuat produk dari server");
     } finally {
@@ -174,7 +210,10 @@ export default function DashboardProductsPage() {
     setFormError("");
     setPhotoError("");
     setIconError("");
+    setPriceError("");
     setNotice("");
+    setDeletedPriceIds([]);
+    setPriceDrafts([newPriceDraft(durations[0]?.id ?? "")]);
     setForm({
       mode: "create",
       name: "",
@@ -189,11 +228,44 @@ export default function DashboardProductsPage() {
     });
   };
 
+  const loadPriceDrafts = useCallback(async (productId: string) => {
+    try {
+      const response = await adminApi.listProductPrices(productId);
+      const rows = Array.isArray(response.prices) ? response.prices : [];
+      setPriceDrafts(rows.map((price) => ({
+        key: price.id,
+        id: price.id,
+        durationId: price.duration?.id ?? "",
+        baseAmount: price.base_amount ? String(price.base_amount) : "",
+        adminFee: price.admin_fee ? String(price.admin_fee) : "",
+        memberSlots: String(price.member_slots ?? 5),
+        adminIncluded: price.admin_included === true,
+        active: price.active !== false,
+      })));
+    } catch {
+      // Daftar harga sekunder: form tetap bisa disimpan walau fetch ini gagal.
+      setPriceError("Daftar harga lama gagal dimuat. Muat ulang halaman sebelum mengedit harga.");
+    }
+  }, []);
+
   const openEdit = (product: SubscriptionProduct) => {
     setFormError("");
     setPhotoError("");
     setIconError("");
+    setPriceError("");
     setNotice("");
+    setDeletedPriceIds([]);
+    setPriceDrafts(product.priceOptions.map((option) => ({
+      key: option.id,
+      id: option.id,
+      durationId: durations.find((duration) => duration.days === option.days)?.id ?? "",
+      baseAmount: option.baseAmount ? String(option.baseAmount) : "",
+      adminFee: option.adminFee ? String(option.adminFee) : "",
+      memberSlots: String(option.memberSlots ?? 5),
+      adminIncluded: option.adminIncluded === true,
+      active: true,
+    })));
+    void loadPriceDrafts(product.id);
     setForm({
       mode: "edit",
       id: product.id,
@@ -298,6 +370,47 @@ export default function DashboardProductsPage() {
       }
     }
 
+    // Validasi seluruh baris harga sebelum produk dibuat, supaya tidak ada
+    // produk setengah jadi ketika satu baris harga ternyata tidak valid.
+    const parsedPrices = priceDrafts.map((draft) => ({
+      draft,
+      baseAmount: parseDraftAmount(draft.baseAmount),
+      adminFee: parseDraftAmount(draft.adminFee),
+      memberSlots: Number(draft.memberSlots) || 0,
+    })).filter((row) => {
+      // Baris baru yang benar-benar kosong diabaikan, sehingga produk tetap
+      // bisa dibuat tanpa harga (dan tampil "belum tersedia" di katalog).
+      const untouched = !row.draft.id
+        && row.baseAmount <= 0
+        && row.adminFee <= 0
+        && row.draft.baseAmount.trim() === ""
+        && row.draft.adminFee.trim() === "";
+      return !untouched;
+    });
+    const seenDurations = new Set<string>();
+    for (const row of parsedPrices) {
+      // Harga lama tanpa rincian dibiarkan apa adanya (lihat loop simpan).
+      if (row.draft.id && row.baseAmount <= 0 && row.adminFee <= 0) continue;
+      if (!row.draft.durationId) {
+        setPriceError("Setiap baris harga wajib memilih durasi.");
+        return;
+      }
+      if (seenDurations.has(row.draft.durationId)) {
+        setPriceError("Durasi yang sama tidak boleh dicantumkan lebih dari sekali.");
+        return;
+      }
+      seenDurations.add(row.draft.durationId);
+      if (row.baseAmount <= 0 && row.adminFee <= 0) {
+        setPriceError("Isi harga modal atau biaya admin minimal salah satu.");
+        return;
+      }
+      if (!Number.isInteger(row.memberSlots) || row.memberSlots < 1 || row.memberSlots > 100) {
+        setPriceError("Jumlah member harus bilangan bulat 1 sampai 100.");
+        return;
+      }
+    }
+    setPriceError("");
+
     setSubmitting(true);
     try {
       const payload: Record<string, unknown> = {
@@ -312,13 +425,40 @@ export default function DashboardProductsPage() {
       if (imageUrlToSend !== undefined) payload.image_url = imageUrlToSend;
       if (iconUrlToSend !== undefined) payload.icon_url = iconUrlToSend;
 
+      let productId = form.id;
       if (form.mode === "create") {
-        await adminApi.createProduct(payload);
-        setNotice(`Produk ${name} dibuat. Tambahkan harga dan akses lewat halaman inventaris.`);
+        const created = await adminApi.createProduct(payload);
+        productId = created.id;
       } else if (form.id) {
         await adminApi.updateProduct(form.id, payload);
-        setNotice(`Produk ${name} diperbarui.`);
       }
+
+      if (productId) {
+        for (const row of parsedPrices) {
+          // Baris lama tanpa rincian (migrasi 022) tidak diubah agar harga yang
+          // sudah dipakai checkout tidak tertimpa nol hanya karena form dibuka.
+          if (row.draft.id && row.baseAmount <= 0 && row.adminFee <= 0) continue;
+          const pricePayload = {
+            duration_id: row.draft.durationId,
+            base_amount: row.baseAmount,
+            admin_fee: row.adminFee,
+            member_slots: row.memberSlots,
+            admin_included: row.draft.adminIncluded,
+            active: row.draft.active,
+          };
+          if (row.draft.id) {
+            await adminApi.updateProductPrice(productId, row.draft.id, pricePayload);
+          } else {
+            await adminApi.createProductPrice(productId, pricePayload);
+          }
+        }
+        for (const priceId of deletedPriceIds) {
+          await adminApi.deleteProductPrice(productId, priceId);
+        }
+      }
+
+      const priceNote = parsedPrices.length > 0 ? ` dengan ${parsedPrices.length} paket harga` : " tanpa harga";
+      setNotice(form.mode === "create" ? `Produk ${name} dibuat${priceNote}.` : `Produk ${name} diperbarui${priceNote}.`);
       setForm(null);
       await loadProducts();
     } catch (failure) {
@@ -330,6 +470,14 @@ export default function DashboardProductsPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const removePriceDraft = (index: number) => {
+    const draft = priceDrafts[index];
+    if (!draft) return;
+    const priceId = draft.id;
+    if (priceId) setDeletedPriceIds((current) => [...current, priceId]);
+    setPriceDrafts((current) => current.filter((_, position) => position !== index));
   };
 
   const changeStatus = async (product: SubscriptionProduct, nextStatus: ProductStatus) => {
@@ -489,6 +637,126 @@ export default function DashboardProductsPage() {
                   value={form.description}
                   onChange={(event) => setForm({ ...form, description: event.target.value })}
                 />
+              </div>
+              <div className="field field-full">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <span className="label" style={{ margin: 0 }}>Harga &amp; pembagian</span>
+                  <button
+                    className="button button-secondary button-sm"
+                    type="button"
+                    onClick={() => setPriceDrafts((current) => [...current, newPriceDraft(durations[0]?.id ?? "")])}
+                  >
+                    <Plus size={13} /> Tambah durasi
+                  </button>
+                </div>
+                <p className="table-secondary" style={{ margin: "4px 0 0" }}>
+                  Isi harga modal dan biaya admin. Harga per orang dihitung otomatis dan dibulatkan ke atas per Rp1.000.
+                </p>
+                {priceDrafts.length === 0 && (
+                  <div className="notice" role="status">Belum ada harga. Produk tetap bisa disimpan, tetapi belum bisa dibeli sampai harga diisi.</div>
+                )}
+                {priceDrafts.map((draft, index) => {
+                  const breakdown = calculatePriceBreakdown(
+                    parseDraftAmount(draft.baseAmount),
+                    parseDraftAmount(draft.adminFee),
+                    Number(draft.memberSlots) || 0,
+                    draft.adminIncluded,
+                  );
+                  const updateDraft = (patch: Partial<PriceDraft>) =>
+                    setPriceDrafts((current) => current.map((item, position) => position === index ? { ...item, ...patch } : item));
+                  return (
+                    <div className="card" key={draft.key} style={{ padding: 14, marginTop: 12 }}>
+                      <div className="form-grid">
+                        <div className="field">
+                          <label className="label" htmlFor={`p-price-duration-${draft.key}`}>Durasi</label>
+                          <SearchableSelect
+                            inputId={`p-price-duration-${draft.key}`}
+                            ariaLabel={`Durasi harga ${index + 1}`}
+                            value={draft.durationId}
+                            onChange={(value) => updateDraft({ durationId: value })}
+                            placeholder={durations.length === 0 ? "Durasi belum tersedia" : "Pilih durasi"}
+                            options={durations.map((duration) => ({
+                              value: duration.id ?? "",
+                              label: duration.name,
+                            })).filter((option) => option.value)}
+                            isDisabled={durations.length === 0}
+                          />
+                        </div>
+                        <div className="field">
+                          <label className="label" htmlFor={`p-price-status-${draft.key}`}>Status harga</label>
+                          <SearchableSelect
+                            inputId={`p-price-status-${draft.key}`}
+                            ariaLabel={`Status harga ${index + 1}`}
+                            value={draft.active ? "Aktif" : "Nonaktif"}
+                            onChange={(value) => updateDraft({ active: value === "Aktif" })}
+                            options={[{ value: "Aktif", label: "Aktif" }, { value: "Nonaktif", label: "Nonaktif" }]}
+                          />
+                        </div>
+                        <div className="field">
+                          <label className="label" htmlFor={`p-price-base-${draft.key}`}>Harga modal (total)</label>
+                          <input
+                            className="input"
+                            id={`p-price-base-${draft.key}`}
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            step={1000}
+                            placeholder="300000"
+                            value={draft.baseAmount}
+                            onChange={(event) => updateDraft({ baseAmount: event.target.value })}
+                          />
+                        </div>
+                        <div className="field">
+                          <label className="label" htmlFor={`p-price-fee-${draft.key}`}>Biaya admin (total)</label>
+                          <input
+                            className="input"
+                            id={`p-price-fee-${draft.key}`}
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            step={1000}
+                            placeholder="30000"
+                            value={draft.adminFee}
+                            onChange={(event) => updateDraft({ adminFee: event.target.value })}
+                          />
+                        </div>
+                        <div className="field">
+                          <label className="label" htmlFor={`p-price-members-${draft.key}`}>Jumlah member</label>
+                          <input
+                            className="input"
+                            id={`p-price-members-${draft.key}`}
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            max={100}
+                            value={draft.memberSlots}
+                            onChange={(event) => updateDraft({ memberSlots: event.target.value })}
+                          />
+                        </div>
+                        <div className="field">
+                          <span className="label">Admin ikut menanggung</span>
+                          <label style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 38 }}>
+                            <input
+                              type="checkbox"
+                              checked={draft.adminIncluded}
+                              onChange={(event) => updateDraft({ adminIncluded: event.target.checked })}
+                            />
+                            Ya, admin mengambil 1 bagian
+                          </label>
+                        </div>
+                      </div>
+                      <div className="notice" role="status" style={{ marginTop: 12 }}>
+                        Total biaya <strong>{formatIDR(breakdown.total)}</strong> ÷ {breakdown.divisor || "-"} = <strong>{formatIDR(breakdown.perSlot)}</strong> per orang · ditagih ke member <strong>{formatIDR(breakdown.totalBilledToMembers)}</strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+                        <button className="button button-secondary button-sm" type="button" onClick={() => removePriceDraft(index)}>
+                          <Trash2 size={13} /> Hapus paket
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {priceError && <p className="field-error" role="alert" style={{ marginTop: 8 }}>{priceError}</p>}
               </div>
               <div className="field field-full">
                 <span className="label">Foto produk</span>

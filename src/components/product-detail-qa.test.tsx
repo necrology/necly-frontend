@@ -54,4 +54,24 @@ describe("QA baris 36, 38, dan 39 pada halaman detail produk", () => {
     expect(screen.getByText(/otomatis berakhir 1 bulan setelah tanggal CO \(checkout\)/)).toBeInTheDocument();
     expect(screen.getByText(/Laporan Kendala/)).toBeInTheDocument();
   });
+
+  it("menampilkan skema harga asli dari rincian patungan admin", () => {
+    const priced = {
+      ...product,
+      priceOptions: product.priceOptions.map((option, index) => index === 0 ? {
+        ...option,
+        price: 55_000,
+        baseAmount: 300_000,
+        adminFee: 30_000,
+        memberSlots: 5,
+        adminIncluded: true,
+      } : option),
+    };
+
+    render(<ProductDetailClient product={priced} />);
+
+    expect(screen.getByText(/÷ 6 = Rp 55\.000/)).toBeInTheDocument();
+    expect(screen.getByText("Rp 30.000")).toBeInTheDocument();
+    expect(screen.getByText("5 orang + admin")).toBeInTheDocument();
+  });
 });
