@@ -99,7 +99,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
     // dipesan (checkout.go). Memakai stok tingkat produk membuat keranjang
     // mengizinkan jumlah yang lebih besar daripada slot paket yang dipilih.
     const durationStock = duration.stock ?? product.stock;
-    addItem({ id: product.id, slug: product.slug, name: product.name, category: product.category, price: duration.price, stock: durationStock, accessType: product.accessType, product_price_id: duration.id, selectedDuration: duration.label, selectedPrice: duration.price, selectedStock: durationStock, selectedDevice });
+    addItem({ id: product.id, slug: product.slug, name: product.name, category: product.category, categoryName: product.categoryName, price: duration.price, stock: durationStock, accessType: product.accessType, product_price_id: duration.id, selectedDuration: duration.label, selectedPrice: duration.price, selectedStock: durationStock, selectedDevice });
     setAdded(true);
     router.push("/checkout");
   };

@@ -7,8 +7,9 @@ import type {
   ApiProductPrice,
   ApiUser,
 } from "./api";
-import { cleanProductName, cleanSlotCopy, mapProductCategory } from "./product-mapper";
+import { apiProductCategoryName, cleanProductName, cleanSlotCopy, mapProductCategory } from "./product-mapper";
 import type {
+  DashboardAnalytics,
   DashboardOrder,
   Customer,
   Payment,
@@ -52,6 +53,84 @@ export function mapApiDashboard(data: Record<string, unknown>) {
     newOrders: values.orders_today,
     activeActivations: values.active_activations,
     availableSlots: values.available_slots,
+  };
+}
+
+function analyticsRecord(value: unknown, label: string): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`Data analitik "${label}" tidak sesuai kontrak`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function analyticsString(data: Record<string, unknown>, key: string): string {
+  const value = data[key];
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`Data analitik "${key}" tidak tersedia`);
+  }
+  return value;
+}
+
+function analyticsNumber(data: Record<string, unknown>, key: string): number {
+  const value = data[key];
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(`Data analitik "${key}" tidak tersedia`);
+  }
+  return value;
+}
+
+function analyticsArray<T>(
+  data: Record<string, unknown>,
+  key: string,
+  mapper: (item: Record<string, unknown>) => T,
+): T[] {
+  const value = data[key];
+  if (!Array.isArray(value)) {
+    throw new Error(`Data analitik "${key}" tidak tersedia`);
+  }
+  return value.map((item, index) => mapper(analyticsRecord(item, `${key}[${index}]`)));
+}
+
+/**
+ * Memvalidasi seluruh kontrak analitik sebelum chart dirender. Respons parsial
+ * tidak boleh diterjemahkan menjadi deret nol, karena itu akan tampak seperti
+ * penjualan nyata yang kosong.
+ */
+export function mapApiDashboardAnalytics(payload: unknown): DashboardAnalytics {
+  const data = analyticsRecord(payload, "respons");
+  const rangeDays = analyticsNumber(data, "range_days");
+  if (rangeDays !== 7 && rangeDays !== 30 && rangeDays !== 90) {
+    throw new Error('Data analitik "range_days" tidak didukung');
+  }
+
+  return {
+    rangeDays,
+    from: analyticsString(data, "from"),
+    to: analyticsString(data, "to"),
+    revenueSeries: analyticsArray(data, "revenue_series", (item) => ({
+      date: analyticsString(item, "date"),
+      amount: analyticsNumber(item, "amount"),
+    })),
+    ordersSeries: analyticsArray(data, "orders_series", (item) => ({
+      date: analyticsString(item, "date"),
+      orders: analyticsNumber(item, "orders"),
+    })),
+    statusBreakdown: analyticsArray(data, "status_breakdown", (item) => ({
+      status: analyticsString(item, "status"),
+      count: analyticsNumber(item, "count"),
+    })),
+    topProducts: analyticsArray(data, "top_products", (item) => ({
+      productId: analyticsString(item, "product_id"),
+      productName: analyticsString(item, "product_name"),
+      salesCount: analyticsNumber(item, "sales_count"),
+      revenue: analyticsNumber(item, "revenue"),
+    })),
+    categoryBreakdown: analyticsArray(data, "category_breakdown", (item) => ({
+      categoryId: analyticsString(item, "category_id"),
+      categoryName: analyticsString(item, "category_name"),
+      orders: analyticsNumber(item, "orders"),
+      revenue: analyticsNumber(item, "revenue"),
+    })),
   };
 }
 
@@ -159,6 +238,7 @@ export function mapApiProductToSubscriptionProduct(apiProduct: ApiProduct): Subs
     eyebrow: "Akun sharing hemat",
     category: mappedCategory,
     categoryId,
+    categoryName: apiProductCategoryName(apiProduct),
     price: primaryPrice?.amount ?? 0,
     stock: apiProduct.stock ?? priceOptions.reduce((sum, option) => sum + (option.stock ?? 0), 0),
     duration: primaryPrice?.duration_name ?? "Belum tersedia",

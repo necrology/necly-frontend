@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { contact } from "@/data/contact";
 import { defaultDeviceOptions } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
+import { productCategoryLabel } from "@/lib/product-category";
 import { continueToCheckout } from "@/lib/checkout-navigation";
 import { useCartStore, type CartItem } from "@/stores/cart-store";
 import { ApiError, apiErrorCode, apiErrorNumber, bootstrapAuth, catalogApi, checkoutApi, DEMO_MODE, useAuthStore } from "@/lib/api";
@@ -28,7 +29,7 @@ const lineKey = (item: Pick<CartItem, "id" | "product_price_id">) => item.produc
 
 function lineDetail(item: CartItem) {
   const parts = [item.selectedDuration, item.selectedDevice ? `${item.selectedDevice} perangkat` : null].filter(Boolean);
-  return parts.length ? parts.join(" · ") : item.category;
+  return parts.length ? parts.join(" · ") : productCategoryLabel(item);
 }
 
 /**

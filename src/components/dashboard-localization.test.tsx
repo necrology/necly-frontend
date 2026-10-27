@@ -12,7 +12,8 @@ afterEach(cleanup);
 describe("dashboard localization", () => {
   it("uses Indonesian navigation and topbar labels", () => {
     render(<><DashboardNav /><DashboardTopbar /></>);
-    expect(screen.getByText("Ringkasan")).toBeInTheDocument();
+    expect(screen.getByText("Dashboard")).toBeInTheDocument();
+    expect(screen.getByText("Kategori")).toBeInTheDocument();
     expect(screen.getByText("Pesanan")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Cari pesanan, pelanggan, atau produk…")).toBeInTheDocument();
     expect(screen.getByLabelText("Notifikasi")).toBeInTheDocument();

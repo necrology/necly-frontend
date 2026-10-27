@@ -20,7 +20,7 @@ describe("dashboard overview localization", () => {
   };
 
   it("uses Indonesian operational headings and amounts", () => {
-    for (const label of ["Ringkasan operasional", "Pendapatan kotor", "Pesanan baru", "Aktivasi berjalan", "Akses tersedia", "Pesanan terbaru"]) {
+    for (const label of ["Dashboard operasional", "Pendapatan kotor", "Pesanan baru", "Aktivasi berjalan", "Akses tersedia", "Pesanan terbaru"]) {
       expect(source).toContain(label);
     }
     // Check for Indonesian locale formatting (toLocaleString with id-ID)
@@ -28,9 +28,12 @@ describe("dashboard overview localization", () => {
     expect(source).not.toContain("Operations overview");
   });
 
-  it("uses a seven-day range that matches the seven-day chart", () => {
-    expect(source).toContain("31 Agu–6 Sep");
-    expect(source).toContain("7 hari terakhir");
+  it("menyediakan filter periode 7, 30, dan 90 hari untuk analitik", () => {
+    expect(source).toContain("[7, 30, 90]");
+    expect(source).toContain("dashboardAnalytics({ days: period })");
+    expect(source).toContain("Tren pendapatan harian");
+    expect(source).toContain("Pendapatan per kategori");
+    expect(source).toContain("Produk terlaris");
   });
 
   it("tidak menampilkan peringkat, ulasan, atau testimoni di pengelolaan produk", () => {

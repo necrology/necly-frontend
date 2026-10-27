@@ -139,6 +139,37 @@ describe("produk admin (W18)", () => {
     expect(updateProductMock).toHaveBeenLastCalledWith("prd-music", { active: false, coming_soon: false });
   });
 
+  it("menampilkan nama kategori asli dari master, bukan kategori lama hasil pemetaan", async () => {
+    render(<ProductsPage />);
+
+    expect(await screen.findByText("Spotify Premium")).toBeInTheDocument();
+    expect(screen.getByText("Streaming Musik")).toBeInTheDocument();
+    expect(screen.queryByText("Streaming")).not.toBeInTheDocument();
+  });
+
+  it("memakai opsi master kategori pada filter produk", async () => {
+    render(<ProductsPage />);
+    await screen.findByText("Spotify Premium");
+
+    chooseSearchableOption("Filter kategori", "Streaming Musik");
+
+    expect(screen.getByText("Spotify Premium")).toBeInTheDocument();
+    expect(screen.getByText("1 hasil")).toBeInTheDocument();
+
+    chooseSearchableOption("Filter kategori", "Penyimpanan Awan");
+
+    expect(screen.getByText("0 hasil")).toBeInTheDocument();
+    expect(screen.queryByText("Spotify Premium")).not.toBeInTheDocument();
+  });
+
+  it("menautkan ke master kategori saat daftar kategori kosong", async () => {
+    listCategoriesMock.mockResolvedValue({ categories: [], page: 1, per_page: 100, total: 0 });
+    render(<ProductsPage />);
+
+    expect(await screen.findByText(/Belum ada kategori. Buat master kategori terlebih dahulu/)).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /Kategori|kategori/ }).some((link) => link.getAttribute("href") === "/dashboard/categories")).toBe(true);
+  });
+
   it("menyaring tabel berdasarkan status Coming Soon", async () => {
     listProductsMock.mockResolvedValue({
       products: [PRODUCT, { ...PRODUCT, id: "prd-canva", name: "Canva Teams", coming_soon: true }],

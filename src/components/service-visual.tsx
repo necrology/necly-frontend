@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { ProductPhoto } from "@/components/product-photo";
 import { safeProductImageSrc } from "@/lib/product-image";
+import { productCategoryLabel } from "@/lib/product-category";
 import { cn } from "@/lib/utils";
 import type { SubscriptionProduct } from "@/lib/types";
 
@@ -24,7 +25,7 @@ export function ServiceVisual({ service, compact = false }: { service: Subscript
       ) : (
         <Image className="service-art" src={illustration} alt="" fill sizes="(max-width: 580px) 100vw, (max-width: 1024px) 50vw, 33vw" />
       )}
-      <span className="service-type">{service.category}</span>
+      <span className="service-type">{productCategoryLabel(service)}</span>
       <span className="service-stock">{service.comingSoon ? "Coming Soon" : service.stock > 0 ? `${service.stock} akses` : "Preorder"}</span>
     </div>
   );

@@ -20,6 +20,7 @@ export function AddToCart({ product }: { product: SubscriptionProduct }) {
       slug: product.slug,
       name: product.name,
       category: product.category,
+      categoryName: product.categoryName,
       price: firstPriceOption.price,
       stock: firstPriceOption.stock ?? product.stock,
       accessType: product.accessType,

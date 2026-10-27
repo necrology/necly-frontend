@@ -12,6 +12,7 @@ import {
   ReceiptText,
   Settings,
   ShoppingBag,
+  Tags,
   UserRound,
   Users,
   X,
@@ -26,7 +27,7 @@ const groups = [
   {
     label: "Pantau",
     items: [
-      { label: "Ringkasan", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Notifikasi", href: "/dashboard/notifications", icon: FileClock },
     ],
   },
@@ -34,6 +35,7 @@ const groups = [
     label: "Operasional",
     items: [
       { label: "Produk", href: "/dashboard/products", icon: ShoppingBag },
+      { label: "Kategori", href: "/dashboard/categories", icon: Tags },
       { label: "Inventaris", href: "/dashboard/inventory", icon: Boxes },
       { label: "Akun", href: "/dashboard/accounts", icon: UserRound },
       { label: "Pesanan", href: "/dashboard/orders", icon: ClipboardList },

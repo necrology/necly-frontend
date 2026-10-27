@@ -8,6 +8,7 @@ import { CommerceProductCard } from "@/components/commerce-product-card";
 import { SearchableSelect } from "@/components/searchable-select";
 import { catalogApi, DEMO_MODE } from "@/lib/api";
 import { mapApiCommerceProduct } from "@/lib/commerce-product";
+import { productCategoryLabel } from "@/lib/product-category";
 
 type ProductSearchBarProps = {
   mode?: "catalog" | "preview";
@@ -17,7 +18,7 @@ type ProductSearchBarProps = {
 const categoryOrder = ["Streaming", "Produktivitas", "Kreatif", "Edukasi", "Keamanan"];
 
 function categoryOptionsFor(items: readonly CommerceProduct[]) {
-  const present = new Set(items.map((product) => product.category));
+  const present = new Set(items.map((product) => productCategoryLabel(product)));
   const ordered = categoryOrder.filter((category) => present.has(category as CommerceProduct["category"]));
   const extras = [...present]
     .filter((category) => !categoryOrder.includes(category))
@@ -92,8 +93,9 @@ export function ProductSearchBar({ mode = "catalog", limit }: ProductSearchBarPr
 
   const displayed = useMemo(() => source.filter((product) => {
     const normalized = query.toLocaleLowerCase("id-ID");
-    const matchesQuery = !normalized || `${product.name} ${product.packageName} ${product.category}`.toLocaleLowerCase("id-ID").includes(normalized);
-    const matchesCategory = activeCategory === "Semua" || product.category === activeCategory;
+    const categoryLabel = productCategoryLabel(product);
+    const matchesQuery = !normalized || `${product.name} ${product.packageName} ${categoryLabel}`.toLocaleLowerCase("id-ID").includes(normalized);
+    const matchesCategory = activeCategory === "Semua" || categoryLabel === activeCategory;
     return matchesQuery && matchesCategory;
   }).slice(0, limit), [activeCategory, limit, query, source]);
 

@@ -4,6 +4,7 @@ import { ComingSoonRibbon } from "@/components/coming-soon-ribbon";
 import { ProductIcon } from "@/components/product-icon";
 import { ServiceVisual } from "@/components/service-visual";
 import { formatIDR } from "@/lib/money";
+import { productCategoryLabel } from "@/lib/product-category";
 import type { SubscriptionProduct } from "@/lib/types";
 
 function badgeFor(product: SubscriptionProduct) {
@@ -35,7 +36,7 @@ export function ServiceCard({ product }: { product: SubscriptionProduct }) {
               width={48}
               height={22}
             />
-            <span className="catalog-category">{product.category}</span>
+            <span className="catalog-category">{productCategoryLabel(product)}</span>
           </span>
           {badge && <span className={`catalog-badge ${badge.className}`}>{badge.label}</span>}
         </div>

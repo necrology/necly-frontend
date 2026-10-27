@@ -4,10 +4,11 @@ import { Clock3, Flame, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { SearchableSelect } from "@/components/searchable-select";
 import { ServiceCard } from "@/components/service-card";
-import { categories, services, type SubscriptionProduct } from "@/data/seed";
+import { services, type SubscriptionProduct } from "@/data/seed";
 import { filterProducts } from "@/lib/catalog";
 import { catalogApi, DEMO_MODE } from "@/lib/api";
 import { mapApiProduct } from "@/lib/product-mapper";
+import { productCategoryLabel } from "@/lib/product-category";
 
 type ProductsClientProps = { initialCategory?: string };
 
@@ -22,7 +23,7 @@ function useOfferCountdown() {
 
 export function ProductsClient({ initialCategory = "Semua" }: ProductsClientProps) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState(categories.includes(initialCategory as never) ? initialCategory : "Semua");
+  const [category, setCategory] = useState(initialCategory || "Semua");
   const [loading, setLoading] = useState(false);
   const [apiProducts, setApiProducts] = useState<SubscriptionProduct[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,16 +33,21 @@ export function ProductsClient({ initialCategory = "Semua" }: ProductsClientProp
     if (!DEMO_MODE) {
       let cancelled = false;
       Promise.resolve().then(() => { if (!cancelled) setLoading(true); });
-      catalogApi.listProducts({ category: category === "Semua" ? undefined : category })
+      catalogApi.listProducts()
         .then((res) => { if (!cancelled) { setApiProducts(res.products.map(mapApiProduct)); setError(null); } })
         .catch(() => { if (!cancelled) setError("Produk belum dapat dimuat. Silakan coba lagi."); })
         .finally(() => { if (!cancelled) setLoading(false); });
       return () => { cancelled = true; };
     }
-  }, [category]);
+  }, []);
 
   const sourceProducts = useMemo(() => (DEMO_MODE || apiProducts === null ? services : apiProducts), [apiProducts]);
-  const filtered = useMemo(() => filterProducts(sourceProducts, { query, category, maxPrice: 1_000_000, inStockOnly: false }), [query, category, sourceProducts]);
+  const categoryOptions = useMemo(() => {
+    const names = sourceProducts.map((product) => productCategoryLabel(product));
+    return ["Semua", ...Array.from(new Set(names.filter(Boolean))).sort((left, right) => left.localeCompare(right, "id-ID"))];
+  }, [sourceProducts]);
+  const activeCategory = categoryOptions.includes(category) ? category : "Semua";
+  const filtered = useMemo(() => filterProducts(sourceProducts, { query, category: activeCategory, maxPrice: 1_000_000, inStockOnly: false }), [query, activeCategory, sourceProducts]);
   const timeParts = [[hours, "Jam"], [minutes, "Menit"], [seconds, "Detik"]] as const;
 
   return (
@@ -51,8 +57,8 @@ export function ProductsClient({ initialCategory = "Semua" }: ProductsClientProp
         <div className="catalog-select is-searchable">
           <SearchableSelect
             ariaLabel="Filter kategori"
-            options={categories.map((item) => ({ value: item, label: item === "Semua" ? "Semua Kategori" : item }))}
-            value={category}
+            options={categoryOptions.map((item) => ({ value: item, label: item === "Semua" ? "Semua Kategori" : item }))}
+            value={activeCategory}
             onChange={setCategory}
           />
         </div>

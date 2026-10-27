@@ -7,6 +7,8 @@ export type CartProduct = {
   slug: string;
   name: string;
   category: string;
+  /** Nama kategori asli dari API; label keranjang memakai ini bila ada. */
+  categoryName?: string;
   price: number;
   stock: number;
   accessType?: string;

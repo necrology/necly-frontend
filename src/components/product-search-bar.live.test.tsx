@@ -62,7 +62,7 @@ describe("katalog live", () => {
     render(<ProductSearchBar />);
     await screen.findByText("Netflix Premium");
 
-    chooseSearchableOption("Pilih kategori", "Produktivitas");
+    chooseSearchableOption("Pilih kategori", "Produktivitas Bersama");
 
     expect(screen.getByText("Apple Music")).toBeInTheDocument();
     expect(screen.queryByText("Netflix Premium")).not.toBeInTheDocument();

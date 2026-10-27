@@ -24,6 +24,8 @@ export type SubscriptionProduct = {
   category: ProductCategory;
   /** ID kategori asli dari API, dipakai form admin agar edit tidak memindahkan kategori. */
   categoryId?: string;
+  /** Nama kategori apa adanya dari API; dipakai untuk label agar kategori baru tidak jatuh ke kategori lama. */
+  categoryName?: string;
   price: number;
   stock: number;
   duration: string;
@@ -145,3 +147,46 @@ export type AssetRecord = {
   updated: string;
 };
 
+/** Periode filter analitik dashboard yang didukung endpoint backend. */
+export type AnalyticsRangeDays = 7 | 30 | 90;
+
+export type RevenueSeriesPoint = {
+  date: string;
+  amount: number;
+};
+
+export type OrdersSeriesPoint = {
+  date: string;
+  orders: number;
+};
+
+export type StatusBreakdownPoint = {
+  status: string;
+  count: number;
+};
+
+export type TopProductPoint = {
+  productId: string;
+  productName: string;
+  salesCount: number;
+  revenue: number;
+};
+
+export type CategoryBreakdownPoint = {
+  categoryId: string;
+  categoryName: string;
+  orders: number;
+  revenue: number;
+};
+
+/** Respons `GET /api/admin/dashboard/analytics?days=7|30|90` yang sudah divalidasi. */
+export type DashboardAnalytics = {
+  rangeDays: AnalyticsRangeDays;
+  from: string;
+  to: string;
+  revenueSeries: RevenueSeriesPoint[];
+  ordersSeries: OrdersSeriesPoint[];
+  statusBreakdown: StatusBreakdownPoint[];
+  topProducts: TopProductPoint[];
+  categoryBreakdown: CategoryBreakdownPoint[];
+};
