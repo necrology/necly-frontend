@@ -3,6 +3,11 @@
 import Select, { type SingleValue } from "react-select";
 import { useId } from "react";
 
+// Menu dirender lewat portal ke `document.body`, di luar dialog. Nilainya harus
+// lebih tinggi dari `.modal-overlay` (200) agar daftar opsi tidak tertutup
+// backdrop modal dan tetap bisa diklik.
+const MENU_PORTAL_Z_INDEX = 1000;
+
 export type SearchableSelectOption = {
   value: string;
   label: string;
@@ -86,8 +91,8 @@ export function SearchableSelect({
         menuPosition="fixed"
         maxMenuHeight={maxMenuHeight}
         styles={{
-          menuPortal: (base) => ({ ...base, zIndex: 90 }),
-          menu: (base) => ({ ...base, zIndex: 90 }),
+          menuPortal: (base) => ({ ...base, zIndex: MENU_PORTAL_Z_INDEX }),
+          menu: (base) => ({ ...base, zIndex: MENU_PORTAL_Z_INDEX }),
         }}
       />
       {name && <input type="hidden" name={name} value={value} required={required} />}
