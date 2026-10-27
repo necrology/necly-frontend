@@ -98,13 +98,16 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .searchable-select .necly-select__indicator-separator { display: none; }
 .searchable-select .necly-select__indicator { padding: 6px; color: var(--faint); }
 .searchable-select .necly-select__clear-indicator { cursor: pointer; }
-.searchable-select .necly-select__menu { border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-md); font-size: 12px; overflow: hidden; }
-.searchable-select .necly-select__menu-list { max-height: 260px; padding: 4px; }
-.searchable-select .necly-select__option { border-radius: 5px; cursor: pointer; }
-.searchable-select .necly-select__option--is-focused { background: #eef6ff; color: var(--ink); }
-.searchable-select .necly-select__option--is-selected { background: var(--blue); color: #fff; }
-.searchable-select .necly-select__option--is-disabled { color: var(--faint); cursor: not-allowed; }
-.searchable-select .necly-select__no-options-message { color: var(--muted); padding: 8px 10px; }
+/* Menu react-select dipindah ke portal `document.body`, jadi tidak lagi menjadi
+   turunan `.searchable-select`. Gaya menu sengaja global (prefix `necly-select`
+   hanya dipakai komponen ini) agar tetap berlaku di dalam maupun di luar modal. */
+.necly-select__menu { border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-md); font-size: 12px; overflow: hidden; }
+.necly-select__menu-list { max-height: 260px; padding: 4px; }
+.necly-select__option { border-radius: 5px; cursor: pointer; }
+.necly-select__option--is-focused { background: #eef6ff; color: var(--ink); }
+.necly-select__option--is-selected { background: var(--blue); color: #fff; }
+.necly-select__option--is-disabled { color: var(--faint); cursor: not-allowed; }
+.necly-select__no-options-message { color: var(--muted); padding: 8px 10px; }
 .searchable-select:has(input[aria-invalid="true"]) .necly-select__control { border-color: #e5484d; }
 .searchable-select input:focus-visible { outline: none; }
 .searchable-select.toolbar-select { flex: 0 1 170px; width: 170px; }
