@@ -58,6 +58,23 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
     durationRowRef.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
   };
 
+  // Produk yang baru dibuat admin bisa belum punya baris harga sama sekali.
+  // Tanpa penjagaan ini `option` undefined dan halaman detail crash saat
+  // membaca `option.stock`, padahal produk tetap tampil di katalog.
+  if (product.priceOptions.length === 0) {
+    return (
+      <div className="commerce-product-detail-shell">
+        <div className="commerce-product-detail-main">
+          <div className="commerce-empty-state" role="status">
+            <h1>{product.name}</h1>
+            <p>Paket harga untuk produk ini belum tersedia. Silakan kembali lagi nanti.</p>
+            <Link className="commerce-detail-backlink" href="/products">Lihat produk lain</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const deviceOptions: number[] = product.deviceOptions?.length ? product.deviceOptions : [...defaultDeviceOptions];
   const option = selectedDuration === null ? product.priceOptions[0] : (product.priceOptions[selectedDuration] ?? product.priceOptions[0]);
   const estimated = selectedPackage && selectedDuration !== null;
