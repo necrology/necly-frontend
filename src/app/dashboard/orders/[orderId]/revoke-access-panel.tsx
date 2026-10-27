@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CheckCircle2, Loader2, RotateCw, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { SearchableSelect } from "@/components/searchable-select";
 import {
   ApiError,
   adminApi,
@@ -156,18 +157,19 @@ export function RevokeAccessPanel({ orderId, orderStatus, onClose, onSuccess }: 
             </p>
           )}
 
-          <div className="dashboard-grid" style={{ gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)" }}>
+          <div className="form-grid">
             <div className="field">
               <label htmlFor="revoke-status">Status akhir</label>
-              <select
-                id="revoke-status"
-                className="input"
+              <SearchableSelect
+                inputId="revoke-status"
+                ariaLabel="Status akhir"
                 value={status}
-                onChange={(event) => setStatus(event.target.value as "cancelled" | "refunded")}
-              >
-                <option value="cancelled">Dibatalkan (tanpa refund otomatis)</option>
-                <option value="refunded">Dikembalikan (refund)</option>
-              </select>
+                onChange={(value) => setStatus(value as "cancelled" | "refunded")}
+                options={[
+                  { value: "cancelled", label: "Dibatalkan (tanpa refund otomatis)" },
+                  { value: "refunded", label: "Dikembalikan (refund)" },
+                ]}
+              />
             </div>
             <div className="field">
               <label htmlFor="revoke-reason">Alasan <span className="field-required">*</span></label>

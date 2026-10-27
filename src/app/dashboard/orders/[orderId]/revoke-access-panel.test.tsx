@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { chooseSearchableOption } from "@/test/searchable-select";
 
 const { getImpactMock, revokeMock } = vi.hoisted(() => ({
   getImpactMock: vi.fn(),
@@ -89,6 +90,22 @@ describe("panel batalkan & cabut akses", () => {
         shared_impact_acknowledged: false,
         new_passwords: {},
       }),
+    );
+  });
+
+  it("dapat mengganti status akhir lewat dropdown yang dipakai dashboard", async () => {
+    getImpactMock.mockResolvedValue({ accounts: [] });
+    render(
+      <RevokeAccessPanel orderId="order-3" orderStatus="paid" onClose={vi.fn()} onSuccess={vi.fn()} />,
+    );
+
+    await waitFor(() => expect(screen.getByText(/Akun belum pernah dikirim/)).toBeInTheDocument());
+    chooseSearchableOption("Status akhir", "Dikembalikan (refund)");
+    fireEvent.change(screen.getByLabelText(/Alasan/), { target: { value: "Refund disetujui" } });
+    fireEvent.click(screen.getByRole("button", { name: /Konfirmasi batalkan/i }));
+
+    await waitFor(() =>
+      expect(revokeMock).toHaveBeenCalledWith("order-3", expect.objectContaining({ status: "refunded" })),
     );
   });
 });
