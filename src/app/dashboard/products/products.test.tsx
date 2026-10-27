@@ -295,6 +295,28 @@ describe("produk admin (W18)", () => {
     expect(updateProductMock.mock.calls[0]?.[1]).toMatchObject({ image_url: "" });
   });
 
+  it("menampilkan pengaturan harga di mode edit meski produk belum punya harga", async () => {
+    listProductsMock.mockResolvedValue({
+      products: [{ ...PRODUCT, prices: [] }],
+      page: 1,
+      per_page: 100,
+      total: 1,
+    });
+    listProductPricesMock.mockResolvedValue({ prices: [] });
+
+    render(<ProductsPage />);
+    await screen.findByText("Spotify Premium");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Spotify Premium" }));
+    const dialog = screen.getByRole("dialog", { name: "Edit Spotify Premium" });
+
+    expect(within(dialog).getByText("Harga & pembagian")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Harga modal (total)")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Biaya admin (total)")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Jumlah member")).toHaveValue(5);
+    expect(within(dialog).getByRole("button", { name: /Tambah durasi/ })).toBeInTheDocument();
+  });
+
   it("membuat produk baru beserta harga patungan dalam satu alur", async () => {
     render(<ProductsPage />);
     await screen.findByText("Spotify Premium");

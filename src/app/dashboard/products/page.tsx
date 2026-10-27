@@ -232,7 +232,10 @@ export default function DashboardProductsPage() {
     try {
       const response = await adminApi.listProductPrices(productId);
       const rows = Array.isArray(response.prices) ? response.prices : [];
-      setPriceDrafts(rows.map((price) => ({
+      // Produk yang belum punya harga tetap harus menampilkan satu baris input
+      // di mode edit, sama seperti mode tambah. Tanpa ini admin hanya melihat
+      // tombol "Tambah durasi" dan mengira pengaturan harga tidak tersedia.
+      setPriceDrafts(rows.length > 0 ? rows.map((price) => ({
         key: price.id,
         id: price.id,
         durationId: price.duration?.id ?? "",
@@ -241,12 +244,12 @@ export default function DashboardProductsPage() {
         memberSlots: String(price.member_slots ?? 5),
         adminIncluded: price.admin_included === true,
         active: price.active !== false,
-      })));
+      })) : [newPriceDraft(durations[0]?.id ?? "")]);
     } catch {
       // Daftar harga sekunder: form tetap bisa disimpan walau fetch ini gagal.
       setPriceError("Daftar harga lama gagal dimuat. Muat ulang halaman sebelum mengedit harga.");
     }
-  }, []);
+  }, [durations]);
 
   const openEdit = (product: SubscriptionProduct) => {
     setFormError("");
@@ -255,7 +258,7 @@ export default function DashboardProductsPage() {
     setPriceError("");
     setNotice("");
     setDeletedPriceIds([]);
-    setPriceDrafts(product.priceOptions.map((option) => ({
+    const existingDrafts = product.priceOptions.map((option) => ({
       key: option.id,
       id: option.id,
       durationId: durations.find((duration) => duration.days === option.days)?.id ?? "",
@@ -264,7 +267,9 @@ export default function DashboardProductsPage() {
       memberSlots: String(option.memberSlots ?? 5),
       adminIncluded: option.adminIncluded === true,
       active: true,
-    })));
+    }));
+    // Produk tanpa harga tetap membuka satu baris input, bukan area kosong.
+    setPriceDrafts(existingDrafts.length > 0 ? existingDrafts : [newPriceDraft(durations[0]?.id ?? "")]);
     void loadPriceDrafts(product.id);
     setForm({
       mode: "edit",
