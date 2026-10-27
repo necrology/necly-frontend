@@ -3,8 +3,21 @@
 import { Bell, ChevronDown, LogOut, Menu, PanelLeftClose, Search, Store, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { authApi, useAuthStore } from "@/lib/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { initialNotifications as seedNotifications, type NotificationItem } from "@/data/seed";
+import { adminApi, authApi, DEMO_MODE, useAuthStore } from "@/lib/api";
+import {
+  NOTIFICATIONS_SEEN_EVENT,
+  NOTIFICATION_FETCH_SIZE,
+  NOTIFICATION_PREVIEW_SIZE,
+  countNewNotifications,
+  isNewNotification,
+  markNotificationsSeen,
+  notificationBadgeLabel,
+  notificationFromAudit,
+  readNotificationsSeenAt,
+} from "@/lib/notifications";
+import { formatDateID } from "@/lib/money";
 import { useDashboardUiStore } from "@/stores/ui-store";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +38,14 @@ export function DashboardTopbar() {
   const [signingOut, setSigningOut] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(DEMO_MODE ? seedNotifications : []);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState("");
+  const [notificationsSeenAt, setNotificationsSeenAt] = useState<string | null>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const canReadNotifications = DEMO_MODE || user?.role === "admin";
+
   useEffect(() => {
     if (!profileOpen) return;
     const onPointerDown = (event: MouseEvent) => {
@@ -40,6 +61,74 @@ export function DashboardTopbar() {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [profileOpen]);
+
+  useEffect(() => {
+    if (!notificationsOpen) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (!notificationsRef.current?.contains(event.target as Node)) setNotificationsOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setNotificationsOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [notificationsOpen]);
+
+  // Halaman Notifikasi menandai "sudah dilihat" lewat localStorage. Event ini
+  // membuat lonceng di topbar ikut memperbarui angka tanpa perlu reload.
+  useEffect(() => {
+    const syncSeenAt = () => setNotificationsSeenAt(readNotificationsSeenAt());
+    syncSeenAt();
+    window.addEventListener(NOTIFICATIONS_SEEN_EVENT, syncSeenAt);
+    return () => window.removeEventListener(NOTIFICATIONS_SEEN_EVENT, syncSeenAt);
+  }, []);
+
+  const refreshNotifications = useCallback(async () => {
+    if (DEMO_MODE) {
+      setNotifications(seedNotifications);
+      setNotificationsLoading(false);
+      setNotificationsError("");
+      return;
+    }
+    if (!canReadNotifications) {
+      setNotifications([]);
+      setNotificationsLoading(false);
+      return;
+    }
+    setNotificationsLoading(true);
+    setNotificationsError("");
+    try {
+      const response = await adminApi.listNotifications({ page: 1, per_page: NOTIFICATION_FETCH_SIZE });
+      if (!Array.isArray(response.notifications)) {
+        throw new Error("invalid notification response");
+      }
+      const mapped = response.notifications.map(notificationFromAudit);
+      setNotifications(mapped);
+      if (!readNotificationsSeenAt()) {
+        // Kunjungan pertama tidak boleh menampilkan seluruh riwayat audit
+        // sebagai "belum dibaca"; anggap entri terbaru sudah terlihat.
+        markNotificationsSeen(mapped[0]?.time ?? new Date().toISOString());
+      }
+    } catch {
+      setNotificationsError("Gagal memuat notifikasi.");
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, [canReadNotifications]);
+
+  useEffect(() => {
+    void Promise.resolve().then(() => refreshNotifications());
+  }, [refreshNotifications]);
+
+  const toggleNotifications = () => {
+    const next = !notificationsOpen;
+    setNotificationsOpen(next);
+    if (next) void refreshNotifications();
+  };
 
   const toggleSidebar = () => {
     // Di layar sempit tombol hamburger harus bisa membuka sekaligus menutup
@@ -67,6 +156,12 @@ export function DashboardTopbar() {
   const displayRole = user?.role === "admin" ? "Administrator" : user?.role === "seller" ? "Penjual" : user ? "Pelanggan" : "Operasional";
   const displayEmail = user?.email?.trim() || "Sesi demo dashboard";
 
+  const newNotificationCount = DEMO_MODE
+    ? notifications.filter((notification) => !notification.read).length
+    : countNewNotifications(notifications, notificationsSeenAt);
+  const badgeLabel = notificationBadgeLabel(newNotificationCount);
+  const preview = notifications.slice(0, NOTIFICATION_PREVIEW_SIZE);
+
   return (
     <header className="dashboard-topbar">
       <button
@@ -85,10 +180,65 @@ export function DashboardTopbar() {
         <span className="topbar-shortcut" style={{ position: "absolute", right: 10, top: 12, fontSize: 9, color: "var(--faint)" }}>Ctrl K</span>
       </div>
       <span className="topbar-spacer" />
-      <Link className="icon-button cart-link" href="/dashboard/notifications" aria-label="Notifikasi">
-        <Bell size={16} />
-        <span className="cart-count">3</span>
-      </Link>
+      <div className="dashboard-notifications" ref={notificationsRef}>
+        <button
+          className="icon-button cart-link"
+          type="button"
+          aria-label="Notifikasi"
+          aria-haspopup="dialog"
+          aria-expanded={notificationsOpen}
+          onClick={toggleNotifications}
+        >
+          <Bell size={16} />
+          {badgeLabel && <span className="cart-count" data-testid="notification-count">{badgeLabel}</span>}
+        </button>
+        {notificationsOpen && (
+          <div className="notifications-popover" role="dialog" aria-label="Notifikasi terbaru">
+            <div className="notifications-popover-head">
+              <div>
+                <strong>Notifikasi</strong>
+                <span className="muted">{newNotificationCount > 0 ? `${newNotificationCount} notifikasi baru` : "Tidak ada notifikasi baru"}</span>
+              </div>
+              <Link href="/dashboard/notifications" onClick={() => setNotificationsOpen(false)}>Lihat semua</Link>
+            </div>
+            {notificationsLoading && notifications.length === 0 && <p className="notifications-popover-state">Memuat notifikasi…</p>}
+            {!notificationsLoading && notificationsError && (
+              <p className="notifications-popover-state" role="alert">{notificationsError}</p>
+            )}
+            {!notificationsLoading && !notificationsError && preview.length === 0 && (
+              <p className="notifications-popover-state">Belum ada notifikasi.</p>
+            )}
+            {preview.length > 0 && (
+              <ul className="notifications-popover-list">
+                {preview.map((notification) => {
+                  const isNew = DEMO_MODE
+                    ? !notification.read
+                    : isNewNotification(notification, notificationsSeenAt);
+                  return (
+                    <li key={notification.id}>
+                      <Link
+                        className={cn("notifications-preview-item", isNew && "is-new")}
+                        href="/dashboard/notifications"
+                        onClick={() => setNotificationsOpen(false)}
+                      >
+                        <span className={`notifications-preview-dot type-${notification.type}`} aria-hidden="true" />
+                        <span className="notifications-preview-copy">
+                          <strong>{notification.title}</strong>
+                          <small>{notification.detail}</small>
+                          <time>{formatDateID(notification.time)}</time>
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <div className="notifications-popover-foot">
+              <Link href="/dashboard/notifications" onClick={() => setNotificationsOpen(false)}>Buka halaman notifikasi</Link>
+            </div>
+          </div>
+        )}
+      </div>
       <div className="dashboard-profile" ref={profileRef}>
         <button
           className="profile-button"

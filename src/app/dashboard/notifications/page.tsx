@@ -8,22 +8,14 @@ import { initialNotifications as seedNotifications, type NotificationItem } from
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { downloadCsv } from "@/lib/csv";
 import { formatDateID } from "@/lib/money";
+import {
+  NOTIFICATION_FETCH_SIZE,
+  markNotificationsSeen,
+  notificationFromAudit,
+  notificationTypeLabels as typeLabels,
+} from "@/lib/notifications";
 
-const NOTIFICATION_PAGE_SIZE = 50;
-
-const typeLabels: Record<string, string> = {
-  order: "Pesanan",
-  inventory: "Inventaris",
-  payment: "Pembayaran",
-  system: "Sistem",
-};
-
-function notificationType(action: string): NotificationItem["type"] {
-  if (action.startsWith("admin.order") || action.startsWith("order.")) return "order";
-  if (action.includes("inventory") || action.includes("slot")) return "inventory";
-  if (action.includes("payment") || action.includes("refund")) return "payment";
-  return "system";
-}
+const NOTIFICATION_PAGE_SIZE = NOTIFICATION_FETCH_SIZE;
 
 export default function NotificationsPage() {
   const [query, setQuery] = useState("");
@@ -62,19 +54,10 @@ export default function NotificationsPage() {
       setPage(typeof response.page === "number" ? response.page : 1);
       setLoaded(response.notifications.length);
       setTotal(typeof response.total === "number" ? response.total : response.notifications.length);
-      setApiNotifications(
-        response.notifications.map((log) => {
-          const resource = log.resource_id ? `${log.resource_type} · ${log.resource_id}` : log.resource_type;
-          return {
-            id: log.id,
-            title: log.action,
-            detail: resource,
-            type: notificationType(log.action),
-            time: log.created_at,
-            read: true,
-          };
-        }),
-      );
+      setApiNotifications(response.notifications.map(notificationFromAudit));
+      // Lonceng memakai penanda ini untuk menghitung notifikasi yang benar-
+      // benar baru sejak halaman ini terakhir dibuka.
+      markNotificationsSeen();
     } catch {
       setError("Gagal memuat notifikasi dari server");
     } finally {
@@ -100,17 +83,7 @@ export default function NotificationsPage() {
         setLoadMoreError("Respons notifikasi berikutnya tidak sesuai kontrak.");
         return;
       }
-      const next = response.notifications.map((log) => {
-        const resource = log.resource_id ? `${log.resource_type} · ${log.resource_id}` : log.resource_type;
-        return {
-          id: log.id,
-          title: log.action,
-          detail: resource,
-          type: notificationType(log.action),
-          time: log.created_at,
-          read: true,
-        };
-      });
+      const next = response.notifications.map(notificationFromAudit);
       setApiNotifications((current) => {
         const seen = new Set((current ?? []).map((notification) => notification.id));
         return [...(current ?? []), ...next.filter((notification) => !seen.has(notification.id))];
@@ -170,7 +143,7 @@ export default function NotificationsPage() {
     <div className="dashboard-page">
       <PageHeader
         title="Notifikasi"
-        description="Pantau aktivitas operasional dari audit log. Status baca belum didukung API."
+        description="Pantau aktivitas operasional dari audit log. Jumlah di lonceng dihitung dari notifikasi baru sejak halaman ini terakhir dibuka."
         actions={
           <button className="button button-secondary button-sm" onClick={exportRows} disabled={rows.length === 0}>
             <Download size={13} /> Ekspor
@@ -179,7 +152,7 @@ export default function NotificationsPage() {
       />
       {!DEMO_MODE && (
         <div className="notice" role="status">
-          Notifikasi ditampilkan dari audit log server. Tidak ada status baca atau aksi hapus di backend.
+          Notifikasi ditampilkan dari audit log server. Status baca disimpan di perangkat ini; tidak ada aksi hapus di backend.
         </div>
       )}
       <div className="toolbar">
