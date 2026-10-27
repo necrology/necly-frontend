@@ -620,7 +620,7 @@ export default function InventoryPage() {
           }
         }
 
-        setNotice(`Akun "${label}" dibuat. Kredensial disimpan terenkripsi dan tidak ditampilkan kembali.`);
+        setNotice(`Akun "${label}" dibuat. Klik "Tambah akses" pada baris akun untuk menambahkan slot jual.`);
         closeAccountForm();
         if (!DEMO_MODE) await refreshAccounts();
       } catch (error) {
@@ -1378,8 +1378,14 @@ function AccountRows({
         <td>{formatDate(account.expiresAt)}</td>
         <td className="tabular">{account.sharingLimit}</td>
         <td>
-          <span className="tabular">{account.usedSlots} / {account.totalSlots}</span>
-          <span className="muted"> · {account.availableSlots} tersedia</span>
+          {account.totalSlots === 0 ? (
+            <span className="muted">Belum ada akses</span>
+          ) : (
+            <>
+              <span className="tabular">{account.usedSlots} / {account.totalSlots}</span>
+              <span className="muted"> · {account.availableSlots} tersedia</span>
+            </>
+          )}
           <div
             className="inventory-bar"
             role="progressbar"
@@ -1415,13 +1421,13 @@ function AccountRows({
               <Pencil size={13} />
             </button>
             <button
-              className="table-action"
+              className={account.totalSlots === 0 ? "button button-secondary button-sm" : "table-action"}
               type="button"
               onClick={onAddSlot}
               title="Tambah akses"
               aria-label={`Tambah akses ke ${account.label}`}
             >
-              <Plus size={13} />
+              <Plus size={13} />{account.totalSlots === 0 ? " Tambah akses" : null}
             </button>
             <button
               className="table-action"

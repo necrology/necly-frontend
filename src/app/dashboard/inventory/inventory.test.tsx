@@ -193,6 +193,21 @@ describe("Halaman Inventaris akun", () => {
     );
   });
 
+  it("menampilkan ajakan tambah akses saat akun belum punya slot", async () => {
+    mockAccounts([{ ...ACCOUNT, total_slots: 0, available_slots: 0, used_slots: 0, remaining_slots: 5 }]);
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    const row = screen.getByText("Akun utama").closest("tr");
+    expect(within(row as HTMLElement).getByText("Belum ada akses")).toBeInTheDocument();
+    const cta = within(row as HTMLElement).getByRole("button", { name: "Tambah akses ke Akun utama" });
+    expect(cta).toHaveTextContent("Tambah akses");
+
+    fireEvent.click(cta);
+    expect(searchableSelectedText("Akun")).toContain("Akun utama");
+    expect(searchableSelectedText("Paket")).toBe("1 Bulan");
+  });
+
   it("menambah akses pada akun yang dipilih dan meneruskan inventory_account_id", async () => {
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
