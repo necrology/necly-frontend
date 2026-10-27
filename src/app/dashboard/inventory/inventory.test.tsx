@@ -280,6 +280,21 @@ describe("Halaman Inventaris akun", () => {
     await screen.findByText(/Akun "Akun utama" dinonaktifkan/);
   });
 
+  it("menolak kredensial yang tidak memakai format email:kata-sandi", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
+    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun rusak" } });
+    fireEvent.change(screen.getByLabelText("Kredensial akun"), {
+      target: { value: "akun@necly.id\nkata-sandi" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
+
+    expect(await screen.findByText(/Kredensial harus ditulis "email:kata-sandi"/)).toBeInTheDocument();
+    expect(createAccountMock).not.toHaveBeenCalled();
+  });
+
   it("membuat akun baru lalu mengosongkan kredensial setelah disimpan", async () => {
     render(<InventoryPage />);
     await screen.findByText("Akun utama");

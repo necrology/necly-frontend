@@ -118,6 +118,39 @@ const dateFormatter = new Intl.DateTimeFormat("id-ID", {
   year: "numeric",
 });
 
+/**
+ * Kredensial inventaris dikirim ke pembeli sebagai username+password. Backend
+ * menerima format `email:kata-sandi` pada baris pertama atau JSON dengan
+ * username/email + password. Tolak bentuk lain di klien agar akun tidak
+ * tersimpan dengan blob yang baru ketahuan rusak saat pengiriman.
+ */
+function credentialFormatError(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      const username = typeof parsed.username === "string"
+        ? parsed.username
+        : typeof parsed.email === "string"
+          ? parsed.email
+          : "";
+      const password = typeof parsed.password === "string" ? parsed.password : "";
+      if (username.trim() && password.trim()) return "";
+    } catch {
+      // Pesan di bawah mencakup JSON yang tidak bisa diparse.
+    }
+    return "Format JSON kredensial harus memuat username/email dan password.";
+  }
+
+  const firstLine = trimmed.split("\n")[0]?.trim() ?? "";
+  const separator = firstLine.indexOf(":");
+  if (separator <= 0 || separator === firstLine.length - 1) {
+    return 'Kredensial harus ditulis "email:kata-sandi" dalam satu baris. Contoh: akun@contoh.com:rahasia123.';
+  }
+  return "";
+}
+
 function formatDate(value?: string | null) {
   if (!value) return "Tidak dibatasi";
   const date = new Date(value);
@@ -569,6 +602,11 @@ export default function InventoryPage() {
     }
     if (accountForm.credentials && !accountForm.credentials.trim()) {
       setFormError("Kredensial baru tidak boleh kosong. Kosongkan kolom bila tidak ingin mengganti.");
+      return;
+    }
+    const credentialError = credentialFormatError(accountForm.credentials);
+    if (credentialError) {
+      setFormError(credentialError);
       return;
     }
 
@@ -1070,11 +1108,11 @@ export default function InventoryPage() {
                   rows={3}
                   value={accountForm.credentials}
                   onChange={(event) => setAccountForm({ ...accountForm, credentials: event.target.value })}
-                  placeholder={accountForm.mode === "create" ? "Email dan kata sandi akun" : "Kosongkan bila tidak ingin mengganti kredensial"}
+                  placeholder={accountForm.mode === "create" ? "akun@contoh.com:kata-sandi" : "Kosongkan bila tidak ingin mengganti kredensial"}
                   autoComplete="off"
                 />
                 <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                  Kredensial disimpan terenkripsi dan tidak pernah ditampilkan kembali setelah disimpan.
+                  Format: <strong>email:kata-sandi</strong> dalam satu baris (contoh: <code>akun@contoh.com:rahasia123</code>). Jangan taruh email dan kata sandi di baris terpisah. Kredensial disimpan terenkripsi dan tidak ditampilkan kembali.
                 </p>
               </div>
               <div className="field">
