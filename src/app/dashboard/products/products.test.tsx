@@ -5,6 +5,11 @@ import { chooseSearchableOption, searchableSelectedText } from "@/test/searchabl
 const {
   listProductsMock,
   listCategoriesMock,
+  listProductDurationsMock,
+  listProductPricesMock,
+  createProductPriceMock,
+  updateProductPriceMock,
+  deleteProductPriceMock,
   updateProductMock,
   createProductMock,
   bootstrapAuthMock,
@@ -13,6 +18,11 @@ const {
 } = vi.hoisted(() => ({
   listProductsMock: vi.fn(),
   listCategoriesMock: vi.fn(),
+  listProductDurationsMock: vi.fn(),
+  listProductPricesMock: vi.fn(),
+  createProductPriceMock: vi.fn(),
+  updateProductPriceMock: vi.fn(),
+  deleteProductPriceMock: vi.fn(),
   updateProductMock: vi.fn(),
   createProductMock: vi.fn(),
   bootstrapAuthMock: vi.fn(),
@@ -30,6 +40,11 @@ vi.mock("@/lib/api", async (importOriginal) => {
       ...actual.adminApi,
       listProducts: listProductsMock,
       listCategories: listCategoriesMock,
+      listProductDurations: listProductDurationsMock,
+      listProductPrices: listProductPricesMock,
+      createProductPrice: createProductPriceMock,
+      updateProductPrice: updateProductPriceMock,
+      deleteProductPrice: deleteProductPriceMock,
       updateProduct: updateProductMock,
       createProduct: createProductMock,
     },
@@ -68,6 +83,20 @@ describe("produk admin (W18)", () => {
   beforeEach(() => {
     listProductsMock.mockReset().mockResolvedValue({ products: [PRODUCT], page: 1, per_page: 100, total: 1 });
     listCategoriesMock.mockReset().mockResolvedValue({ categories: CATEGORIES, page: 1, per_page: 100, total: 3 });
+    listProductDurationsMock.mockReset().mockResolvedValue({
+      durations: [
+        { id: "dur-1", name: "1 Bulan", days: 30 },
+        { id: "dur-3", name: "3 Bulan", days: 90 },
+        { id: "dur-6", name: "6 Bulan", days: 180 },
+        { id: "dur-12", name: "12 Bulan", days: 365 },
+      ],
+    });
+    listProductPricesMock.mockReset().mockResolvedValue({
+      prices: [{ id: "price-1", amount: 79000, active: true, duration: { id: "dur-1", name: "1 Bulan", days: 30 } }],
+    });
+    createProductPriceMock.mockReset().mockResolvedValue({ id: "price-new", amount: 55000 });
+    updateProductPriceMock.mockReset().mockResolvedValue({ id: "price-1", amount: 79000 });
+    deleteProductPriceMock.mockReset().mockResolvedValue(undefined);
     updateProductMock.mockReset().mockResolvedValue(PRODUCT);
     createProductMock.mockReset().mockResolvedValue(PRODUCT);
     bootstrapAuthMock.mockReset().mockResolvedValue({ id: "admin-1", role: "admin" });
@@ -264,5 +293,30 @@ describe("produk admin (W18)", () => {
 
     await waitFor(() => expect(updateProductMock).toHaveBeenCalledTimes(1));
     expect(updateProductMock.mock.calls[0]?.[1]).toMatchObject({ image_url: "" });
+  });
+
+  it("membuat produk baru beserta harga patungan dalam satu alur", async () => {
+    render(<ProductsPage />);
+    await screen.findByText("Spotify Premium");
+
+    fireEvent.click(screen.getByRole("button", { name: "Tambah produk" }));
+    fireEvent.change(screen.getByLabelText("Nama produk"), { target: { value: "ChatGPT Plus" } });
+    chooseSearchableOption("Kategori", "Streaming Musik");
+    fireEvent.change(screen.getByLabelText("Harga modal (total)"), { target: { value: "300000" } });
+    fireEvent.change(screen.getByLabelText("Biaya admin (total)"), { target: { value: "30000" } });
+    fireEvent.click(screen.getByLabelText("Ya, admin mengambil 1 bagian"));
+    fireEvent.click(screen.getByRole("button", { name: "Simpan produk" }));
+
+    await waitFor(() => expect(createProductMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(createProductPriceMock).toHaveBeenCalledTimes(1));
+    expect(createProductPriceMock.mock.calls[0]?.[0]).toBe("prd-music");
+    expect(createProductPriceMock.mock.calls[0]?.[1]).toMatchObject({
+      duration_id: "dur-1",
+      base_amount: 300000,
+      admin_fee: 30000,
+      member_slots: 5,
+      admin_included: true,
+      active: true,
+    });
   });
 });

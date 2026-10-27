@@ -14,6 +14,11 @@ export type PriceOption = {
   days: number;
   price: number;
   stock?: number;
+  /** Rincian harga patungan dari admin; dipakai kartu Skema Harga. */
+  baseAmount?: number;
+  adminFee?: number;
+  memberSlots?: number;
+  adminIncluded?: boolean;
 };
 
 export type SubscriptionProduct = {

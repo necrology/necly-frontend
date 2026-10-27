@@ -148,6 +148,11 @@ export type ApiProductDuration = {
 export type ApiProductPrice = {
   id: string;
   amount: number;
+  /** Rincian harga patungan (NEC-136); amount tetap harga final per slot. */
+  base_amount?: number;
+  admin_fee?: number;
+  member_slots?: number;
+  admin_included?: boolean;
   currency?: string;
   active?: boolean;
   duration?: ApiProductDuration;
@@ -1035,6 +1040,24 @@ export const adminApi = {
   updateProduct: (id: string, data: Record<string, unknown>) =>
     apiRequest<ApiProduct>(`/admin/products/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteProduct: (id: string) => apiRequest<void>(`/admin/products/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  listProductDurations: () =>
+    apiRequest<{ durations: ApiProductDuration[] }>("/admin/product-durations"),
+  listProductPrices: (productId: string) =>
+    apiRequest<{ prices: ApiProductPrice[] }>(`/admin/products/${encodeURIComponent(productId)}/prices`),
+  createProductPrice: (productId: string, data: Record<string, unknown>) =>
+    apiRequest<ApiProductPrice>(`/admin/products/${encodeURIComponent(productId)}/prices`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  updateProductPrice: (productId: string, priceId: string, data: Record<string, unknown>) =>
+    apiRequest<ApiProductPrice>(
+      `/admin/products/${encodeURIComponent(productId)}/prices/${encodeURIComponent(priceId)}`,
+      { method: "PATCH", body: JSON.stringify(data) },
+    ),
+  deleteProductPrice: (productId: string, priceId: string) =>
+    apiRequest<void>(`/admin/products/${encodeURIComponent(productId)}/prices/${encodeURIComponent(priceId)}`, {
+      method: "DELETE",
+    }),
   listCategories: (params?: { page?: number; per_page?: number }) =>
     apiRequest<Record<string, unknown>>(`/admin/categories${toQuery(params)}`),
   createCategory: (data: { name: string; slug: string; description?: string }) =>

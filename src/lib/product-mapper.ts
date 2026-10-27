@@ -110,6 +110,10 @@ function mapPriceOption(price: NonNullable<ApiProduct["prices"]>[number]): Price
     days,
     price: price.amount,
     stock: priceStock(price),
+    baseAmount: price.base_amount,
+    adminFee: price.admin_fee,
+    memberSlots: price.member_slots,
+    adminIncluded: price.admin_included,
   };
 }
 
