@@ -14,6 +14,7 @@ import {
   type ApiDeliveryItemOptions,
   type ApiOrder,
   type ApiOrderDelivery,
+  type ApiRevokeAccessResponse,
 } from "@/lib/api";
 import { formatDateTimeWIB, formatIDR } from "@/lib/money";
 import { orderStatusLabel } from "@/lib/order-status";
@@ -29,6 +30,7 @@ import {
 } from "@/lib/order-delivery";
 import { dashboardOrders } from "@/data/seed";
 import { DeliveryAccountPicker, ReplaceAccountPanel } from "./delivery-picker";
+import { RevokeAccessPanel } from "./revoke-access-panel";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -128,6 +130,7 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
   const [replaceLoading, setReplaceLoading] = useState(false);
   const [replaceError, setReplaceError] = useState<string | null>(null);
   const [replaceSubmitting, setReplaceSubmitting] = useState(false);
+  const [revokeOpen, setRevokeOpen] = useState(false);
 
   const loadOrder = useCallback(async () => {
     setLoading(true);
@@ -247,6 +250,7 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
   const hasUnsent = deliveries.length === 0 || deliveries.some((delivery) => delivery.status !== "sent");
   const canSend = !DEMO_MODE && (approvable || (alreadyApproved && hasUnsent));
   const sendLabel = approvable ? "Setujui & kirim akun" : "Kirim akun";
+  const canRevoke = !DEMO_MODE && ["pending_payment", "paid", "fulfilling", "processing", "shipped", "delivered", "completed"].includes(order.status);
 
   const openSendPicker = async () => {
     setPickerOpen(true);
@@ -390,6 +394,25 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
     }
   };
 
+  const openRevoke = () => {
+    setRevokeOpen(true);
+    setActionError("");
+    setActionNotice("");
+  };
+
+  const handleRevoked = (result: ApiRevokeAccessResponse) => {
+    setRevokeOpen(false);
+    setOrder(result.order);
+    setActionNotice(
+      `Akses pesanan dicabut dan ${result.released_slots} slot dikembalikan ke stok. ` +
+        (result.accounts.length > 0
+          ? "Pastikan kata sandi baru sudah dikirim ke pelanggan lain yang masih aktif."
+          : ""),
+    );
+    // Muat ulang agar status pengiriman dan assignment ikut tersinkron.
+    setReloadToken((value) => value + 1);
+  };
+
   return (
     <div className="dashboard-page">
       <PageHeader
@@ -405,6 +428,15 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
                 disabled={pickerLoading || pickerSubmitting}
               >
                 <MailCheck size={13} /> {sendLabel}
+              </button>
+            )}
+            {canRevoke && (
+              <button
+                className="button button-danger button-sm"
+                type="button"
+                onClick={openRevoke}
+              >
+                <ShieldCheck size={13} /> Batalkan &amp; cabut akses
               </button>
             )}
             <Link className="button button-secondary button-sm" href="/dashboard/orders">
@@ -480,6 +512,15 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
           error={pickerError}
           submitting={pickerSubmitting}
           approvable={approvable}
+        />
+      )}
+
+      {revokeOpen && (
+        <RevokeAccessPanel
+          orderId={order.id}
+          orderStatus={order.status}
+          onClose={() => setRevokeOpen(false)}
+          onSuccess={handleRevoked}
         />
       )}
 

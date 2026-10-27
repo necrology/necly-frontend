@@ -275,6 +275,22 @@ export type ApiDeliveryItemOptions = {
   accounts: ApiDeliveryAccountOption[];
 };
 
+/** Dampak pencabutan akses per akun inventaris. Tidak memuat kredensial. */
+export type ApiRevocationAccountImpact = {
+  inventory_account_id: string;
+  label: string;
+  account_email?: string;
+  /** Jumlah pelanggan lain yang masih memakai akun yang sama. */
+  other_active_users: number;
+};
+
+/** Hasil pembatalan langganan + pencabutan akses. */
+export type ApiRevokeAccessResponse = {
+  order: ApiOrder;
+  accounts: ApiRevocationAccountImpact[];
+  released_slots: number;
+};
+
 export type ApiOrder = {
   id: string;
   number: string;
@@ -1084,6 +1100,24 @@ export const adminApi = {
   getOrderDeliveryOptions: (id: string) =>
     apiRequest<{ items: ApiDeliveryItemOptions[] }>(
       `/admin/orders/${encodeURIComponent(id)}/delivery-options`,
+    ),
+  getOrderRevocationImpact: (id: string) =>
+    apiRequest<{ accounts: ApiRevocationAccountImpact[] }>(
+      `/admin/orders/${encodeURIComponent(id)}/revocation-impact`,
+    ),
+  revokeOrderAccess: (
+    id: string,
+    data: {
+      status: "cancelled" | "refunded";
+      reason: string;
+      provider_rotation_confirmed: boolean;
+      shared_impact_acknowledged: boolean;
+      new_passwords: Record<string, string>;
+    },
+  ) =>
+    apiRequest<ApiRevokeAccessResponse>(
+      `/admin/orders/${encodeURIComponent(id)}/revoke-access`,
+      { method: "POST", body: JSON.stringify(data) },
     ),
   assignOrderDeliveryAccount: (id: string, deliveryId: string, inventoryAccountId: string) =>
     apiRequest<{ delivery: ApiOrderDelivery }>(

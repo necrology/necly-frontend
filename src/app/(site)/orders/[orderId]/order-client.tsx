@@ -246,6 +246,15 @@ function OrderClientInner({ orderId }: OrderClientProps) {
         <div style={{ display: "grid", gap: 15 }}>
           {DEMO_MODE && <div className="demo-banner"><PackageCheck size={16} /><span>Ini adalah status pesanan contoh. Tidak ada layanan yang dibeli dan tidak ada operator yang ditugaskan.</span></div>}
           {!normalizedStatus && <div className="demo-banner" role="alert"><PackageCheck size={16} /><span>Status pesanan tidak dikenali. Hubungi tim dukungan sebelum melanjutkan.</span></div>}
+          {(order.status === "cancelled" || order.status === "refunded") && (
+            <div className="demo-banner" role="status">
+              <PackageCheck size={16} />
+              <span>
+                Langganan ini sudah dihentikan. Akses akun dan kode OTP untuk pesanan ini tidak berlaku lagi.
+                Hubungi dukungan Necly bila Anda memerlukan bantuan lain.
+              </span>
+            </div>
+          )}
           <section className="card" style={{ padding: 27 }}>
             <h2 className="h3">Progres</h2>
             {steps.length > 0 ? (
