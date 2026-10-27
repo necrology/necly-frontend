@@ -45,6 +45,7 @@ type AccountRow = {
   productId: string;
   productName: string;
   label: string;
+  accountEmail: string;
   status: string;
   expiresAt: string | null;
   sharingLimit: number;
@@ -67,7 +68,8 @@ type AssignmentState = {
 type AccountDraft = {
   productId: string;
   label: string;
-  credentials: string;
+  accountEmail: string;
+  accountPassword: string;
   status: InventoryStatus;
   expires: string;
   sharingLimit: string;
@@ -118,37 +120,8 @@ const dateFormatter = new Intl.DateTimeFormat("id-ID", {
   year: "numeric",
 });
 
-/**
- * Kredensial inventaris dikirim ke pembeli sebagai username+password. Backend
- * menerima format `email:kata-sandi` pada baris pertama atau JSON dengan
- * username/email + password. Tolak bentuk lain di klien agar akun tidak
- * tersimpan dengan blob yang baru ketahuan rusak saat pengiriman.
- */
-function credentialFormatError(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  if (trimmed.startsWith("{")) {
-    try {
-      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
-      const username = typeof parsed.username === "string"
-        ? parsed.username
-        : typeof parsed.email === "string"
-          ? parsed.email
-          : "";
-      const password = typeof parsed.password === "string" ? parsed.password : "";
-      if (username.trim() && password.trim()) return "";
-    } catch {
-      // Pesan di bawah mencakup JSON yang tidak bisa diparse.
-    }
-    return "Format JSON kredensial harus memuat username/email dan password.";
-  }
-
-  const firstLine = trimmed.split("\n")[0]?.trim() ?? "";
-  const separator = firstLine.indexOf(":");
-  if (separator <= 0 || separator === firstLine.length - 1) {
-    return 'Kredensial harus ditulis "email:kata-sandi" dalam satu baris. Contoh: akun@contoh.com:rahasia123.';
-  }
-  return "";
+function isValidAccountEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 }
 
 function formatDate(value?: string | null) {
@@ -194,6 +167,7 @@ function mapAccount(account: ApiInventoryAccount, productsById: Map<string, Prod
     productId: account.product_id,
     productName,
     label: (account.label ?? "").trim() || "Akun inventaris",
+    accountEmail: (account.account_email ?? "").trim(),
     status: account.status,
     expiresAt: account.expires_at ?? null,
     sharingLimit,
@@ -211,6 +185,7 @@ function buildDemoAccounts(): AccountRow[] {
     productId: DEMO_PRODUCTS.find((product) => product.name === seed.product)?.id ?? `demo-product-${index}`,
     productName: seed.product,
     label: `Akun ${index + 1}`,
+    accountEmail: `akun${index + 1}@contoh.test`,
     status: seed.status === "Kedaluwarsa" ? "expired" : "active",
     expiresAt: null,
     sharingLimit: Math.max(seed.totalSlots, 1),
@@ -459,7 +434,7 @@ export default function InventoryPage() {
     const needle = query.trim().toLowerCase();
     if (!needle) return accounts;
     return accounts.filter((account) =>
-      `${account.productName} ${account.label} ${statusLabel(account.status)}`.toLowerCase().includes(needle),
+      `${account.productName} ${account.label} ${account.accountEmail} ${statusLabel(account.status)}`.toLowerCase().includes(needle),
     );
   }, [accounts, query]);
 
@@ -500,7 +475,8 @@ export default function InventoryPage() {
       mode: "create",
       productId: products[0]?.id ?? "",
       label: "",
-      credentials: "",
+      accountEmail: "",
+      accountPassword: "",
       status: "active",
       expires: "",
       sharingLimit: "1",
@@ -518,8 +494,9 @@ export default function InventoryPage() {
       accountId: account.id,
       productId: account.productId,
       label: account.label,
-      // Credentials are write-only: never prefill this field from the API.
-      credentials: "",
+      // Email is not secret; password stays write-only and is never prefilled.
+      accountEmail: account.accountEmail,
+      accountPassword: "",
       status: (account.status as InventoryStatus) ?? "active",
       expires: toDateInput(account.expiresAt),
       sharingLimit: String(account.sharingLimit),
@@ -596,17 +573,17 @@ export default function InventoryPage() {
       setFormError("Pilih produk untuk akun inventaris.");
       return;
     }
-    if (accountForm.mode === "create" && !accountForm.credentials.trim()) {
-      setFormError("Kredensial akun wajib diisi saat membuat akun.");
+    const accountEmail = accountForm.accountEmail.trim();
+    if (accountEmail && !isValidAccountEmail(accountEmail)) {
+      setFormError("Format email akun tidak valid.");
       return;
     }
-    if (accountForm.credentials && !accountForm.credentials.trim()) {
-      setFormError("Kredensial baru tidak boleh kosong. Kosongkan kolom bila tidak ingin mengganti.");
+    if (accountForm.mode === "create" && !accountEmail) {
+      setFormError("Email akun wajib diisi saat membuat akun.");
       return;
     }
-    const credentialError = credentialFormatError(accountForm.credentials);
-    if (credentialError) {
-      setFormError(credentialError);
+    if (accountForm.mode === "create" && !accountForm.accountPassword.trim()) {
+      setFormError("Kata sandi akun wajib diisi saat membuat akun.");
       return;
     }
 
@@ -614,7 +591,8 @@ export default function InventoryPage() {
       const payload: Record<string, unknown> = {
         product_id: accountForm.productId,
         label,
-        credentials: accountForm.credentials.trim(),
+        account_email: accountEmail,
+        account_password: accountForm.accountPassword,
         sharing_limit: sharingLimit,
       };
       if (accountForm.expires) payload.expires_at = toExpiresAt(accountForm.expires);
@@ -629,6 +607,7 @@ export default function InventoryPage() {
               productId: accountForm.productId,
               productName: product?.name ?? "Produk demo",
               label,
+              accountEmail,
               status: accountForm.status,
               expiresAt: accountForm.expires ? toExpiresAt(accountForm.expires) : null,
               sharingLimit,
@@ -682,7 +661,19 @@ export default function InventoryPage() {
     if (accountForm.expires && accountForm.expires !== toDateInput(account.expiresAt)) {
       changes.expires_at = toExpiresAt(accountForm.expires);
     }
-    if (accountForm.credentials.trim()) changes.credentials = accountForm.credentials.trim();
+    const credentialsChanged = accountEmail !== account.accountEmail || accountForm.accountPassword.trim() !== "";
+    if (credentialsChanged) {
+      if (!accountEmail) {
+        setFormError("Email akun wajib diisi saat mengganti kredensial.");
+        return;
+      }
+      if (!accountForm.accountPassword.trim()) {
+        setFormError("Kata sandi wajib diisi saat mengganti email atau kredensial akun.");
+        return;
+      }
+      changes.account_email = accountEmail;
+      changes.account_password = accountForm.accountPassword;
+    }
 
     if (Object.keys(changes).length === 0) {
       setFormError("Tidak ada perubahan untuk disimpan.");
@@ -709,6 +700,7 @@ export default function InventoryPage() {
               ? {
                   ...account,
                   label: (pendingSave.changes.label as string) ?? account.label,
+                  accountEmail: (pendingSave.changes.account_email as string) ?? account.accountEmail,
                   status: (pendingSave.changes.status as string) ?? account.status,
                   sharingLimit: (pendingSave.changes.sharing_limit as number) ?? account.sharingLimit,
                   expiresAt: (pendingSave.changes.expires_at as string) ?? account.expiresAt,
@@ -1097,22 +1089,40 @@ export default function InventoryPage() {
                   required
                 />
               </div>
-              <div className={accountForm.mode === "create" ? "field" : "field field-full"}>
-                <label className="label" htmlFor="inv-credentials">
-                  {accountForm.mode === "create" ? "Kredensial akun" : "Kredensial baru (opsional)"}
-                </label>
-                <textarea
+              <div className="field">
+                <label className="label" htmlFor="inv-account-email">Email akun</label>
+                <input
                   className="input"
-                  id="inv-credentials"
-                  name="credentials"
-                  rows={3}
-                  value={accountForm.credentials}
-                  onChange={(event) => setAccountForm({ ...accountForm, credentials: event.target.value })}
-                  placeholder={accountForm.mode === "create" ? "akun@contoh.com:kata-sandi" : "Kosongkan bila tidak ingin mengganti kredensial"}
+                  id="inv-account-email"
+                  type="email"
+                  value={accountForm.accountEmail}
+                  onChange={(event) => setAccountForm({ ...accountForm, accountEmail: event.target.value })}
+                  placeholder="akun@contoh.com"
                   autoComplete="off"
+                  required={accountForm.mode === "create"}
                 />
                 <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                  Format: <strong>email:kata-sandi</strong> dalam satu baris (contoh: <code>akun@contoh.com:rahasia123</code>). Jangan taruh email dan kata sandi di baris terpisah. Kredensial disimpan terenkripsi dan tidak ditampilkan kembali.
+                  Email ini tampil di daftar inventaris dan dipakai pembeli untuk login.
+                </p>
+              </div>
+              <div className="field">
+                <label className="label" htmlFor="inv-account-password">
+                  {accountForm.mode === "create" ? "Kata sandi akun" : "Kata sandi baru (opsional)"}
+                </label>
+                <input
+                  className="input"
+                  id="inv-account-password"
+                  type="password"
+                  value={accountForm.accountPassword}
+                  onChange={(event) => setAccountForm({ ...accountForm, accountPassword: event.target.value })}
+                  placeholder={accountForm.mode === "create" ? "Kata sandi akun" : "Kosongkan bila tidak ingin mengganti"}
+                  autoComplete="new-password"
+                  required={accountForm.mode === "create"}
+                />
+                <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                  {accountForm.mode === "create"
+                    ? "Email dan kata sandi disimpan terenkripsi dan tidak ditampilkan kembali."
+                    : "Isi kata sandi juga bila mengubah email. Kosongkan keduanya bila tidak ingin mengganti kredensial."}
                 </p>
               </div>
               <div className="field">
@@ -1297,7 +1307,7 @@ export default function InventoryPage() {
               setQuery(value);
               if (value.trim().length >= 2) void searchAllAccounts();
             }}
-            placeholder="Cari produk, label akun, atau status…"
+            placeholder="Cari produk, label, email, atau status…"
             aria-label="Cari inventaris"
           />
         </div>
@@ -1330,6 +1340,7 @@ export default function InventoryPage() {
               <tr>
                 <th>Produk</th>
                 <th>Akun</th>
+                <th>Email akun</th>
                 <th>Status</th>
                 <th>Kedaluwarsa</th>
                 <th>Limit sharing</th>
@@ -1341,11 +1352,11 @@ export default function InventoryPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="muted" style={{ textAlign: "center" }}>Memuat akun inventaris…</td>
+                  <td colSpan={9} className="muted" style={{ textAlign: "center" }}>Memuat akun inventaris…</td>
                 </tr>
               ) : visibleAccounts.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="muted" style={{ textAlign: "center" }}>
+                  <td colSpan={9} className="muted" style={{ textAlign: "center" }}>
                     {accounts.length === 0
                       ? "Belum ada akun inventaris. Tambahkan akun untuk mulai menjual akses."
                       : "Tidak ada akun yang cocok dengan pencarian."}
@@ -1410,6 +1421,7 @@ function AccountRows({
       <tr>
         <td className="table-primary">{account.productName}</td>
         <td>{account.label}</td>
+        <td>{account.accountEmail || "—"}</td>
         <td>
           <span className={`badge badge-dot ${statusTone(account.status)}`}>{statusLabel(account.status)}</span>
         </td>
@@ -1481,7 +1493,7 @@ function AccountRows({
       </tr>
       {expanded && (
         <tr>
-          <td colSpan={8} style={{ height: "auto", padding: 0, whiteSpace: "normal", background: "var(--surface-2)" }}>
+          <td colSpan={9} style={{ height: "auto", padding: 0, whiteSpace: "normal", background: "var(--surface-2)" }}>
             <div style={{ padding: "14px 18px" }}>
               <div className="panel-header" style={{ marginBottom: 10 }}>
                 <h3 className="panel-title">Assignment akses — {account.label}</h3>
@@ -1561,7 +1573,8 @@ function describeChanges(account: AccountRow, changes: Record<string, unknown>) 
   if (typeof changes.status === "string") parts.push(`status ${statusLabel(account.status)} → ${statusLabel(changes.status)}`);
   if (typeof changes.sharing_limit === "number") parts.push(`limit sharing ${account.sharingLimit} → ${changes.sharing_limit}`);
   if (typeof changes.expires_at === "string") parts.push(`kedaluwarsa ${formatDate(account.expiresAt)} → ${formatDate(changes.expires_at)}`);
-  if (typeof changes.credentials === "string") parts.push("kredensial diganti");
+  if (typeof changes.account_email === "string") parts.push(`email akun → ${changes.account_email}`);
+  if (typeof changes.account_password === "string") parts.push("kata sandi diganti");
 
   return `Konfirmasi perubahan akun ${account.label}: ${parts.join(", ")}.`;
 }

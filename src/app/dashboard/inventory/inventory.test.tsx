@@ -57,6 +57,7 @@ const ACCOUNT = {
   product_id: "prd-1",
   product: PRODUCT,
   label: "Akun utama",
+  account_email: "akun@necly.id",
   status: "active",
   sharing_limit: 5,
   expires_at: "2026-12-31T00:00:00Z",
@@ -118,6 +119,7 @@ describe("Halaman Inventaris akun", () => {
     const row = screen.getByText("Akun utama").closest("tr");
     expect(row).not.toBeNull();
     expect(within(row as HTMLElement).getByText("Netflix Premium")).toBeInTheDocument();
+    expect(within(row as HTMLElement).getByText("akun@necly.id")).toBeInTheDocument();
     expect(within(row as HTMLElement).getByText("Aktif")).toBeInTheDocument();
     expect(row?.textContent).toContain("2 / 3");
     expect(row?.textContent).toContain("1 tersedia");
@@ -146,8 +148,8 @@ describe("Halaman Inventaris akun", () => {
     await screen.findByText("Akun utama");
 
     fireEvent.click(screen.getByRole("button", { name: "Kelola akun Akun utama" }));
-    const credentials = screen.getByLabelText("Kredensial baru (opsional)") as HTMLTextAreaElement;
-    expect(credentials).toHaveValue("");
+    expect(screen.getByLabelText("Email akun")).toHaveValue("akun@necly.id");
+    expect(screen.getByLabelText("Kata sandi baru (opsional)")).toHaveValue("");
 
     fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun cadangan baru" } });
     chooseSearchableOption("Status akun", "Nonaktif");
@@ -170,7 +172,7 @@ describe("Halaman Inventaris akun", () => {
       }),
     );
     await screen.findByText(/Akun "Akun cadangan baru" diperbarui/);
-    expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("credentials");
+    expect(updateAccountMock.mock.calls[0]?.[1]).not.toHaveProperty("account_password");
     expect(screen.queryByDisplayValue(/rahasia/i)).not.toBeInTheDocument();
   });
 
@@ -179,16 +181,19 @@ describe("Halaman Inventaris akun", () => {
     await screen.findByText("Akun utama");
 
     fireEvent.click(screen.getByRole("button", { name: "Kelola akun Akun utama" }));
-    fireEvent.change(screen.getByLabelText("Kredensial baru (opsional)"), {
-      target: { value: "email-baru@necly.id:kata-sandi-baru" },
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "email-baru@necly.id" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi baru (opsional)"), {
+      target: { value: "kata-sandi-baru" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
-    expect(screen.getByText(/kredensial diganti/)).toBeInTheDocument();
+    expect(screen.getByText(/email akun → email-baru@necly.id/)).toBeInTheDocument();
+    expect(screen.getByText(/kata sandi diganti/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Ya, terapkan perubahan" }));
 
     await waitFor(() =>
       expect(updateAccountMock).toHaveBeenCalledWith("acc-1", {
-        credentials: "email-baru@necly.id:kata-sandi-baru",
+        account_email: "email-baru@necly.id",
+        account_password: "kata-sandi-baru",
       }),
     );
   });
@@ -280,19 +285,16 @@ describe("Halaman Inventaris akun", () => {
     await screen.findByText(/Akun "Akun utama" dinonaktifkan/);
   });
 
-  it("menolak kredensial yang tidak memakai format email:kata-sandi", async () => {
+  it("mewajibkan kata sandi saat email akun diubah", async () => {
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
-    fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun rusak" } });
-    fireEvent.change(screen.getByLabelText("Kredensial akun"), {
-      target: { value: "akun@necly.id\nkata-sandi" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
+    fireEvent.click(screen.getByRole("button", { name: "Kelola akun Akun utama" }));
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "email-baru@necly.id" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan perubahan" }));
 
-    expect(await screen.findByText(/Kredensial harus ditulis "email:kata-sandi"/)).toBeInTheDocument();
-    expect(createAccountMock).not.toHaveBeenCalled();
+    expect(await screen.findByText(/Kata sandi wajib diisi saat mengganti email/)).toBeInTheDocument();
+    expect(updateAccountMock).not.toHaveBeenCalled();
   });
 
   it("membuat akun baru lalu mengosongkan kredensial setelah disimpan", async () => {
@@ -301,9 +303,8 @@ describe("Halaman Inventaris akun", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
     fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun baru" } });
-    fireEvent.change(screen.getByLabelText("Kredensial akun"), {
-      target: { value: "akun-baru@necly.id:kata-sandi" },
-    });
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "akun-baru@necly.id" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi akun"), { target: { value: "kata-sandi" } });
     fireEvent.change(screen.getByLabelText("Limit sharing"), { target: { value: "8" } });
     fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
 
@@ -311,13 +312,14 @@ describe("Halaman Inventaris akun", () => {
       expect(createAccountMock).toHaveBeenCalledWith({
         product_id: "prd-1",
         label: "Akun baru",
-        credentials: "akun-baru@necly.id:kata-sandi",
+        account_email: "akun-baru@necly.id",
+        account_password: "kata-sandi",
         sharing_limit: 8,
       }),
     );
     await screen.findByText(/Akun "Akun baru" dibuat/);
-    expect(screen.queryByLabelText("Kredensial akun")).not.toBeInTheDocument();
-    expect(screen.queryByDisplayValue("akun-baru@necly.id:kata-sandi")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Kata sandi akun")).not.toBeInTheDocument();
+    expect(screen.queryByDisplayValue("kata-sandi")).not.toBeInTheDocument();
   });
 
   it("menerapkan status nonaktif pada akun baru lewat PATCH setelah create", async () => {
@@ -326,7 +328,8 @@ describe("Halaman Inventaris akun", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Tambah akun" }));
     fireEvent.change(screen.getByLabelText("Label akun"), { target: { value: "Akun nonaktif" } });
-    fireEvent.change(screen.getByLabelText("Kredensial akun"), { target: { value: "akun@necly.id:sandi" } });
+    fireEvent.change(screen.getByLabelText("Email akun"), { target: { value: "akun@necly.id" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi akun"), { target: { value: "sandi" } });
     chooseSearchableOption("Status akun", "Nonaktif");
     fireEvent.click(screen.getByRole("button", { name: "Simpan akun" }));
 
