@@ -10,6 +10,10 @@ const {
   createAccountMock,
   updateAccountMock,
   createSlotsMock,
+  extendAccountMock,
+  deactivateAccountMock,
+  extendSlotMock,
+  deactivateSlotMock,
 } = vi.hoisted(() => ({
   bootstrapAuthMock: vi.fn(),
   listProductsMock: vi.fn(),
@@ -18,6 +22,10 @@ const {
   createAccountMock: vi.fn(),
   updateAccountMock: vi.fn(),
   createSlotsMock: vi.fn(),
+  extendAccountMock: vi.fn(),
+  deactivateAccountMock: vi.fn(),
+  extendSlotMock: vi.fn(),
+  deactivateSlotMock: vi.fn(),
 }));
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -34,6 +42,10 @@ vi.mock("@/lib/api", async (importOriginal) => {
       createInventoryAccount: createAccountMock,
       updateInventoryAccount: updateAccountMock,
       createInventorySlots: createSlotsMock,
+      extendInventoryAccount: extendAccountMock,
+      deactivateInventoryAccount: deactivateAccountMock,
+      extendInventorySlot: extendSlotMock,
+      deactivateInventorySlot: deactivateSlotMock,
     },
   };
 });
@@ -109,6 +121,10 @@ describe("Halaman Inventaris akun", () => {
     createSlotsMock.mockReset().mockImplementation((data: { quantity: number; inventory_account_id: string }) =>
       Promise.resolve({ created: data.quantity, inventory_account_id: data.inventory_account_id }),
     );
+    extendAccountMock.mockReset().mockResolvedValue(ACCOUNT);
+    deactivateAccountMock.mockReset().mockResolvedValue({ ...ACCOUNT, status: "inactive" });
+    extendSlotMock.mockReset().mockResolvedValue({ ...SLOT, access_expires_at: "2027-01-31T00:00:00Z" });
+    deactivateSlotMock.mockReset().mockResolvedValue({ ...SLOT, status: "inactive" });
   });
 
   it("menampilkan akun per produk dengan status, expiry, limit sharing, dan kapasitas akses", async () => {
@@ -258,10 +274,10 @@ describe("Halaman Inventaris akun", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Nonaktifkan akun Akun utama" }));
     expect(screen.getByText(/Konfirmasi: nonaktifkan akun Akun utama/)).toBeInTheDocument();
-    expect(updateAccountMock).not.toHaveBeenCalled();
+    expect(deactivateAccountMock).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Ya, nonaktifkan" }));
-    await waitFor(() => expect(updateAccountMock).toHaveBeenCalledWith("acc-1", { status: "inactive" }));
+    await waitFor(() => expect(deactivateAccountMock).toHaveBeenCalledWith("acc-1"));
     await screen.findByText(/Akun "Akun utama" dinonaktifkan/);
   });
 
@@ -405,7 +421,7 @@ describe("Halaman Inventaris akun", () => {
     fireEvent.click(screen.getByRole("button", { name: "Nonaktifkan akun Akun cadangan" }));
     fireEvent.click(screen.getByRole("button", { name: "Ya, nonaktifkan" }));
 
-    await waitFor(() => expect(updateAccountMock).toHaveBeenCalledWith("acc-2", { status: "inactive" }));
+    await waitFor(() => expect(deactivateAccountMock).toHaveBeenCalledWith("acc-2"));
     await waitFor(() => {
       const pageTwoCalls = listAccountsMock.mock.calls.filter(([params]) => params?.page === 2);
       expect(pageTwoCalls.length).toBeGreaterThanOrEqual(2);
@@ -426,5 +442,123 @@ describe("Halaman Inventaris akun", () => {
 
     expect(screen.getByText("150")).toBeInTheDocument();
     expect(screen.getByText("1 termuat · 1 produk (dari halaman termuat)")).toBeInTheDocument();
+  });
+
+  it("menampilkan penanda H-7/H-1 dan akun yang sudah kedaluwarsa", async () => {
+    const day = 24 * 60 * 60 * 1000;
+    const h7 = {
+      ...ACCOUNT,
+      id: "acc-h7",
+      label: "Akun H-7",
+      expires_at: new Date(Date.now() + 3 * day).toISOString(),
+      days_remaining: 3,
+    };
+    const h1 = {
+      ...ACCOUNT,
+      id: "acc-h1",
+      label: "Akun H-1",
+      expires_at: new Date(Date.now() + day).toISOString(),
+      days_remaining: 1,
+    };
+    const expired = {
+      ...ACCOUNT,
+      id: "acc-expired",
+      label: "Akun lewat",
+      status: "expired",
+      expires_at: new Date(Date.now() - day).toISOString(),
+      days_remaining: 0,
+      sellable: false,
+    };
+    listAccountsMock.mockReset().mockResolvedValue({
+      accounts: [h7, h1, expired],
+      page: 1,
+      per_page: 100,
+      total: 3,
+    });
+
+    render(<InventoryPage />);
+
+    const h7Row = (await screen.findByText("Akun H-7")).closest("tr") as HTMLElement;
+    const h1Row = screen.getByText("Akun H-1").closest("tr") as HTMLElement;
+    const expiredRow = screen.getByText("Akun lewat").closest("tr") as HTMLElement;
+
+    expect(within(h7Row).getByText("H-7")).toBeInTheDocument();
+    expect(within(h1Row).getByText("H-1")).toBeInTheDocument();
+    expect(within(expiredRow).getAllByText("Kedaluwarsa").length).toBeGreaterThan(0);
+  });
+
+  it("memperpanjang akun dengan konfirmasi dan memuat ulang dashboard", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Perpanjang akun Akun utama" }));
+    expect(screen.getByLabelText("Durasi perpanjangan (hari)")).toHaveValue(30);
+    fireEvent.change(screen.getByLabelText("Durasi perpanjangan (hari)"), { target: { value: "45" } });
+    fireEvent.click(screen.getByRole("button", { name: "Tinjau perpanjangan" }));
+
+    expect(extendAccountMock).not.toHaveBeenCalled();
+    expect(screen.getByText(/Perpanjang akun "Akun utama" selama 45 hari/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ya, perpanjang" }));
+
+    await waitFor(() => expect(extendAccountMock).toHaveBeenCalledWith("acc-1", { duration_days: 45 }));
+    await screen.findByText(/Masa aktif akun "Akun utama" diperpanjang/);
+    expect(listAccountsMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("memperpanjang slot dengan payload durasi dan memperbarui assignment", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Lihat assignment Akun utama" }));
+    await screen.findByText("ORD-001");
+    fireEvent.click(screen.getByRole("button", { name: "Perpanjang slot order ORD-001" }));
+    fireEvent.change(screen.getByLabelText("Durasi perpanjangan (hari)"), { target: { value: "10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Tinjau perpanjangan" }));
+
+    expect(extendSlotMock).not.toHaveBeenCalled();
+    expect(screen.getByText(/Perpanjang slot order ORD-001 pada akun "Akun utama" selama 10 hari/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ya, perpanjang" }));
+
+    await waitFor(() => expect(extendSlotMock).toHaveBeenCalledWith("slot-1", { duration_days: 10 }));
+    await screen.findByText(/Masa aktif slot order ORD-001 diperpanjang/);
+  });
+
+  it("menampilkan error validasi saat slot melewati masa aktif akun", async () => {
+    extendSlotMock.mockRejectedValueOnce(
+      new ApiError("slot would outlive account", 422, {
+        error: "slot would outlive account",
+        code: "slot_exceeds_account_expiry",
+      }),
+    );
+
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Lihat assignment Akun utama" }));
+    await screen.findByText("ORD-001");
+    fireEvent.click(screen.getByRole("button", { name: "Perpanjang slot order ORD-001" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tinjau perpanjangan" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, perpanjang" }));
+
+    await screen.findByText(/Masa aktif slot tidak boleh melewati masa aktif akun/);
+    expect(extendSlotMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("menonaktifkan satu slot tanpa menghapus assignment", async () => {
+    render(<InventoryPage />);
+    await screen.findByText("Akun utama");
+
+    fireEvent.click(screen.getByRole("button", { name: "Lihat assignment Akun utama" }));
+    await screen.findByText("ORD-001");
+    fireEvent.click(screen.getByRole("button", { name: "Nonaktifkan slot order ORD-001" }));
+    expect(screen.getByText(/Konfirmasi: nonaktifkan slot order ORD-001/)).toBeInTheDocument();
+    expect(deactivateSlotMock).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ya, nonaktifkan slot" }));
+
+    await waitFor(() => expect(deactivateSlotMock).toHaveBeenCalledWith("slot-1"));
+    await screen.findByText(/Slot order ORD-001 pada akun "Akun utama" dinonaktifkan/);
   });
 });

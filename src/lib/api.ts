@@ -1073,6 +1073,22 @@ export const adminApi = {
     apiRequest<ApiInventoryAccount>("/admin/inventory", { method: "POST", body: JSON.stringify(data) }),
   updateInventoryAccount: (id: string, data: Record<string, unknown>) =>
     apiRequest<ApiInventoryAccount>(`/admin/inventory/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
+  // Aksi masa aktif NEC-137. Perpanjangan menerima durasi hari atau tanggal
+  // eksplisit; nonaktifkan mempertahankan baris dan riwayat order.
+  extendInventoryAccount: (id: string, data: { duration_days?: number; expires_at?: string }) =>
+    apiRequest<ApiInventoryAccount>(`/admin/inventory/${encodeURIComponent(id)}/extend`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  deactivateInventoryAccount: (id: string) =>
+    apiRequest<ApiInventoryAccount>(`/admin/inventory/${encodeURIComponent(id)}/deactivate`, { method: "POST" }),
+  extendInventorySlot: (slotId: string, data: { duration_days: number }) =>
+    apiRequest<ApiInventorySlot>(`/admin/inventory/slots/${encodeURIComponent(slotId)}/extend`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  deactivateInventorySlot: (slotId: string) =>
+    apiRequest<ApiInventorySlot>(`/admin/inventory/slots/${encodeURIComponent(slotId)}/deactivate`, { method: "POST" }),
   // Assignment read-only: order/user yang memakai tiap slot, tanpa kredensial.
   getInventoryAccount: (id: string) =>
     apiRequest<ApiInventoryAccount>(`/admin/inventory/${encodeURIComponent(id)}`),

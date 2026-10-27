@@ -3,12 +3,13 @@
 import {
   AlertTriangle,
   Boxes,
+  CalendarClock,
+  CalendarPlus,
   ClipboardList,
   Pencil,
   Plus,
   Power,
   Search,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MetricCard } from "@/components/metric-card";
@@ -19,6 +20,12 @@ import { StatusBadge } from "@/components/status-badge";
 import { inventoryAccounts as seedInventoryAccounts, services } from "@/data/seed";
 import { ApiError, adminApi, apiErrorCode, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import type { ApiInventoryAccount, ApiInventorySlot } from "@/lib/api";
+import {
+  buildAccountExtensionPayload,
+  buildSlotExtensionPayload,
+  parseExtensionDuration,
+  resolveInventoryExpiry,
+} from "@/lib/inventory-expiry";
 
 const STATUS_OPTIONS = [
   { value: "active", label: "Aktif" },
@@ -53,6 +60,7 @@ type AccountRow = {
   usedSlots: number;
   remainingSlots: number;
   sellable: boolean;
+  daysRemaining: number | null;
 };
 
 type AssignmentState = {
@@ -100,6 +108,43 @@ type PendingSlot = {
   remainingAfter: number;
 };
 
+type ExtendTarget =
+  | {
+      kind: "account";
+      id: string;
+      label: string;
+      currentExpiry: string | null;
+    }
+  | {
+      kind: "slot";
+      id: string;
+      accountId: string;
+      accountLabel: string;
+      label: string;
+      currentExpiry: string | null;
+      accountExpiresAt: string | null;
+    };
+
+type ExtendFormState = {
+  target: ExtendTarget;
+  mode: "duration" | "date";
+  duration: string;
+  date: string;
+};
+
+type PendingExtend = {
+  target: ExtendTarget;
+  payload: { duration_days: number } | { expires_at: string };
+  summary: string;
+};
+
+type PendingSlotDeactivate = {
+  slotId: string;
+  accountId: string;
+  accountLabel: string;
+  label: string;
+};
+
 const ACCOUNT_PAGE_SIZE = 100;
 
 const DEMO_PRODUCTS: ProductOption[] = services.map((product) => ({
@@ -144,6 +189,13 @@ function statusTone(status: string) {
   return status === "active" ? "status-success" : status === "expired" ? "status-danger" : "status-warning";
 }
 
+function slotDisplayLabel(slot: ApiInventorySlot) {
+  if (slot.order_number) return `order ${slot.order_number}`;
+  if (slot.reserved_name) return slot.reserved_name;
+  if (slot.reserved_email) return slot.reserved_email;
+  return `slot ${slot.id.slice(0, 8)}`;
+}
+
 function mapAccount(account: ApiInventoryAccount, productsById: Map<string, ProductOption>): AccountRow {
   const productName =
     account.product?.name ?? productsById.get(account.product_id)?.name ?? "Produk tidak dikenal";
@@ -169,6 +221,7 @@ function mapAccount(account: ApiInventoryAccount, productsById: Map<string, Prod
     usedSlots,
     remainingSlots,
     sellable: account.sellable ?? (account.status === "active" && !expired),
+    daysRemaining: account.days_remaining ?? null,
   };
 }
 
@@ -186,10 +239,11 @@ function buildDemoAccounts(): AccountRow[] {
     usedSlots: seed.usedSlots,
     remainingSlots: Math.max(Math.max(seed.totalSlots, 1) - seed.totalSlots, 0),
     sellable: seed.status !== "Kedaluwarsa",
+    daysRemaining: null,
   }));
 }
 
-function describeInventoryError(error: unknown, action: "load" | "save" | "slot") {
+function describeInventoryError(error: unknown, action: "load" | "save" | "slot" | "extend") {
   if (error instanceof ApiError) {
     const code = apiErrorCode(error);
     switch (code) {
@@ -201,6 +255,12 @@ function describeInventoryError(error: unknown, action: "load" | "save" | "slot"
         return "Akun yang dipilih bukan milik produk paket ini.";
       case "account_required":
         return "Belum ada akun aktif yang berkapasitas untuk produk ini. Tambahkan akun inventaris terlebih dahulu.";
+      case "slot_exceeds_account_expiry":
+        return "Masa aktif slot tidak boleh melewati masa aktif akun. Perpanjang akun terlebih dahulu atau pilih durasi yang lebih pendek.";
+      case "account_expiry_not_extended":
+        return "Tanggal kedaluwarsa baru harus lebih lama dari masa aktif akun saat ini.";
+      case "inventory_slot_unavailable":
+        return "Slot ini sudah dilepas atau tidak dapat diubah lagi.";
       case "invalid_input":
         return error.message || "Data inventaris tidak valid.";
       default:
@@ -215,8 +275,8 @@ function describeInventoryError(error: unknown, action: "load" | "save" | "slot"
       case 403:
         return "Anda tidak diizinkan mengelola inventaris.";
       case 404:
-        return action === "save"
-          ? "Akun inventaris tidak ditemukan. Muat ulang daftar akun."
+        return action === "save" || action === "extend"
+          ? "Akun atau slot inventaris tidak ditemukan. Muat ulang daftar."
           : "Data inventaris tidak ditemukan.";
       case 409:
         return error.message || "Perubahan bertentangan dengan kapasitas akun saat ini.";
@@ -247,6 +307,11 @@ export default function InventoryPage() {
   const [slotForm, setSlotForm] = useState<{ accountId: string; priceId: string; quantity: string } | null>(null);
   const [slotError, setSlotError] = useState("");
   const [pendingSlot, setPendingSlot] = useState<PendingSlot | null>(null);
+
+  const [extendForm, setExtendForm] = useState<ExtendFormState | null>(null);
+  const [extendError, setExtendError] = useState("");
+  const [pendingExtend, setPendingExtend] = useState<PendingExtend | null>(null);
+  const [pendingSlotDeactivate, setPendingSlotDeactivate] = useState<PendingSlotDeactivate | null>(null);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<Record<string, AssignmentState>>({});
@@ -444,9 +509,15 @@ export default function InventoryPage() {
     const provisioned = accounts.reduce((sum, account) => sum + account.totalSlots, 0);
     const used = accounts.reduce((sum, account) => sum + account.usedSlots, 0);
     const productCount = new Set(accounts.map((account) => account.productId)).size;
-    const attention = accounts.filter(
-      (account) => !account.sellable || account.availableSlots === 0 || account.remainingSlots === 0,
-    ).length;
+    const attention = accounts.filter((account) => {
+      if (!account.sellable || account.availableSlots === 0 || account.remainingSlots === 0) return true;
+      const expiry = resolveInventoryExpiry({
+        expiresAt: account.expiresAt,
+        status: account.status,
+        daysRemaining: account.daysRemaining,
+      });
+      return expiry.expired || expiry.marker !== null;
+    }).length;
 
     return { available, provisioned, used, productCount, attention };
   }, [accounts]);
@@ -529,6 +600,51 @@ export default function InventoryPage() {
     setPendingSlot(null);
   };
 
+  const openExtendAccount = (account: AccountRow) => {
+    setActionError("");
+    setNotice("");
+    setExtendError("");
+    setPendingExtend(null);
+    setExtendForm({
+      target: {
+        kind: "account",
+        id: account.id,
+        label: account.label,
+        currentExpiry: account.expiresAt,
+      },
+      mode: "duration",
+      duration: "30",
+      date: "",
+    });
+  };
+
+  const openExtendSlot = (account: AccountRow, slot: ApiInventorySlot) => {
+    setActionError("");
+    setNotice("");
+    setExtendError("");
+    setPendingExtend(null);
+    setExtendForm({
+      target: {
+        kind: "slot",
+        id: slot.id,
+        accountId: account.id,
+        accountLabel: account.label,
+        label: slotDisplayLabel(slot),
+        currentExpiry: slot.access_expires_at ?? null,
+        accountExpiresAt: account.expiresAt,
+      },
+      mode: "duration",
+      duration: "30",
+      date: "",
+    });
+  };
+
+  const closeExtendForm = () => {
+    setExtendForm(null);
+    setExtendError("");
+    setPendingExtend(null);
+  };
+
   const handleSlotAccountChange = (accountId: string) => {
     const account = accounts.find((item) => item.id === accountId);
     const product = account ? productById.get(account.productId) : null;
@@ -599,6 +715,7 @@ export default function InventoryPage() {
               usedSlots: 0,
               remainingSlots: sharingLimit,
               sellable: accountForm.status === "active",
+              daysRemaining: null,
             },
             ...current,
           ]);
@@ -708,6 +825,10 @@ export default function InventoryPage() {
               : account,
           ),
         );
+      } else if (pendingStatus.nextStatus === "inactive") {
+        // Nonaktifkan memakai route lifecycle NEC-137 agar audit log dan
+        // perilaku backend konsisten dengan aksi masa aktif lainnya.
+        await adminApi.deactivateInventoryAccount(pendingStatus.accountId);
       } else {
         await adminApi.updateInventoryAccount(pendingStatus.accountId, { status: pendingStatus.nextStatus });
       }
@@ -720,6 +841,164 @@ export default function InventoryPage() {
     } catch (error) {
       setActionError(describeInventoryError(error, "save"));
       setPendingStatus(null);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const submitExtension = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!extendForm) return;
+
+    setExtendError("");
+    setActionError("");
+    const { target } = extendForm;
+
+    const durationDays = extendForm.mode === "duration" ? parseExtensionDuration(extendForm.duration) : null;
+    if (extendForm.mode === "duration" && durationDays === null) {
+      setExtendError("Durasi perpanjangan harus berupa angka antara 1 dan 3650 hari.");
+      return;
+    }
+
+    const payload =
+      extendForm.mode === "duration"
+        ? (target.kind === "account"
+            ? buildAccountExtensionPayload({ durationDays })
+            : buildSlotExtensionPayload(durationDays as number))
+        : target.kind === "account"
+          ? buildAccountExtensionPayload({ expiresAt: extendForm.date ? toExpiresAt(extendForm.date) : null })
+          : null;
+
+    if (!payload) {
+      setExtendError(
+        extendForm.mode === "date"
+          ? "Pilih tanggal kedaluwarsa baru yang valid."
+          : "Durasi perpanjangan harus berupa angka antara 1 dan 3650 hari.",
+      );
+      return;
+    }
+
+    const targetLabel =
+      target.kind === "account"
+        ? `akun "${target.label}"`
+        : `slot ${target.label} pada akun "${target.accountLabel}"`;
+    const summary =
+      "duration_days" in payload
+        ? `Perpanjang ${targetLabel} selama ${payload.duration_days} hari? Masa aktif baru dihitung dari tanggal kedaluwarsa yang paling akhir.`
+        : `Tetapkan masa aktif ${targetLabel} sampai ${formatDate(payload.expires_at)}?`;
+
+    setPendingExtend({ target, payload, summary });
+  };
+
+  const applyExtension = async () => {
+    if (!pendingExtend) return;
+    const { target, payload } = pendingExtend;
+    setSubmitting(true);
+    setExtendError("");
+    setActionError("");
+
+    try {
+      if (DEMO_MODE) {
+        if (target.kind === "account") {
+          const base = Math.max(Date.now(), target.currentExpiry ? new Date(target.currentExpiry).getTime() : 0);
+          const nextExpiry =
+            "duration_days" in payload
+              ? new Date(base + payload.duration_days * 24 * 60 * 60 * 1000).toISOString()
+              : payload.expires_at;
+          setAccounts((current) =>
+            current.map((account) =>
+              account.id === target.id
+                ? {
+                    ...account,
+                    expiresAt: nextExpiry,
+                    status: account.status === "expired" ? "active" : account.status,
+                    sellable: true,
+                  }
+                : account,
+            ),
+          );
+        } else if ("duration_days" in payload) {
+          setAssignments((state) => {
+            const current = state[target.accountId];
+            if (!current) return state;
+            return {
+              ...state,
+              [target.accountId]: {
+                ...current,
+                rows: current.rows.map((slot) =>
+                  slot.id === target.id
+                    ? {
+                        ...slot,
+                        access_expires_at: new Date(
+                          Math.max(Date.now(), slot.access_expires_at ? new Date(slot.access_expires_at).getTime() : 0) +
+                            payload.duration_days * 24 * 60 * 60 * 1000,
+                        ).toISOString(),
+                      }
+                    : slot,
+                ),
+              },
+            };
+          });
+        }
+      } else if (target.kind === "account") {
+        await adminApi.extendInventoryAccount(target.id, payload);
+      } else if ("duration_days" in payload) {
+        await adminApi.extendInventorySlot(target.id, payload);
+      }
+
+      setNotice(
+        target.kind === "account"
+          ? `Masa aktif akun "${target.label}" diperpanjang.`
+          : `Masa aktif slot ${target.label} diperpanjang.`,
+      );
+      closeExtendForm();
+      if (!DEMO_MODE) {
+        await refreshAccounts();
+        if (target.kind === "slot") await loadAssignments(target.accountId, true);
+      }
+    } catch (error) {
+      // Modal tetap terbuka agar admin dapat memperbaiki durasi/tanggal.
+      setPendingExtend(null);
+      setExtendError(describeInventoryError(error, "extend"));
+      if (!DEMO_MODE) await refreshAccounts();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const applySlotDeactivation = async () => {
+    if (!pendingSlotDeactivate) return;
+    setSubmitting(true);
+    setActionError("");
+    try {
+      if (DEMO_MODE) {
+        setAssignments((state) => {
+          const current = state[pendingSlotDeactivate.accountId];
+          if (!current) return state;
+          return {
+            ...state,
+            [pendingSlotDeactivate.accountId]: {
+              ...current,
+              rows: current.rows.map((slot) =>
+                slot.id === pendingSlotDeactivate.slotId ? { ...slot, status: "inactive" } : slot,
+              ),
+            },
+          };
+        });
+      } else {
+        await adminApi.deactivateInventorySlot(pendingSlotDeactivate.slotId);
+      }
+
+      setNotice(`Slot ${pendingSlotDeactivate.label} pada akun "${pendingSlotDeactivate.accountLabel}" dinonaktifkan.`);
+      setPendingSlotDeactivate(null);
+      if (!DEMO_MODE) {
+        await refreshAccounts();
+        await loadAssignments(pendingSlotDeactivate.accountId, true);
+      }
+    } catch (error) {
+      setActionError(describeInventoryError(error, "slot"));
+      setPendingSlotDeactivate(null);
+      if (!DEMO_MODE) await refreshAccounts();
     } finally {
       setSubmitting(false);
     }
@@ -1011,6 +1290,145 @@ export default function InventoryPage() {
               ? "Akun akan bisa dipakai kembali untuk akses baru."
               : "Slot yang sudah ada tetap terpakai, tetapi akun tidak akan dipilih untuk kapasitas baru."}
           </p>
+        </Modal>
+      )}
+
+      {pendingSlotDeactivate && (
+        <Modal
+          title={`Konfirmasi: nonaktifkan slot ${pendingSlotDeactivate.label}?`}
+          size="sm"
+          role="alertdialog"
+          onClose={() => setPendingSlotDeactivate(null)}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={() => setPendingSlotDeactivate(null)} disabled={submitting}>
+                Batal
+              </button>
+              <button className="button button-primary" type="button" onClick={applySlotDeactivation} disabled={submitting}>
+                {submitting ? "Menyimpan…" : "Ya, nonaktifkan slot"}
+              </button>
+            </>
+          }
+        >
+          <p className="muted" style={{ margin: 0, fontSize: 12 }}>
+            Slot pada akun {`"${pendingSlotDeactivate.accountLabel}"`} tidak akan dipakai untuk pembelian baru. Baris slot dan riwayat
+            order tetap tersimpan.
+          </p>
+        </Modal>
+      )}
+
+      {extendForm && (
+        <Modal
+          title={
+            extendForm.target.kind === "account"
+              ? `Perpanjang akun — ${extendForm.target.label}`
+              : `Perpanjang slot — ${extendForm.target.label}`
+          }
+          description="Masa aktif baru dihitung dari tanggal kedaluwarsa yang paling akhir, bukan dari hari ini. Tindakan ini dicatat di audit log."
+          size="lg"
+          onClose={closeExtendForm}
+          footer={
+            pendingExtend ? (
+              <>
+                <button className="button button-secondary" type="button" onClick={() => setPendingExtend(null)} disabled={submitting}>
+                  Ubah
+                </button>
+                <button className="button button-primary" type="button" onClick={applyExtension} disabled={submitting}>
+                  {submitting ? "Menyimpan…" : "Ya, perpanjang"}
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="button button-secondary" type="button" onClick={closeExtendForm} disabled={submitting}>
+                  Batal
+                </button>
+                <button className="button button-primary" type="submit" form="inventory-extend-form" disabled={submitting}>
+                  Tinjau perpanjangan
+                </button>
+              </>
+            )
+          }
+        >
+          <form id="inventory-extend-form" onSubmit={submitExtension} aria-label="Form perpanjangan masa aktif">
+            <div className="form-grid">
+              {extendForm.target.kind === "account" && (
+                <div className="field field-full">
+                  <label className="label" htmlFor="inv-extend-mode">Metode perpanjangan</label>
+                  <SearchableSelect
+                    inputId="inv-extend-mode"
+                    ariaLabel="Metode perpanjangan"
+                    value={extendForm.mode}
+                    onChange={(value) => {
+                      setPendingExtend(null);
+                      setExtendError("");
+                      setExtendForm({ ...extendForm, mode: value as "duration" | "date" });
+                    }}
+                    options={[
+                      { value: "duration", label: "Tambah durasi" },
+                      { value: "date", label: "Tetapkan tanggal" },
+                    ]}
+                  />
+                </div>
+              )}
+
+              {extendForm.mode === "duration" ? (
+                <div className="field">
+                  <label className="label" htmlFor="inv-extend-duration">Durasi perpanjangan (hari)</label>
+                  <input
+                    className="input"
+                    id="inv-extend-duration"
+                    type="number"
+                    min="1"
+                    max="3650"
+                    value={extendForm.duration}
+                    onChange={(event) => {
+                      setPendingExtend(null);
+                      setExtendForm({ ...extendForm, duration: event.target.value });
+                    }}
+                    required
+                  />
+                  <p className="muted" style={{ margin: 0, fontSize: 11 }}>1 sampai 3650 hari.</p>
+                </div>
+              ) : (
+                <div className="field">
+                  <label className="label" htmlFor="inv-extend-date">Tanggal kedaluwarsa baru</label>
+                  <input
+                    className="input"
+                    id="inv-extend-date"
+                    type="date"
+                    value={extendForm.date}
+                    onChange={(event) => {
+                      setPendingExtend(null);
+                      setExtendForm({ ...extendForm, date: event.target.value });
+                    }}
+                    required
+                  />
+                  <p className="muted" style={{ margin: 0, fontSize: 11 }}>
+                    Tanggal harus lebih lama dari masa aktif saat ini ({formatDate(extendForm.target.currentExpiry)}).
+                  </p>
+                </div>
+              )}
+
+              {extendForm.target.kind === "slot" && (
+                <div className="notice field-full" style={{ margin: 0 }}>
+                  Slot tidak boleh melewati masa aktif akun {`"${extendForm.target.accountLabel}"`} yang berakhir{" "}
+                  {formatDate(extendForm.target.accountExpiresAt)}. Perpanjang akun terlebih dahulu bila slot membutuhkan waktu lebih lama.
+                </div>
+              )}
+
+              {extendError && (
+                <p className="field field-full" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
+                  {extendError}
+                </p>
+              )}
+
+              {pendingExtend && (
+                <div className="notice field-full" role="alertdialog" aria-label="Konfirmasi perpanjangan">
+                  <p style={{ margin: 0 }}>{pendingExtend.summary}</p>
+                </div>
+              )}
+            </div>
+          </form>
         </Modal>
       )}
 
@@ -1327,6 +1745,16 @@ export default function InventoryPage() {
                       onLoadMoreAssignments={() => loadMoreAssignments(account.id)}
                       onEdit={() => openEditForm(account)}
                       onAddSlot={() => openSlotForm(account)}
+                      onExtendAccount={() => openExtendAccount(account)}
+                      onExtendSlot={(slot) => openExtendSlot(account, slot)}
+                      onDeactivateSlot={(slot) =>
+                        setPendingSlotDeactivate({
+                          slotId: slot.id,
+                          accountId: account.id,
+                          accountLabel: account.label,
+                          label: slotDisplayLabel(slot),
+                        })
+                      }
                       onToggleStatus={() =>
                         setPendingStatus({
                           accountId: account.id,
@@ -1355,6 +1783,9 @@ function AccountRows({
   onLoadMoreAssignments,
   onEdit,
   onAddSlot,
+  onExtendAccount,
+  onExtendSlot,
+  onDeactivateSlot,
   onToggleStatus,
 }: {
   account: AccountRow;
@@ -1365,17 +1796,30 @@ function AccountRows({
   onLoadMoreAssignments: () => void;
   onEdit: () => void;
   onAddSlot: () => void;
+  onExtendAccount: () => void;
+  onExtendSlot: (slot: ApiInventorySlot) => void;
+  onDeactivateSlot: (slot: ApiInventorySlot) => void;
   onToggleStatus: () => void;
 }) {
+  const accountExpiry = resolveInventoryExpiry({
+    expiresAt: account.expiresAt,
+    status: account.status,
+    daysRemaining: account.daysRemaining,
+  });
+  // Status nonaktif yang dipilih admin tidak boleh tertimpa tanggal lampau.
+  const effectiveStatus = account.status === "active" && accountExpiry.expired ? "expired" : account.status;
+
   return (
     <>
       <tr>
         <td className="table-primary">{account.productName}</td>
         <td>{account.label}</td>
         <td>
-          <span className={`badge badge-dot ${statusTone(account.status)}`}>{statusLabel(account.status)}</span>
+          <span className={`badge badge-dot ${statusTone(effectiveStatus)}`}>{statusLabel(effectiveStatus)}</span>
         </td>
-        <td>{formatDate(account.expiresAt)}</td>
+        <td>
+          <ExpiryCell expiry={accountExpiry} expiresAt={account.expiresAt} />
+        </td>
         <td className="tabular">{account.sharingLimit}</td>
         <td>
           <span className="tabular">{account.usedSlots} / {account.totalSlots}</span>
@@ -1405,6 +1849,15 @@ function AccountRows({
         </td>
         <td>
           <div className="table-actions">
+            <button
+              className="table-action"
+              type="button"
+              onClick={onExtendAccount}
+              title="Perpanjang masa aktif akun"
+              aria-label={`Perpanjang akun ${account.label}`}
+            >
+              <CalendarClock size={13} />
+            </button>
             <button
               className="table-action"
               type="button"
@@ -1465,24 +1918,63 @@ function AccountRows({
                           <th>Order</th>
                           <th>Pengguna</th>
                           <th>Reservasi</th>
+                          <th>Masa aktif</th>
                           <th>Dibuat</th>
+                          <th aria-label="Aksi slot" />
                         </tr>
                       </thead>
                       <tbody>
-                        {assignment.rows.map((slot) => (
-                          <tr key={slot.id}>
-                            <td>{priceLabelById.get(slot.product_price_id) ?? slot.product_price_id}</td>
-                            <td><StatusBadge status={slot.status} /></td>
-                            <td>
-                              {slot.order_id && slot.order_number ? (
-                                <a href={`/dashboard/orders/${slot.order_id}`}>{slot.order_number}</a>
-                              ) : slot.order_number ?? "—"}
-                            </td>
-                            <td>{slot.reserved_name ?? slot.reserved_email ?? "—"}</td>
-                            <td>{formatDate(slot.reserved_until)}</td>
-                            <td>{formatDate(slot.created_at)}</td>
-                          </tr>
-                        ))}
+                        {assignment.rows.map((slot) => {
+                          const slotExpiry = resolveInventoryExpiry({
+                            expiresAt: slot.access_expires_at,
+                            status: slot.status,
+                            daysRemaining: slot.days_remaining,
+                          });
+                          const slotLocked = slot.status === "released";
+                          const slotStatus =
+                            slotExpiry.expired && slot.status !== "inactive" && slot.status !== "released"
+                              ? "expired"
+                              : slot.status;
+                          return (
+                            <tr key={slot.id}>
+                              <td>{priceLabelById.get(slot.product_price_id) ?? slot.product_price_id}</td>
+                              <td><StatusBadge status={slotStatus} /></td>
+                              <td>
+                                {slot.order_id && slot.order_number ? (
+                                  <a href={`/dashboard/orders/${slot.order_id}`}>{slot.order_number}</a>
+                                ) : slot.order_number ?? "—"}
+                              </td>
+                              <td>{slot.reserved_name ?? slot.reserved_email ?? "—"}</td>
+                              <td>{formatDate(slot.reserved_until)}</td>
+                              <td><ExpiryCell expiry={slotExpiry} expiresAt={slot.access_expires_at} /></td>
+                              <td>{formatDate(slot.created_at)}</td>
+                              <td>
+                                <div className="table-actions">
+                                  <button
+                                    className="table-action"
+                                    type="button"
+                                    onClick={() => onExtendSlot(slot)}
+                                    disabled={slotLocked}
+                                    title="Perpanjang masa aktif slot"
+                                    aria-label={`Perpanjang slot ${slotDisplayLabel(slot)}`}
+                                  >
+                                    <CalendarPlus size={12} />
+                                  </button>
+                                  <button
+                                    className="table-action"
+                                    type="button"
+                                    onClick={() => onDeactivateSlot(slot)}
+                                    disabled={slotLocked || slot.status === "inactive"}
+                                    title="Nonaktifkan slot"
+                                    aria-label={`Nonaktifkan slot ${slotDisplayLabel(slot)}`}
+                                  >
+                                    <Power size={12} />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -1508,6 +2000,29 @@ function AccountRows({
         </tr>
       )}
     </>
+  );
+}
+
+function ExpiryCell({
+  expiry,
+  expiresAt,
+}: {
+  expiry: ReturnType<typeof resolveInventoryExpiry>;
+  expiresAt?: string | null;
+}) {
+  const markerTone = expiry.marker === "H-1" ? "status-danger" : "status-warning";
+  return (
+    <div style={{ display: "grid", gap: 3 }}>
+      <span>{formatDate(expiresAt)}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        {expiry.state === "expired" ? (
+          <span className="badge badge-dot status-danger">Kedaluwarsa</span>
+        ) : expiry.marker ? (
+          <span className={`badge badge-dot ${markerTone}`}>{expiry.marker}</span>
+        ) : null}
+        <span className="muted" style={{ fontSize: 10 }}>{expiry.label}</span>
+      </span>
+    </div>
   );
 }
 
