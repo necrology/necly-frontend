@@ -37,6 +37,8 @@ describe("halaman ambil OTP akun", () => {
     lookupMock.mockResolvedValue({ otp: "482913", received_at: "2026-10-21T10:00:00Z" });
     render(<AccountOtpPage />);
 
+    expect(screen.getByRole("heading", { name: "Alur pengambilan OTP" })).toBeInTheDocument();
+    expect(screen.getByText(/Salin kode OTP dan masukkan ke halaman verifikasi platform/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Email akun/)).toHaveValue("family@example.test");
     expect(screen.getByLabelText(/Kode akses/)).toHaveValue("ABCD234567");
 

@@ -81,6 +81,17 @@ function OtpForm() {
         </p>
       </header>
 
+      <section className="card otp-help" style={{ padding: 20, marginBottom: 18 }} aria-label="Alur pengambilan OTP">
+        <KeyRound size={18} aria-hidden="true" />
+        <h2 className="h3">Alur pengambilan OTP</h2>
+        <ol className="otp-steps">
+          <li>Login ke platform yang dibeli. Saat platform meminta kode OTP lewat email, buka halaman ini.</li>
+          <li>Buka detail pesanan → bagian <strong>Akses akun &amp; OTP</strong> → tekan <strong>Buat kode akses OTP</strong>.</li>
+          <li>Masukkan email akun dan kode akses tersebut di form ini, lalu tunggu kode OTP terbaru muncul.</li>
+          <li>Salin kode OTP dan masukkan ke halaman verifikasi platform untuk menyelesaikan login.</li>
+        </ol>
+      </section>
+
       <div className="otp-grid">
         <form className="card otp-form" onSubmit={submit} noValidate>
           <div className="otp-form-heading">
