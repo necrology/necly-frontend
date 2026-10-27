@@ -7,17 +7,18 @@ import { CheckoutCommerceClient } from "./checkout-commerce-client";
 // seperti "one-month", dan checkout menolak yang bukan UUID.
 const PRICE_ID = "3f1a2b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b";
 
-const { checkoutMock, catalogMock, pushMock, replaceItemsMock, cartItems } = vi.hoisted(() => ({
+const { checkoutMock, catalogMock, pushMock, replaceItemsMock, clearCartMock, cartItems } = vi.hoisted(() => ({
   checkoutMock: vi.fn(),
   catalogMock: vi.fn(),
   pushMock: vi.fn(),
   replaceItemsMock: vi.fn(),
+  clearCartMock: vi.fn(),
   cartItems: { value: [] as unknown[] },
 }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock }) }));
 vi.mock("@/stores/cart-store", () => ({
-  useCartStore: (selector: (state: unknown) => unknown) => selector({ items: cartItems.value, replaceItems: replaceItemsMock }),
+  useCartStore: (selector: (state: unknown) => unknown) => selector({ items: cartItems.value, replaceItems: replaceItemsMock, clear: clearCartMock }),
 }));
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
@@ -66,6 +67,7 @@ describe("CheckoutCommerceClient", () => {
     catalogMock.mockResolvedValue(catalogWith(50_000));
     pushMock.mockReset();
     replaceItemsMock.mockReset();
+    clearCartMock.mockReset();
     // Sebuah baris keranjang yang sah: id harganya UUID dari katalog API, dan
     // belum ada perangkat terpilih sehingga pemilihnya masih diuji.
     cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1 }];
@@ -169,6 +171,7 @@ describe("CheckoutCommerceClient", () => {
     await waitFor(() => expect(checkoutMock).toHaveBeenCalled());
     // QA baris 38: jumlah perangkat yang diklik ikut terkirim bersama item.
     expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: PRICE_ID, quantity: 1, device_count: 1 }]);
+    expect(clearCartMock).toHaveBeenCalledTimes(1);
     expect(pushMock).toHaveBeenCalledWith("/payment/ord-123");
   });
 
@@ -237,6 +240,7 @@ describe("CheckoutCommerceClient", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Stok paket habis.");
+    expect(clearCartMock).not.toHaveBeenCalled();
   });
 
   // QA baris 38 & 39: jumlah perangkat wajib diklik, dan bila belum dipilih

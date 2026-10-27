@@ -62,6 +62,7 @@ export function CheckoutCommerceClient() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
   const replaceItems = useCartStore((state) => state.replaceItems);
+  const clearCart = useCartStore((state) => state.clear);
   const [payment, setPayment] = useState("QRIS");
   const [voucherOpen, setVoucherOpen] = useState(false);
   const [voucher, setVoucher] = useState("");
@@ -177,6 +178,9 @@ export function CheckoutCommerceClient() {
     let liveSubtotal = subtotal;
     try {
       if (DEMO_MODE) {
+        // Demo juga mengosongkan keranjang supaya perilaku setelah bayar sama
+        // dengan alur Xendit yang sebenarnya.
+        clearCart();
         router.push(`/payment/${DEMO_ORDER_ID}`);
         return;
       }
@@ -245,6 +249,9 @@ export function CheckoutCommerceClient() {
         },
         idempotencyKey.current,
       );
+      // Pesanan sudah dibuat dari isi keranjang ini. Kosongkan sekarang agar
+      // pembeli yang kembali dari Xendit tidak melihat item yang sama lagi.
+      clearCart();
       continueToCheckout(response, router.push);
     } catch (err) {
       const code = apiErrorCode(err);
