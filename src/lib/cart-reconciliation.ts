@@ -114,6 +114,7 @@ export function reconcileCartItems(items: CartItem[], catalog: ApiProduct[]): Ca
       slug: product.slug,
       name: product.name,
       category: product.category,
+      categoryName: product.categoryName,
       price: option.price,
       stock: availableStock,
       accessType: product.accessType,

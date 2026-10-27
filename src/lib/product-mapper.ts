@@ -26,6 +26,15 @@ function productCategoryName(product: ApiProduct) {
   return typeof product.category === "string" ? product.category : product.category?.name;
 }
 
+/**
+ * Nama kategori apa adanya dari API. Label UI memakai ini supaya kategori
+ * buatan admin (mis. "Streaming Video") tidak berubah menjadi kategori lama.
+ */
+export function apiProductCategoryName(product: ApiProduct): string | undefined {
+  const name = productCategoryName(product)?.trim();
+  return name || undefined;
+}
+
 export function mapProductCategory(product: ApiProduct): ProductCategory {
   const category = productCategoryName(product);
   return categoryAliases[(category ?? "").toLocaleLowerCase("id-ID")] ?? "Produktivitas";
@@ -123,6 +132,7 @@ export function mapApiProduct(product: ApiProduct): SubscriptionProduct {
     eyebrow: "Akun sharing hemat",
     category,
     categoryId: productCategoryId(product),
+    categoryName: apiProductCategoryName(product),
     price: primaryPrice?.price ?? 0,
     stock,
     duration: primaryPrice?.duration ?? "Belum tersedia",

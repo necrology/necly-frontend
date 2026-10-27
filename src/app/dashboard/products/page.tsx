@@ -20,16 +20,16 @@ import {
   isProductIconInput,
   validateProductImageFile,
 } from "@/lib/product-image";
+import { productCategoryLabel } from "@/lib/product-category";
 import { productStatus, productStatusPayload, type ProductStatus } from "@/lib/product-status";
 import type { SubscriptionProduct } from "@/lib/types";
 import type { ApiProduct } from "@/lib/api";
 
-const categories = ["Semua", "Streaming", "Produktivitas", "Kreatif", "Edukasi", "Keamanan"] as const;
 const statusOptions: ProductStatus[] = ["Aktif", "Coming Soon", "Nonaktif"];
 const statusFilters = ["Semua status", ...statusOptions] as const;
 const fallbackPhoto = "/illustrations/product-workspace.svg";
 
-type CategoryOption = { id: string; name: string };
+type CategoryOption = { id: string; name: string; active: boolean };
 type PhotoMode = "keep" | "replace" | "remove";
 
 type ProductForm = {
@@ -107,7 +107,11 @@ export default function DashboardProductsPage() {
       setCategoryOptions(
         rawCategories
           .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
-          .map((item) => ({ id: String(item.id ?? ""), name: String(item.name ?? "") }))
+          .map((item) => ({
+            id: String(item.id ?? ""),
+            name: String(item.name ?? ""),
+            active: item.active !== false,
+          }))
           .filter((item) => item.id && item.name),
       );
     } catch {
@@ -137,11 +141,29 @@ export default function DashboardProductsPage() {
     [demoProducts, apiProducts],
   );
 
+  // Opsi filter berasal dari master kategori; bila master belum tersedia,
+  // pakai nama kategori yang benar-benar ada pada produk agar filter tidak kosong.
+  const categoryFilterOptions = useMemo(() => {
+    const names = categoryOptions.length > 0
+      ? categoryOptions.map((option) => option.name)
+      : renderProducts.map((product) => productCategoryLabel(product));
+    return ["Semua", ...Array.from(new Set(names.filter(Boolean))).sort((left, right) => left.localeCompare(right, "id-ID"))];
+  }, [categoryOptions, renderProducts]);
+
+  // Produk baru hanya boleh memakai kategori aktif. Saat edit, kategori lama
+  // tetap ditampilkan agar produk tidak kehilangan kategori meski sudah nonaktif.
+  const selectableCategoryOptions = useMemo(() => {
+    if (!form) return categoryOptions.filter((option) => option.active);
+    return categoryOptions.filter(
+      (option) => option.active || option.id === form.categoryId,
+    );
+  }, [categoryOptions, form]);
+
   const rows = useMemo(
     () =>
       renderProducts.filter(
         (product) =>
-          (category === "Semua" || product.category === category) &&
+          (category === "Semua" || productCategoryLabel(product) === category) &&
           (statusFilter === "Semua status" || productStatus(product) === statusFilter) &&
           product.name.toLowerCase().includes(query.toLowerCase()),
       ),
@@ -365,17 +387,28 @@ export default function DashboardProductsPage() {
         title="Produk akun sharing"
         description="Kelola paket akun langganan sharing, harga, ketersediaan akses anggota, dan status tayang agar pelanggan bisa berlangganan lebih hemat."
         actions={
-          <button
-            className="button button-primary button-sm"
-            onClick={openCreate}
-            disabled={DEMO_MODE}
-            title={DEMO_MODE ? "Mode demo tidak menyimpan produk baru" : undefined}
-          >
-            <Plus size={13} /> Tambah produk
-          </button>
+          <>
+            <Link className="button button-secondary button-sm" href="/dashboard/categories">
+              Kelola kategori
+            </Link>
+            <button
+              className="button button-primary button-sm"
+              onClick={openCreate}
+              disabled={DEMO_MODE}
+              title={DEMO_MODE ? "Mode demo tidak menyimpan produk baru" : undefined}
+            >
+              <Plus size={13} /> Tambah produk
+            </button>
+          </>
         }
       />
       {notice && <div className="notice success" role="status">{notice}</div>}
+      {!DEMO_MODE && !loading && categoryOptions.length === 0 && (
+        <div className="notice" role="status">
+          Belum ada kategori. Buat master kategori terlebih dahulu di{" "}
+          <Link href="/dashboard/categories">halaman Kategori</Link>.
+        </div>
+      )}
       {statusError && <div className="notice" role="alert" style={{ color: "var(--danger)" }}>{statusError}</div>}
       {form && (
         <Modal
@@ -422,9 +455,19 @@ export default function DashboardProductsPage() {
                   ariaLabel="Kategori"
                   value={form.categoryId}
                   onChange={(value) => setForm({ ...form, categoryId: value })}
-                  placeholder="Pilih kategori"
-                  options={categoryOptions.map((option) => ({ value: option.id, label: option.name }))}
+                  placeholder={selectableCategoryOptions.length === 0 ? "Belum ada kategori aktif" : "Pilih kategori"}
+                  options={selectableCategoryOptions.map((option) => ({
+                    value: option.id,
+                    label: option.name,
+                    isDisabled: !option.active && option.id !== form.categoryId,
+                  }))}
+                  isDisabled={selectableCategoryOptions.length === 0}
                 />
+                {selectableCategoryOptions.length === 0 && (
+                  <span className="table-secondary">
+                    <Link href="/dashboard/categories">Buat atau aktifkan master kategori</Link> terlebih dahulu.
+                  </span>
+                )}
               </div>
               <div className="field">
                 <label className="label" htmlFor="p-status">Status produk</label>
@@ -584,7 +627,7 @@ export default function DashboardProductsPage() {
         <SearchableSelect
           className="toolbar-select"
           ariaLabel="Filter kategori"
-          options={categories.map((item) => ({ value: item, label: item }))}
+          options={categoryFilterOptions.map((item) => ({ value: item, label: item }))}
           value={category}
           onChange={setCategory}
         />
@@ -657,7 +700,7 @@ export default function DashboardProductsPage() {
                       />
                       {statusUpdatingId === product.id && <span className="table-secondary" style={{ marginLeft: 6 }}>Menyimpan…</span>}
                     </td>
-                    <td>{product.category}</td>
+                    <td>{productCategoryLabel(product)}</td>
                     <td className="tabular">{formatIDR(product.price)}</td>
                     <td>
                       <StatusBadge status={product.stock > 0 ? "Aktif" : "Daftar tunggu"} />

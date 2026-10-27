@@ -8,6 +8,7 @@ import { catalogApi, DEMO_MODE } from "@/lib/api";
 import { reconcileCartItems } from "@/lib/cart-reconciliation";
 import { cartTotals, formatIDR } from "@/lib/money";
 import { QuantityStepper } from "@/components/quantity-stepper";
+import { productCategoryLabel } from "@/lib/product-category";
 import { useCartStore, type CartItem } from "@/stores/cart-store";
 
 /**
@@ -88,7 +89,7 @@ export function CartClient() {
             <article className="card cart-item accent-blue" key={`${key}-${index}`}>
               <span className="cart-thumb" aria-hidden="true">{initials(item.name)}</span>
               <div>
-                <span className="eyebrow" style={{ fontSize: 9 }}>{item.category}</span>
+                <span className="eyebrow" style={{ fontSize: 9 }}>{productCategoryLabel(item)}</span>
                 <h2 className="h3" style={{ marginTop: 5 }}>{item.name}</h2>
                 <p className="muted small" style={{ margin: "5px 0 0" }}>{lineDetail(item)}</p>
                 <p className="muted small" style={{ margin: "3px 0 0" }}>{formatIDR(item.price)} × {item.quantity}</p>

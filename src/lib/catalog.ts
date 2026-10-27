@@ -1,6 +1,8 @@
 export type CatalogProduct = {
   name: string;
   category: string;
+  /** Nama kategori asli API; dipakai filter agar kategori baru tidak jatuh ke kategori lama. */
+  categoryName?: string;
   price: number;
   stock: number;
 };
@@ -24,7 +26,7 @@ export function filterProducts<T extends CatalogProduct>(
       !filters.category ||
       filters.category === "All" ||
       filters.category === "Semua" ||
-      product.category === filters.category;
+      (product.categoryName?.trim() || product.category) === filters.category;
     const matchesPrice = product.price <= filters.maxPrice;
     const matchesStock = !filters.inStockOnly || product.stock > 0;
 

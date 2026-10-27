@@ -395,6 +395,33 @@ export type ApiDashboardStats = {
   available_slots: number;
 };
 
+/** Kontrak `GET /api/admin/dashboard/analytics` (NEC-131). */
+export type ApiDashboardRevenuePoint = { date: string; amount: number };
+export type ApiDashboardOrdersPoint = { date: string; orders: number };
+export type ApiDashboardStatusPoint = { status: string; count: number };
+export type ApiDashboardTopProduct = {
+  product_id: string;
+  product_name: string;
+  sales_count: number;
+  revenue: number;
+};
+export type ApiDashboardCategoryPoint = {
+  category_id: string;
+  category_name: string;
+  orders: number;
+  revenue: number;
+};
+export type ApiDashboardAnalytics = {
+  range_days: number;
+  from: string;
+  to: string;
+  revenue_series: ApiDashboardRevenuePoint[];
+  orders_series: ApiDashboardOrdersPoint[];
+  status_breakdown: ApiDashboardStatusPoint[];
+  top_products: ApiDashboardTopProduct[];
+  category_breakdown: ApiDashboardCategoryPoint[];
+};
+
 /** DTO C-07 audit log. Metadata tetap opaque dan tidak dipetakan ke UI. */
 export type ApiAuditLog = {
   id: string;
@@ -988,6 +1015,8 @@ export const accountOtpApi = {
 
 export const adminApi = {
   dashboard: () => apiRequest<ApiDashboardStats>("/admin/dashboard"),
+  dashboardAnalytics: (params: { days: 7 | 30 | 90 }) =>
+    apiRequest<ApiDashboardAnalytics>(`/admin/dashboard/analytics?days=${params.days}`),
   listUsers: (params?: {
     page?: number;
     per_page?: number;

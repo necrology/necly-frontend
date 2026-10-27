@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { dashboardMock, listOrdersMock, bootstrapAuthMock } = vi.hoisted(() => ({
+const { dashboardMock, dashboardAnalyticsMock, listOrdersMock, bootstrapAuthMock } = vi.hoisted(() => ({
   dashboardMock: vi.fn(),
+  dashboardAnalyticsMock: vi.fn(),
   listOrdersMock: vi.fn(),
   bootstrapAuthMock: vi.fn(),
 }));
@@ -13,7 +14,12 @@ vi.mock("@/lib/api", async (importOriginal) => {
     ...actual,
     DEMO_MODE: false,
     bootstrapAuth: bootstrapAuthMock,
-    adminApi: { ...actual.adminApi, dashboard: dashboardMock, listOrders: listOrdersMock },
+    adminApi: {
+      ...actual.adminApi,
+      dashboard: dashboardMock,
+      dashboardAnalytics: dashboardAnalyticsMock,
+      listOrders: listOrdersMock,
+    },
   };
 });
 
@@ -30,6 +36,30 @@ const D1 = {
   revenue_today: 167400,
   active_activations: 1,
   available_slots: 1,
+};
+
+const ANALYTICS = {
+  range_days: 7,
+  from: "2026-10-21",
+  to: "2026-10-27",
+  revenue_series: [
+    { date: "2026-10-21", amount: 150000 },
+    { date: "2026-10-22", amount: 225000 },
+  ],
+  orders_series: [
+    { date: "2026-10-21", orders: 3 },
+    { date: "2026-10-22", orders: 4 },
+  ],
+  status_breakdown: [
+    { status: "paid", count: 2 },
+    { status: "pending_payment", count: 1 },
+  ],
+  top_products: [
+    { product_id: "prd-1", product_name: "Netflix Premium", sales_count: 4, revenue: 744000 },
+  ],
+  category_breakdown: [
+    { category_id: "cat-1", category_name: "Streaming Video", orders: 3, revenue: 600000 },
+  ],
 };
 
 function apiOrder(number = "ORD-1760832000000-0192f0b0") {
@@ -65,10 +95,12 @@ function metric(label: string) {
 describe("dashboard admin (C12/C19)", () => {
   beforeEach(() => {
     dashboardMock.mockReset();
+    dashboardAnalyticsMock.mockReset();
     listOrdersMock.mockReset();
     bootstrapAuthMock.mockReset();
     bootstrapAuthMock.mockResolvedValue({ id: "admin-1", role: "admin" });
     dashboardMock.mockResolvedValue(D1);
+    dashboardAnalyticsMock.mockResolvedValue(ANALYTICS);
     listOrdersMock.mockResolvedValue({ orders: [apiOrder()], page: 1, per_page: 5, total: 1 });
   });
 
@@ -130,6 +162,62 @@ describe("dashboard admin (C12/C19)", () => {
     expect(await screen.findByText("Akses ditolak")).toBeInTheDocument();
     expect(screen.getByText(/hanya untuk admin/)).toBeInTheDocument();
     expect(dashboardMock).not.toHaveBeenCalled();
+    expect(dashboardAnalyticsMock).not.toHaveBeenCalled();
     expect(listOrdersMock).not.toHaveBeenCalled();
+  });
+
+  it("menampilkan chart summary dari data analitik dan mengganti periode 7/30/90 hari", async () => {
+    render(<DashboardPage />);
+
+    expect(await screen.findByText("Tren pendapatan harian")).toBeInTheDocument();
+    expect(screen.getByText("Pesanan per hari")).toBeInTheDocument();
+    expect(screen.getByText("Komposisi status pesanan")).toBeInTheDocument();
+    expect(screen.getByText("Pendapatan per kategori")).toBeInTheDocument();
+    expect(screen.getByText("Produk terlaris")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /Streaming Video/ })).toBeInTheDocument();
+    expect(screen.getAllByText("Netflix Premium").length).toBeGreaterThan(0);
+
+    await waitFor(() => expect(dashboardAnalyticsMock).toHaveBeenCalledWith({ days: 7 }));
+    fireEvent.click(screen.getByRole("button", { name: "30 hari" }));
+    await waitFor(() => expect(dashboardAnalyticsMock).toHaveBeenLastCalledWith({ days: 30 }));
+    expect(screen.getByRole("button", { name: "30 hari" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("menampilkan empty state per chart tanpa mengarang angka nol", async () => {
+    dashboardAnalyticsMock.mockResolvedValue({
+      ...ANALYTICS,
+      revenue_series: [],
+      orders_series: [],
+      status_breakdown: [],
+      top_products: [],
+      category_breakdown: [],
+    });
+    render(<DashboardPage />);
+
+    expect(await screen.findByText("Belum ada data pendapatan pada periode ini.")).toBeInTheDocument();
+    expect(screen.getByText("Belum ada data pesanan pada periode ini.")).toBeInTheDocument();
+    expect(screen.getByText("Belum ada data status pesanan pada periode ini.")).toBeInTheDocument();
+    expect(screen.getByText("Belum ada data pendapatan per kategori pada periode ini.")).toBeInTheDocument();
+    expect(screen.getByText("Belum ada produk terjual pada periode ini.")).toBeInTheDocument();
+  });
+
+  it("menampilkan error analitik yang jelas dan tombol coba lagi", async () => {
+    dashboardAnalyticsMock.mockRejectedValue(new Error("network"));
+    render(<DashboardPage />);
+
+    expect(await screen.findByText("Gagal memuat analitik dashboard dari server.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Coba lagi" })).toBeInTheDocument();
+    expect(screen.queryByText("Tren pendapatan harian")).not.toBeInTheDocument();
+    expect(screen.queryByText("Rp0")).not.toBeInTheDocument();
+  });
+
+  it("menolak respons analitik yang tidak lengkap alih-alih merender nol", async () => {
+    const incomplete = { ...ANALYTICS } as Record<string, unknown>;
+    delete incomplete.status_breakdown;
+    dashboardAnalyticsMock.mockResolvedValue(incomplete);
+    render(<DashboardPage />);
+
+    expect(await screen.findByText(/Data analitik dashboard dari server tidak lengkap/)).toBeInTheDocument();
+    expect(screen.queryByText("Komposisi status pesanan")).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ApiProduct } from "./api";
 import { mapApiProduct } from "./product-mapper";
+import { productCategoryLabel } from "./product-category";
 
 // Bentuknya mengikuti payload /public/products apa adanya: ketersediaan datang
 // sebagai available_slots per harga, dan produk tidak punya field stock.
@@ -44,6 +45,7 @@ describe("mapApiProduct", () => {
       slug: "netflix-premium",
       name: "Netflix Premium",
       category: "Streaming",
+      categoryName: "Video Streaming",
       price: 186_000,
       stock: 6,
       duration: "30 hari",
@@ -74,6 +76,26 @@ describe("mapApiProduct", () => {
   // Katalog tidak pernah mengirim `stock`; membaca field itu membuat seluruh
   // etalase tampil "Stok habis" walaupun slotnya tersedia, dan keranjang
   // mengunci jumlah di angka yang salah.
+  it("mempertahankan nama kategori baru dari API untuk label tampilan", () => {
+    const product = mapApiProduct({
+      ...apiProduct,
+      category_id: "cat-streaming-baru",
+      category: { id: "cat-streaming-baru", name: "Streaming Video 4K", slug: "streaming-video-4k" },
+    });
+
+    expect(product.categoryName).toBe("Streaming Video 4K");
+    expect(productCategoryLabel(product)).toBe("Streaming Video 4K");
+  });
+
+  it("tidak mengubah kategori produk menjadi Produktivitas saat nama kategori tidak dikenal", () => {
+    const product = mapApiProduct({
+      ...apiProduct,
+      category: { id: "cat-hobi", name: "Hobi & Kerajinan", slug: "hobi-kerajinan" },
+    });
+
+    expect(productCategoryLabel(product)).toBe("Hobi & Kerajinan");
+  });
+
   it("membersihkan label slot internal dari judul layanan (QA baris 88-89)", () => {
     const product = mapApiProduct({
       ...apiProduct,

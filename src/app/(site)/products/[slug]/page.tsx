@@ -8,6 +8,7 @@ import { getProduct, getRelatedProducts, type CommerceProduct } from "@/data/pro
 import { getService } from "@/data/seed";
 import { ApiError, catalogApi, DEMO_MODE } from "@/lib/api";
 import { mapApiCommerceProduct, toCommerceProduct } from "@/lib/commerce-product";
+import { productCategoryLabel } from "@/lib/product-category";
 
 // Halaman detail live harus membaca katalog pada setiap permintaan; jangan
 // membekukan hasil build ketika backend belum tentu tersedia.
@@ -41,7 +42,7 @@ async function resolveRelated(product: CommerceProduct): Promise<CommerceProduct
     const response = await catalogApi.listProducts({ per_page: 100 });
     return response.products
       .map(mapApiCommerceProduct)
-      .filter((candidate) => candidate.id !== product.id && candidate.category === product.category)
+      .filter((candidate) => candidate.id !== product.id && productCategoryLabel(candidate) === productCategoryLabel(product))
       .slice(0, 3);
   } catch {
     // Produk serupa bersifat pelengkap; kegagalannya tidak boleh mengarang

@@ -3,14 +3,20 @@
 import { ArrowRight, Banknote, Boxes, CircleCheckBig, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { RevenueChart } from "@/components/dashboard-charts";
+import {
+  CategoryRevenueBarChart,
+  OrderStatusDonutChart,
+  OrdersSeriesChart,
+  RevenueTrendChart,
+  TopProductsBreakdown,
+} from "@/components/dashboard-charts";
 import { MetricCard } from "@/components/metric-card";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { formatIDR } from "@/lib/money";
 import { adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
-import { mapApiDashboard, mapApiOrderToDashboardOrder } from "@/lib/admin-mappers";
-import type { DashboardOrder } from "@/lib/types";
+import { mapApiDashboard, mapApiDashboardAnalytics, mapApiOrderToDashboardOrder } from "@/lib/admin-mappers";
+import type { AnalyticsRangeDays, DashboardAnalytics, DashboardOrder } from "@/lib/types";
 
 interface DashboardData {
   grossRevenue: number;
@@ -24,12 +30,69 @@ type DashboardError = {
   message: string;
 };
 
+const PERIOD_OPTIONS: AnalyticsRangeDays[] = [7, 30, 90];
+
+/** Data simulasi hanya untuk mode demo; jalur live tidak pernah memakai ini. */
+function createDemoAnalytics(days: AnalyticsRangeDays): DashboardAnalytics {
+  const end = new Date("2026-09-06T00:00:00Z");
+  const revenuePattern = [1.2, 1.8, 1.4, 2.2, 1.9, 2.6, 2.1];
+  const orderPattern = [18, 24, 21, 34, 29, 41, 36];
+  const series = Array.from({ length: days }, (_, index) => {
+    const date = new Date(end);
+    date.setUTCDate(end.getUTCDate() - (days - 1 - index));
+    const slot = index % revenuePattern.length;
+    return {
+      date: date.toISOString().slice(0, 10),
+      amount: Math.round(revenuePattern[slot] * 1_000_000),
+      orders: orderPattern[slot],
+    };
+  });
+
+  return {
+    rangeDays: days,
+    from: series[0]?.date ?? "2026-09-06",
+    to: series[series.length - 1]?.date ?? "2026-09-06",
+    revenueSeries: series.map(({ date, amount }) => ({ date, amount })),
+    ordersSeries: series.map(({ date, orders }) => ({ date, orders })),
+    statusBreakdown: [
+      { status: "paid", count: 2 },
+      { status: "pending_payment", count: 1 },
+      { status: "completed", count: 1 },
+    ],
+    topProducts: [
+      { productId: "demo-1", productName: "StreamFlix Keluarga", salesCount: 16, revenue: 1_744_000 },
+      { productId: "demo-2", productName: "CineMax Anggota Keluarga", salesCount: 11, revenue: 352_000 },
+      { productId: "demo-3", productName: "OfficeCloud Kursi Keluarga", salesCount: 7, revenue: 3_493_000 },
+    ],
+    categoryBreakdown: [
+      { categoryId: "demo-streaming", categoryName: "Streaming", orders: 128, revenue: 5_800_000 },
+      { categoryId: "demo-productivity", categoryName: "Produktivitas", orders: 42, revenue: 3_100_000 },
+      { categoryId: "demo-creative", categoryName: "Kreatif", orders: 31, revenue: 1_700_000 },
+      { categoryId: "demo-education", categoryName: "Edukasi", orders: 38, revenue: 1_500_000 },
+      { categoryId: "demo-security", categoryName: "Keamanan", orders: 26, revenue: 1_100_000 },
+    ],
+  };
+}
+
+function formatRangeDate(value: string) {
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : parsed.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [recentOrders, setRecentOrders] = useState<DashboardOrder[]>([]);
   const [recentError, setRecentError] = useState<string | null>(null);
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [error, setError] = useState<DashboardError | null>(null);
+  const [period, setPeriod] = useState<AnalyticsRangeDays>(7);
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(!DEMO_MODE);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [analyticsReloadToken, setAnalyticsReloadToken] = useState(0);
+  const [sessionReady, setSessionReady] = useState(DEMO_MODE);
 
   useEffect(() => {
     if (DEMO_MODE) {
@@ -64,6 +127,9 @@ export default function DashboardPage() {
           });
           return;
         }
+
+        // Analitik boleh dimuat paralel dengan metrik setelah role terverifikasi.
+        setSessionReady(true);
 
         const [statsResult, ordersResult] = await Promise.allSettled([
           adminApi.dashboard(),
@@ -119,6 +185,51 @@ export default function DashboardPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (DEMO_MODE || !sessionReady) return;
+
+    let cancelled = false;
+
+    adminApi
+      .dashboardAnalytics({ days: period })
+      .then((response) => {
+        if (cancelled) return;
+        try {
+          setAnalytics(mapApiDashboardAnalytics(response));
+        } catch {
+          setAnalyticsError("Data analitik dashboard dari server tidak lengkap atau tidak sesuai kontrak.");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAnalyticsError("Gagal memuat analitik dashboard dari server.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAnalyticsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [period, sessionReady, analyticsReloadToken]);
+
+  const changePeriod = (days: AnalyticsRangeDays) => {
+    if (days === period) return;
+    setPeriod(days);
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    // Jangan mempertahankan chart periode lama saat periode baru sedang dimuat.
+    setAnalytics(null);
+  };
+
+  const retryAnalytics = () => {
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    setAnalytics(null);
+    setAnalyticsReloadToken((value) => value + 1);
+  };
+
   if (error && !DEMO_MODE) {
     const title =
       error.kind === "forbidden"
@@ -172,6 +283,7 @@ export default function DashboardPage() {
   // tersedia ditampilkan sebagai "—" sampai respons server benar-benar ada.
   const displayData = DEMO_MODE ? demoData : data;
   const displayOrders = DEMO_MODE ? demoOrders : recentOrders;
+  const displayAnalytics = DEMO_MODE ? createDemoAnalytics(period) : analytics;
   const metricsReady = displayData !== null;
   const revenueLabel = displayData
     ? DEMO_MODE
@@ -181,16 +293,111 @@ export default function DashboardPage() {
   // Belum ada field perbandingan di kontrak C-06; teks persentase lama tidak
   // boleh ditampilkan seolah-olah berasal dari data.
   const comparisonText = metricsReady ? (DEMO_MODE ? "Data simulasi" : "—") : "Memuat metrik…";
+  const rangeLabel = displayAnalytics
+    ? `${formatRangeDate(displayAnalytics.from)}–${formatRangeDate(displayAnalytics.to)}`
+    : `${period} hari terakhir`;
+
+  const analyticsPanel = () => {
+    if (analyticsLoading) {
+      return (
+        <section className="card panel" role="status" aria-live="polite">
+          <h2 className="panel-title">Ringkasan analitik</h2>
+          <p className="muted small" style={{ margin: "12px 0 0" }}>Memuat analitik dashboard…</p>
+        </section>
+      );
+    }
+
+    if (analyticsError) {
+      return (
+        <section className="card panel" role="alert">
+          <div className="panel-header" style={{ marginBottom: 8 }}>
+            <div>
+              <h2 className="panel-title">Ringkasan analitik</h2>
+              <span className="muted" style={{ fontSize: 9 }}>{period} hari terakhir</span>
+            </div>
+          </div>
+          <p className="muted small" style={{ margin: "0 0 12px" }}>{analyticsError}</p>
+          <button
+            className="button button-secondary button-sm"
+            type="button"
+            onClick={retryAnalytics}
+          >
+            Coba lagi
+          </button>
+        </section>
+      );
+    }
+
+    if (!displayAnalytics) return null;
+
+    return (
+      <div className="analytics-grid" aria-label="Chart analitik dashboard">
+        <article className="card panel analytics-wide">
+          <div className="panel-header">
+            <div>
+              <h2 className="panel-title">Tren pendapatan harian</h2>
+              <span className="muted" style={{ fontSize: 9 }}>{rangeLabel} · total {formatIDR(displayAnalytics.revenueSeries.reduce((sum, point) => sum + point.amount, 0))}</span>
+            </div>
+            <span className="badge status-info">Area</span>
+          </div>
+          <RevenueTrendChart data={displayAnalytics.revenueSeries} />
+        </article>
+
+        <article className="card panel">
+          <div className="panel-header">
+            <div>
+              <h2 className="panel-title">Pesanan per hari</h2>
+              <span className="muted" style={{ fontSize: 9 }}>{rangeLabel}</span>
+            </div>
+            <span className="badge status-info">Bar</span>
+          </div>
+          <OrdersSeriesChart data={displayAnalytics.ordersSeries} />
+        </article>
+
+        <article className="card panel">
+          <div className="panel-header">
+            <div>
+              <h2 className="panel-title">Komposisi status pesanan</h2>
+              <span className="muted" style={{ fontSize: 9 }}>{rangeLabel}</span>
+            </div>
+            <span className="badge status-info">Donut</span>
+          </div>
+          <OrderStatusDonutChart data={displayAnalytics.statusBreakdown} />
+        </article>
+
+        <article className="card panel analytics-wide">
+          <div className="panel-header">
+            <div>
+              <h2 className="panel-title">Pendapatan per kategori</h2>
+              <span className="muted" style={{ fontSize: 9 }}>{rangeLabel}</span>
+            </div>
+            <span className="badge status-info">Bar horizontal</span>
+          </div>
+          <CategoryRevenueBarChart data={displayAnalytics.categoryBreakdown} />
+        </article>
+
+        <article className="card panel analytics-wide">
+          <div className="panel-header">
+            <div>
+              <h2 className="panel-title">Produk terlaris</h2>
+              <span className="muted" style={{ fontSize: 9 }}>Berdasarkan jumlah penjualan pada periode terpilih</span>
+            </div>
+          </div>
+          <TopProductsBreakdown data={displayAnalytics.topProducts} />
+        </article>
+      </div>
+    );
+  };
 
   return (
     <div className="dashboard-page">
       <PageHeader
-        title="Ringkasan operasional"
+        title="Dashboard operasional"
         description="Pantau penjualan akun langganan sharing, pembayaran, aktivasi akses anggota, dan ketersediaan agar pelanggan berlangganan lebih hemat."
         actions={
           <>
-            <span className="badge status-info" title="Endpoint metrik belum menerima parameter rentang waktu">
-              {DEMO_MODE ? "31 Agu–6 Sep (simulasi)" : "Ringkasan server"}
+            <span className="badge status-info">
+              {DEMO_MODE ? `${period} hari (simulasi)` : rangeLabel}
             </span>
             <Link className="button button-primary button-sm" href="/dashboard/orders">
               Buka pesanan <ArrowRight size={13} />
@@ -224,28 +431,36 @@ export default function DashboardPage() {
           icon={<Boxes size={14} />}
         />
       </section>
+
+      <section className="analytics-section" aria-label="Analitik dashboard">
+        <div className="analytics-toolbar">
+          <div>
+            <h2 className="panel-title">Ringkasan analitik</h2>
+            <span className="muted" style={{ fontSize: 9 }}>Filter periode untuk seluruh chart di bawah</span>
+          </div>
+          <div className="period-filter" role="group" aria-label="Filter periode analitik">
+            {PERIOD_OPTIONS.map((days) => (
+              <button
+                key={days}
+                type="button"
+                aria-pressed={period === days}
+                onClick={() => changePeriod(days)}
+              >
+                {days} hari
+              </button>
+            ))}
+          </div>
+        </div>
+        {analyticsPanel()}
+      </section>
+
       <section className="dashboard-grid">
         <article className="card panel">
           <div className="panel-header">
             <div>
-              <h2 className="panel-title">Gerakan pendapatan</h2>
-              <span className="muted" style={{ fontSize: 9 }}>
-                IDR juta · 7 hari terakhir
-              </span>
+              <h2 className="panel-title">Aktivitas langsung</h2>
+              <span className="muted" style={{ fontSize: 9 }}>Pesanan terbaru dari server</span>
             </div>
-            <span className="badge status-info">Harian</span>
-          </div>
-          {DEMO_MODE ? (
-            <RevenueChart />
-          ) : (
-            <p className="muted small" style={{ margin: 0, padding: "16px 0" }} role="status">
-              Deret pendapatan harian belum tersedia dari API. Angka metrik di atas berasal dari ringkasan server.
-            </p>
-          )}
-        </article>
-        <article className="card panel">
-          <div className="panel-header">
-            <h2 className="panel-title">Aktivitas langsung</h2>
             <Link href="/dashboard/audit-log" className="muted" style={{ fontSize: 9 }}>
               Log audit
             </Link>
@@ -268,6 +483,20 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+        </article>
+        <article className="card panel">
+          <div className="panel-header">
+            <div>
+              <h2 className="panel-title">Ringkasan periode</h2>
+              <span className="muted" style={{ fontSize: 9 }}>{rangeLabel}</span>
+            </div>
+          </div>
+          <dl className="period-summary">
+            <div><dt>Pendapatan</dt><dd>{displayAnalytics ? formatIDR(displayAnalytics.revenueSeries.reduce((sum, point) => sum + point.amount, 0)) : "—"}</dd></div>
+            <div><dt>Pesanan</dt><dd>{displayAnalytics ? displayAnalytics.ordersSeries.reduce((sum, point) => sum + point.orders, 0) : "—"}</dd></div>
+            <div><dt>Kategori terjual</dt><dd>{displayAnalytics ? displayAnalytics.categoryBreakdown.length : "—"}</dd></div>
+            <div><dt>Produk teratas</dt><dd>{displayAnalytics?.topProducts[0]?.productName ?? "—"}</dd></div>
+          </dl>
         </article>
       </section>
       <section className="card table-panel">

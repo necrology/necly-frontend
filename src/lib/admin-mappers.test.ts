@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   mapApiAuditLog,
   mapApiDashboard,
+  mapApiDashboardAnalytics,
   mapApiInventoryAccountToManaged,
   mapApiInventorySlotAssignment,
   mapApiOrderToDashboardOrder,
@@ -363,5 +364,56 @@ describe("kontrak Manajemen akun Fase 2 NEC-96", () => {
       daysRemaining: 9,
     });
     expect(mapApiInventorySlotAssignment(slot, now)).not.toHaveProperty("credentials");
+  });
+});
+
+describe("kontrak analitik dashboard NEC-131", () => {
+  const analytics = {
+    range_days: 7,
+    from: "2026-10-21",
+    to: "2026-10-27",
+    revenue_series: [{ date: "2026-10-21", amount: 0 }, { date: "2026-10-22", amount: 125000 }],
+    orders_series: [{ date: "2026-10-21", orders: 0 }, { date: "2026-10-22", orders: 3 }],
+    status_breakdown: [{ status: "paid", count: 2 }],
+    top_products: [{ product_id: "prd-1", product_name: "Netflix Premium", sales_count: 4, revenue: 123000 }],
+    category_breakdown: [{ category_id: "cat-1", category_name: "Streaming Video", orders: 3, revenue: 100000 }],
+  };
+
+  it("memetakan seluruh deret dan mempertahankan nol yang sah", () => {
+    expect(mapApiDashboardAnalytics(analytics)).toEqual({
+      rangeDays: 7,
+      from: "2026-10-21",
+      to: "2026-10-27",
+      revenueSeries: analytics.revenue_series,
+      ordersSeries: analytics.orders_series,
+      statusBreakdown: analytics.status_breakdown,
+      topProducts: [
+        { productId: "prd-1", productName: "Netflix Premium", salesCount: 4, revenue: 123000 },
+      ],
+      categoryBreakdown: [
+        { categoryId: "cat-1", categoryName: "Streaming Video", orders: 3, revenue: 100000 },
+      ],
+    });
+  });
+
+  it.each([
+    ["range_days", 14],
+    ["from", ""],
+    ["revenue_series", null],
+    ["orders_series", "bukan-array"],
+    ["status_breakdown", undefined],
+    ["top_products", {}],
+    ["category_breakdown", null],
+  ])("menolak field %s yang tidak sesuai kontrak", (key, value) => {
+    expect(() => mapApiDashboardAnalytics({ ...analytics, [key]: value })).toThrow(/tidak/);
+  });
+
+  it("menolak item deret yang kehilangan angka", () => {
+    expect(() =>
+      mapApiDashboardAnalytics({
+        ...analytics,
+        revenue_series: [{ date: "2026-10-21" }],
+      }),
+    ).toThrow(/amount/);
   });
 });
