@@ -303,6 +303,9 @@ function OrderClientInner({ orderId }: OrderClientProps) {
               <div className="order-access-list">
                 {access.items.map((item) => {
                   const issued = accessCodes[item.order_item_id];
+                  // Mailbox pusat bisa aktif sementara akun tertentu tetap tanpa
+                  // app password, jadi kesiapan dicek per akun juga.
+                  const otpReady = access.otp_inbox_ready && item.otp_ready !== false;
                   return (
                     <div className="order-access-row" key={`${item.order_item_id}-${item.account_email}`}>
                       <div>
@@ -332,14 +335,21 @@ function OrderClientInner({ orderId }: OrderClientProps) {
                           </span>
                         </div>
                       ) : (
-                        <button
-                          className="button button-primary button-sm"
-                          type="button"
-                          disabled={!access.otp_inbox_ready || accessBusy === item.order_item_id}
-                          onClick={() => issueAccessCode(item.order_item_id)}
-                        >
-                          {accessBusy === item.order_item_id ? "Membuat kode…" : "Buat kode akses OTP"}
-                        </button>
+                        <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
+                          {!otpReady && (
+                            <span className="otp-alert" role="status">
+                              Layanan OTP untuk akun ini belum disiapkan. Hubungi dukungan Necly dengan menyertakan nomor pesanan.
+                            </span>
+                          )}
+                          <button
+                            className="button button-primary button-sm"
+                            type="button"
+                            disabled={!otpReady || accessBusy === item.order_item_id}
+                            onClick={() => issueAccessCode(item.order_item_id)}
+                          >
+                            {accessBusy === item.order_item_id ? "Membuat kode…" : "Buat kode akses OTP"}
+                          </button>
+                        </div>
                       )}
                     </div>
                   );

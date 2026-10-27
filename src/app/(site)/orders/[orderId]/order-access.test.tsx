@@ -38,7 +38,7 @@ describe("akses akun dan OTP pada detail pesanan", () => {
       created_at: "2026-10-21T09:00:00Z", updated_at: "2026-10-21T10:00:00Z",
     });
     listAccessMock.mockResolvedValue({
-      items: [{ order_item_id: ITEM_ID, product_name: "Netflix Premium", duration_name: "1 Bulan", account_label: "Akun utama", account_email: "family@example.test" }],
+      items: [{ order_item_id: ITEM_ID, product_name: "Netflix Premium", duration_name: "1 Bulan", account_label: "Akun utama", account_email: "family@example.test", otp_ready: true }],
       otp_inbox_ready: true,
     });
     issueCodeMock.mockResolvedValue({
@@ -67,5 +67,17 @@ describe("akses akun dan OTP pada detail pesanan", () => {
     const button = await screen.findByRole("button", { name: "Buat kode akses OTP" });
     expect(button).toBeDisabled();
     expect(screen.getByText(/Layanan ambil OTP belum aktif/)).toBeInTheDocument();
+  });
+
+  it("menonaktifkan pembuatan kode saat akun belum punya sumber mailbox", async () => {
+    listAccessMock.mockResolvedValue({
+      items: [{ order_item_id: ITEM_ID, product_name: "Netflix Premium", duration_name: "1 Bulan", account_label: "Akun utama", account_email: "family@example.test", otp_ready: false }],
+      otp_inbox_ready: true,
+    });
+    render(<OrderClient orderId={ORDER_ID} />);
+
+    const button = await screen.findByRole("button", { name: "Buat kode akses OTP" });
+    expect(button).toBeDisabled();
+    expect(screen.getByText(/Layanan OTP untuk akun ini belum disiapkan/)).toBeInTheDocument();
   });
 });

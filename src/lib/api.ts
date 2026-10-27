@@ -350,6 +350,8 @@ export type ApiAccountAccess = {
   duration_name: string;
   account_label: string;
   account_email: string;
+  /** False when neither the central mailbox nor this account's app password is configured. */
+  otp_ready?: boolean;
 };
 
 export type ApiAccountAccessResponse = {
