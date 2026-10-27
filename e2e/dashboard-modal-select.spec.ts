@@ -62,6 +62,16 @@ test("select kategori menampilkan daftar di atas backdrop modal produk", async (
         total: 2,
       });
     }
+    if (url.pathname.endsWith("/admin/product-durations")) {
+      return fulfillJson(route, 200, {
+        durations: [
+          { id: "dur-1-bulan", name: "1 Bulan", days: 30 },
+          { id: "dur-3-bulan", name: "3 Bulan", days: 90 },
+          { id: "dur-6-bulan", name: "6 Bulan", days: 180 },
+          { id: "dur-12-bulan", name: "12 Bulan", days: 365 },
+        ],
+      });
+    }
     return fulfillJson(route, 404, { error: `Endpoint belum dimock: ${url.pathname}` });
   });
 
