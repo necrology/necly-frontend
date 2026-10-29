@@ -1,7 +1,7 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 
-// NEC-92: panduan pada card "Ubah kata sandi" tidak boleh memecah kata
-// "mengkonfirmasi." ke baris berikutnya. Backend dimock penuh di browser.
+// NEC-145: copy revisi pada kartu "Ubah kata sandi" harus tetap rapi di mobile.
+// Backend dimock penuh di browser.
 function corsHeaders(route: Route) {
   return {
     "access-control-allow-origin": route.request().headers().origin ?? "*",
@@ -72,7 +72,7 @@ async function hintLines(page: Page) {
   });
 }
 
-test("panduan ubah kata sandi tetap utuh di baris awal pada mobile", async ({ page }) => {
+test("copy revisi panduan ubah kata sandi tetap rapi pada mobile", async ({ page }) => {
   const user = {
     id: "usr-e2e",
     email: "pelanggan@example.id",
@@ -104,7 +104,7 @@ test("panduan ubah kata sandi tetap utuh di baris awal pada mobile", async ({ pa
   await expect(hint).toBeVisible();
 
   const fullText =
-    "Masukkan kata sandi Anda saat ini untuk mengkonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.";
+    "Masukkan kata sandi Anda saat ini untuk mengonfirmasi. Setelah tersimpan, semua perangkat lain akan keluar otomatis.";
 
   for (const width of [390, 375, 360]) {
     await page.setViewportSize({ width, height: 844 });
@@ -112,7 +112,7 @@ test("panduan ubah kata sandi tetap utuh di baris awal pada mobile", async ({ pa
     expect(lines, `paragraf panduan harus ter-render pada ${width}px`).not.toBeNull();
     expect(lines!.join(" "), `teks tidak boleh hilang pada ${width}px`).toBe(fullText);
     expect(lines![0], `kalimat pertama harus utuh pada ${width}px`).toBe(
-      "Masukkan kata sandi Anda saat ini untuk mengkonfirmasi.",
+      "Masukkan kata sandi Anda saat ini untuk mengonfirmasi.",
     );
     expect(lines![1], `kalimat kedua harus mulai di baris berikutnya pada ${width}px`).toMatch(
       /^Setelah tersimpan, semua perangkat lain/,

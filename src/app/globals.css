@@ -1049,9 +1049,8 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .account-card h2 { display: flex; align-items: center; gap: 9px; margin: 0; }
 .account-card form { display: grid; gap: 18px; }
 .account-card > .button { width: fit-content; }
-/* NEC-92: kalimat panduan ubah kata sandi harus utuh di baris awal, sehingga
-   kata "mengkonfirmasi." tidak turun sendirian ke baris berikutnya. Ukuran
-   mobile mengikuti teks sekunder lain dan menyusut halus di layar sempit. */
+/* NEC-145: copy panduan ubah kata sandi tetap rapi di mobile. Ukuran teks
+   mengikuti teks sekunder lain dan menyusut halus di layar sempit. */
 .account-password-hint { letter-spacing: -0.015em; }
 @media (max-width: 580px) {
   .account-password-hint { font-size: clamp(9px, 2.6vw, 11px); }
