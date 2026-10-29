@@ -17,13 +17,13 @@ describe("halaman detail produk Coming Soon", () => {
     addItemMock.mockReset();
   });
 
-  it("menonaktifkan pemilihan paket, durasi, perangkat, dan tombol pesan", () => {
+  it("menonaktifkan pemilihan paket, durasi, dan tombol pesan", () => {
     render(<ProductDetailClient product={comingSoonProduct} />);
 
     expect(screen.getByText("Produk ini segera hadir. Pemesanan dibuka setelah tanggal rilis.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: new RegExp(comingSoonProduct.packageName) })).toBeDisabled();
     expect(screen.getAllByRole("button", { name: /1 Bulan/ })[0]).toBeDisabled();
-    expect(screen.getByRole("button", { name: "1 Perangkat" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "1 Perangkat" })).not.toBeInTheDocument();
 
     // CTA pemesanan diganti pesan "Segera hadir" dan tidak dapat diklik.
     const orderButtons = screen.getAllByRole("button", { name: "Segera hadir" });

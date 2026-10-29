@@ -11,45 +11,43 @@ import { products } from "@/data/products";
 
 const product = products[0];
 
-describe("QA baris 36, 38, dan 39 pada halaman detail produk", () => {
+describe("QA halaman detail produk", () => {
   beforeEach(() => pushMock.mockReset());
 
-  it("menampilkan pilihan jumlah perangkat di samping durasi berlangganan (baris 38)", () => {
+  it("menghapus kontrol jumlah perangkat dari detail tanpa mengubah pilihan paket dan durasi", () => {
     render(<ProductDetailClient product={product} />);
 
     expect(screen.getByRole("heading", { name: /Pilih Durasi Berlangganan/ })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /Pilih Jumlah Perangkat/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "1 Perangkat" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Pilih Jumlah Perangkat/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "1 Perangkat" })).not.toBeInTheDocument();
   });
 
-  it("menandai pilihan wajib dan memberi peringatan merah sebelum dipilih (baris 39)", () => {
+  it("menandai paket dan durasi wajib sebelum memesan", () => {
     render(<ProductDetailClient product={product} />);
 
     fireEvent.click(screen.getAllByRole("button", { name: /Pesan/ })[0]);
 
     expect(screen.getByText("Pilih paket dahulu sebelum memesan.")).toBeInTheDocument();
     expect(screen.getByText("Pilih durasi berlangganan dahulu sebelum memesan.")).toBeInTheDocument();
-    expect(screen.getByText("Pilih jumlah perangkat dahulu sebelum memesan.")).toBeInTheDocument();
     expect(pushMock).not.toHaveBeenCalled();
   });
 
-  it("mengizinkan pemesanan setelah durasi dan perangkat diklik", () => {
+  it("mengizinkan pemesanan setelah paket dan durasi diklik", () => {
     render(<ProductDetailClient product={product} />);
 
     fireEvent.click(screen.getByRole("button", { name: new RegExp(product.packageName) }));
     fireEvent.click(screen.getByRole("button", { name: "1 Bulan" }));
-    fireEvent.click(screen.getByRole("button", { name: "1 Perangkat" }));
     fireEvent.click(screen.getAllByRole("button", { name: /Pesan/ })[0]);
 
     expect(pushMock).toHaveBeenCalledWith("/checkout");
   });
 
-  it('mengisi card "Informasi" dengan jumlah perangkat, daftar perangkat, dan masa aktif (baris 36)', () => {
+  it('mengisi card "Informasi" dengan ketentuan perangkat, daftar perangkat, dan masa aktif', () => {
     render(<ProductDetailClient product={product} />);
 
     fireEvent.click(screen.getByRole("button", { name: "Informasi" }));
 
-    expect(screen.getByText(/sesuai dengan ketentuan produk/)).toBeInTheDocument();
+    expect(screen.getByText(/ketentuan paket yang Anda pilih/)).toBeInTheDocument();
     expect(screen.getByText(/Smartphone, Laptop\/PC, Smart TV/)).toBeInTheDocument();
     expect(screen.getByText(/otomatis berakhir 1 bulan setelah tanggal CO \(checkout\)/)).toBeInTheDocument();
     expect(screen.getByText(/Laporan Kendala/)).toBeInTheDocument();

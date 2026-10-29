@@ -48,6 +48,28 @@ describe("halaman pembayaran (live)", () => {
     await waitFor(() => expect(screen.getByText("Menunggu pembayaran")).toBeInTheDocument());
   });
 
+  it("menyediakan nomor pesanan yang dapat disalin saat menunggu pembayaran", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    getOrderMock.mockResolvedValue({
+      id: "ord-1",
+      number: "NCL-260906-001",
+      status: "pending_payment",
+      subtotal: 500_000,
+      discount: 0,
+      total: 512_500,
+      currency: "IDR",
+      items: [],
+    });
+
+    render(<PaymentClient orderId="ord-1" />);
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Salin nomor pesanan NCL-260906-001" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Salin nomor pesanan NCL-260906-001" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("NCL-260906-001"));
+    expect(screen.getByText(/Laporan Kendala/)).toBeInTheDocument();
+  });
+
   it("menampilkan tautan Pesanan saya setelah pembayaran dikonfirmasi", async () => {
     getOrderMock.mockResolvedValue({
       id: "ord-1",

@@ -4,7 +4,7 @@ import { CheckCircle2, ChevronDown, CircleAlert, Clock3, Flame, Gift, Info, Shie
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { defaultDeviceOptions, type CommerceProduct } from "@/data/products";
+import { type CommerceProduct } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { ProductBrand } from "@/components/product-brand";
 import { ProductPhoto } from "@/components/product-photo";
@@ -34,10 +34,10 @@ const purchaseReasons = [
 
 export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   const router = useRouter();
-  // Baris 38 & 39: durasi dan jumlah perangkat tidak dipilih otomatis supaya
-  // user wajib mengklik; kalau belum dipilih, tombol Pesan memunculkan warning.
+  // Durasi dan paket dipilih eksplisit supaya pembeli meninjau paket sebelum
+  // checkout. Jumlah perangkat tidak lagi diatur di halaman detail; checkout
+  // memakai ketentuan perangkat dari paket yang dipilih.
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
-  const [selectedDevice, setSelectedDevice] = useState<number | null>(null);
   const [selectedPackage, setSelectedPackage] = useState(false);
   const [showWarnings, setShowWarnings] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<string>("Skema Harga");
@@ -46,7 +46,6 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   const packageSectionRef = useRef<HTMLHeadingElement>(null);
   const durationSectionRef = useRef<HTMLHeadingElement>(null);
   const durationRowRef = useRef<HTMLDivElement>(null);
-  const deviceRowRef = useRef<HTMLDivElement>(null);
 
   // Pemilih durasi letaknya inline di halaman, bukan accordion. Tombol "Ubah"
   // karena itu mengantar user ke sana, bukan membuka accordion lain.
@@ -58,24 +57,6 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
     durationRowRef.current?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
   };
 
-  // Produk yang baru dibuat admin bisa belum punya baris harga sama sekali.
-  // Tanpa penjagaan ini `option` undefined dan halaman detail crash saat
-  // membaca `option.stock`, padahal produk tetap tampil di katalog.
-  if (product.priceOptions.length === 0) {
-    return (
-      <div className="commerce-product-detail-shell">
-        <div className="commerce-product-detail-main">
-          <div className="commerce-empty-state" role="status">
-            <h1>{product.name}</h1>
-            <p>Paket harga untuk produk ini belum tersedia. Silakan kembali lagi nanti.</p>
-            <Link className="commerce-detail-backlink" href="/products">Lihat produk lain</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const deviceOptions: number[] = product.deviceOptions?.length ? product.deviceOptions : [...defaultDeviceOptions];
   const option = selectedDuration === null ? product.priceOptions[0] : (product.priceOptions[selectedDuration] ?? product.priceOptions[0]);
   const estimated = selectedPackage && selectedDuration !== null;
   const comingSoon = product.comingSoon === true;
@@ -84,7 +65,6 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
   const inStock = (option.stock ?? product.stock) > 0;
   const packageMissing = showWarnings && !selectedPackage;
   const durationMissing = showWarnings && selectedDuration === null;
-  const deviceMissing = showWarnings && selectedDevice === null;
   const stockMissing = showWarnings && selectedDuration !== null && !inStock;
   // Rincian harga dari admin dipakai bila ada. Produk lama yang belum punya
   // base_amount/admin_fee tetap memakai angka katalog supaya tidak menampilkan
@@ -114,9 +94,9 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
     // Coming Soon bukan stok habis: tombol dan seluruh pemilih dinonaktifkan,
     // dan halaman ini tidak boleh pernah mendorong item ke keranjang.
     if (comingSoon) return;
-    if (!selectedPackage || selectedDuration === null || selectedDevice === null) {
+    if (!selectedPackage || selectedDuration === null) {
       setShowWarnings(true);
-      scrollTo(!selectedPackage ? packageSectionRef : selectedDuration === null ? durationRowRef : deviceRowRef);
+      scrollTo(!selectedPackage ? packageSectionRef : durationRowRef);
       return;
     }
     if (!inStock) {
@@ -129,7 +109,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
     // dipesan (checkout.go). Memakai stok tingkat produk membuat keranjang
     // mengizinkan jumlah yang lebih besar daripada slot paket yang dipilih.
     const durationStock = duration.stock ?? product.stock;
-    addItem({ id: product.id, slug: product.slug, name: product.name, category: product.category, categoryName: product.categoryName, price: duration.price, stock: durationStock, accessType: product.accessType, product_price_id: duration.id, selectedDuration: duration.label, selectedPrice: duration.price, selectedStock: durationStock, selectedDevice });
+    addItem({ id: product.id, slug: product.slug, name: product.name, category: product.category, price: duration.price, stock: durationStock, accessType: product.accessType, product_price_id: duration.id, selectedDuration: duration.label, selectedPrice: duration.price, selectedStock: durationStock });
     setAdded(true);
     router.push("/checkout");
   };
@@ -167,9 +147,6 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
             <div className="commerce-duration-row" ref={durationRowRef}>{product.priceOptions.map((duration, index) => { const hasStock = (duration.stock ?? product.stock) > 0; return <button type="button" className={index === selectedDuration ? "selected" : ""} aria-pressed={index === selectedDuration} disabled={comingSoon || !hasStock} onClick={() => setSelectedDuration(index)} key={duration.id}>{duration.label}{hasStock ? "" : " · Habis"}</button>; })}</div>
             {durationMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih durasi berlangganan dahulu sebelum memesan.</p>}
             {stockMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Durasi ini sedang habis. Pilih durasi lain yang masih tersedia.</p>}
-            <h2>Pilih Jumlah Perangkat <span className="commerce-required" aria-hidden="true">*</span></h2>
-            <div className="commerce-duration-row" ref={deviceRowRef}>{deviceOptions.map((devices) => <button type="button" className={devices === selectedDevice ? "selected" : ""} aria-pressed={devices === selectedDevice} disabled={comingSoon} onClick={() => setSelectedDevice(devices)} key={devices}>{devices} Perangkat</button>)}</div>
-            {deviceMissing && <p className="commerce-field-warning" role="alert"><CircleAlert size={15} />Pilih jumlah perangkat dahulu sebelum memesan.</p>}
           </div>
         </div>
         <div className="commerce-detail-accordions">
@@ -187,7 +164,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
                   ) : title === "Informasi" ? (
                     <div className="commerce-accordion-copy">
                       <ol>
-                        <li>Layanan dapat diakses melalui <strong>{selectedDevice ?? deviceOptions[0]} perangkat/user</strong> sesuai dengan ketentuan produk.</li>
+                        <li>Jumlah perangkat yang dapat digunakan mengikuti <strong>ketentuan paket yang Anda pilih</strong>.</li>
                         <li>Perangkat yang dapat digunakan meliputi <strong>{deviceList}</strong>, dan perangkat lainnya yang mendukung layanan.</li>
                         <li>Akses layanan akan <strong>otomatis berakhir 1 bulan setelah tanggal CO (checkout)</strong>. Jadi, jangan lupa cek masa aktif layanan secara berkala agar kamu bisa mengantisipasi perpanjangan dari jauh hari.</li>
                       </ol>
@@ -209,7 +186,6 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
         <div className="commerce-summary-product commerce-summary-product--text"><div><strong>{product.name} - {product.packageName}</strong><b>{estimated ? <>{formatRupiahLabel(option.price)} <small>/ bulan</small></> : "—"}</b></div></div>
         <div className="commerce-summary-line"><span>Paket Dipilih</span><strong>{product.packageName}</strong><small>{product.brand}</small></div>
         <div className="commerce-summary-line"><span>Durasi Berlangganan <button type="button" onClick={editDuration} disabled={comingSoon}>Ubah</button></span><strong>{selectedDuration !== null ? option.label : "Belum dipilih"}</strong></div>
-        <div className="commerce-summary-line"><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
         <div className="commerce-summary-total"><span>Total Biaya</span><b>{estimated ? formatRupiahLabel(option.price) : "—"}</b></div>
         <button className="commerce-primary-button" type="button" disabled={comingSoon || (selectedDuration !== null && !inStock)} onClick={addToCart}>{comingSoon ? "Segera hadir" : added ? "Lanjut ke checkout…" : selectedDuration !== null && !inStock ? "Stok habis" : <>Pesan <span>→</span></>}</button>
       </aside>

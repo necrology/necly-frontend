@@ -55,7 +55,7 @@ describe("riwayat pesanan pelanggan", () => {
     listOrdersMock.mockResolvedValue({
       orders: [order(1), order(2)],
       page: 1,
-      per_page: 10,
+      per_page: 5,
       total: 2,
     });
   });
@@ -65,7 +65,7 @@ describe("riwayat pesanan pelanggan", () => {
 
     await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
     expect(bootstrapAuthMock).toHaveBeenCalledTimes(1);
-    expect(listOrdersMock).toHaveBeenCalledWith({ page: 1, per_page: 10 });
+    expect(listOrdersMock).toHaveBeenCalledWith({ page: 1, per_page: 5 });
     expect(screen.getByText("ORD-W12-2")).toBeInTheDocument();
     expect(screen.getAllByText("Rp186.000")).toHaveLength(2);
     expect(screen.getByRole("link", { name: "Lihat detail pesanan ORD-W12-1" })).toHaveAttribute(
@@ -149,13 +149,13 @@ describe("riwayat pesanan pelanggan", () => {
   it("kembali ke halaman terakhir saat total menyusut di tengah pagination", async () => {
     listOrdersMock
       .mockResolvedValueOnce({
-        orders: Array.from({ length: 10 }, (_, index) => order(index + 1)),
+        orders: Array.from({ length: 5 }, (_, index) => order(index + 1)),
         page: 1,
-        per_page: 10,
-        total: 12,
+        per_page: 5,
+        total: 7,
       })
-      .mockResolvedValueOnce({ orders: [], page: 2, per_page: 10, total: 1 })
-      .mockResolvedValueOnce({ orders: [order(11)], page: 1, per_page: 10, total: 1 });
+      .mockResolvedValueOnce({ orders: [], page: 2, per_page: 5, total: 1 })
+      .mockResolvedValueOnce({ orders: [order(11)], page: 1, per_page: 5, total: 1 });
 
     render(<OrderHistoryClient />);
 
@@ -165,19 +165,19 @@ describe("riwayat pesanan pelanggan", () => {
     // Request page 2 mengembalikan daftar kosong tetapi total masih 1, jadi
     // komponen harus mundur ke page 1 dan fetch ulang, bukan menampilkan
     // empty state "Belum ada pesanan".
-    await waitFor(() => expect(listOrdersMock).toHaveBeenLastCalledWith({ page: 1, per_page: 10 }));
+    await waitFor(() => expect(listOrdersMock).toHaveBeenLastCalledWith({ page: 1, per_page: 5 }));
     await waitFor(() => expect(screen.getByText("ORD-W12-11")).toBeInTheDocument());
     expect(screen.queryByText("Belum ada pesanan")).not.toBeInTheDocument();
     expect(listOrdersMock).toHaveBeenCalledTimes(3);
     expect(screen.getByText(/Menampilkan 1–1 dari 1 pesanan/)).toBeInTheDocument();
   });
 
-  it("memuat halaman berikutnya memakai parameter pagination API", async () => {
+  it("memuat lima riwayat per halaman memakai parameter pagination API", async () => {
     listOrdersMock.mockResolvedValue({
-      orders: Array.from({ length: 10 }, (_, index) => order(index + 1)),
+      orders: Array.from({ length: 5 }, (_, index) => order(index + 1)),
       page: 1,
-      per_page: 10,
-      total: 12,
+      per_page: 5,
+      total: 7,
     });
 
     render(<OrderHistoryClient />);
@@ -185,7 +185,7 @@ describe("riwayat pesanan pelanggan", () => {
     await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: /Berikutnya/ }));
 
-    await waitFor(() => expect(listOrdersMock).toHaveBeenLastCalledWith({ page: 2, per_page: 10 }));
+    await waitFor(() => expect(listOrdersMock).toHaveBeenLastCalledWith({ page: 2, per_page: 5 }));
     expect(screen.getByText("Halaman 2 dari 2")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Berikutnya/ })).toBeDisabled();
   });

@@ -4,6 +4,7 @@ import { Check, Circle, ClipboardCopy, CreditCard, ExternalLink, Headphones, Key
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ApiError, bootstrapAuth, checkoutApi, DEMO_MODE, accountOtpApi, type ApiAccountAccessResponse, type ApiOrder, type ApiOTPAccessCode } from "@/lib/api";
+import { OrderNumberCopy } from "@/components/order-number-copy";
 import { StatusBadge } from "@/components/status-badge";
 import { formatDateTimeID, formatIDR } from "@/lib/money";
 import { getOrderSteps, normalizeOrderStatus, orderStatusLabel } from "@/lib/order-status";
@@ -277,6 +278,10 @@ function OrderClientInner({ orderId }: OrderClientProps) {
           </section>
           <section className="card" style={{ padding: 27 }}>
             <h2 className="h3">Detail pembayaran</h2>
+            <div className="order-number-copy">
+              <span className="muted small">Nomor pesanan</span>
+              <OrderNumberCopy number={order.number} />
+            </div>
             <div className="summary-lines">
               <div className="summary-line"><span>Subtotal</span><strong>{formatIDR(order.subtotal)}</strong></div>
               {order.discount > 0 && <div className="summary-line"><span>Diskon</span><strong style={{ color: "var(--success)" }}>-{formatIDR(order.discount)}</strong></div>}
@@ -397,7 +402,7 @@ function OrderClientInner({ orderId }: OrderClientProps) {
           <section className="card" style={{ padding: 22 }}>
             <Headphones size={18} />
             <h2 className="h3" style={{ marginTop: 10 }}>Butuh bantuan?</h2>
-            <p className="muted small">Gunakan referensi pesanan <strong>{order.number}</strong> saat menghubungi tim dukungan Necly.</p>
+            <p className="muted small">Salin nomor pesanan dari detail pembayaran saat menghubungi tim dukungan Necly atau membuat laporan.</p>
             <Link className="button button-secondary button-sm" href="/laporan-kendala">Laporkan kendala</Link>
           </section>
         </aside>

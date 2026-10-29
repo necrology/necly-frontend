@@ -17,7 +17,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { ApiError, bootstrapAuth, checkoutApi, DEMO_MODE, type ApiOrder } from "@/lib/api";
 import { formatDateTimeID, formatIDR } from "@/lib/money";
 
-const PER_PAGE = 10;
+const PER_PAGE = 5;
 
 type LoadError = {
   kind: "unauthorized" | "generic";
@@ -230,7 +230,7 @@ export function OrderHistoryClient() {
     <>
       <header className="page-hero">
         <div className="container">
-          <span className="eyebrow">Pesanan saya</span>
+          <span className="eyebrow orders-eyebrow">Pesanan saya</span>
           <h1 className="h1" style={{ marginTop: 12 }}>Riwayat pesanan</h1>
           <p className="lede" style={{ marginTop: 12 }}>
             Semua pesanan yang pernah Anda buat tersimpan di sini, termasuk status pembayaran dan akses layanan.

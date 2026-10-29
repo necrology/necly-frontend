@@ -1022,6 +1022,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .account-orders-link:hover { color: #2a2140; background: #ffd477; border-color: #ffd477; }
 .account-forgot-link { justify-self: start; margin-top: -8px; padding-inline: 0; }
 /* Riwayat pesanan pelanggan: daftar, status, total, dan pagination. */
+.orders-eyebrow { color: #fcbd50; }
 .orders-page { display: grid; gap: 16px; padding: 0 0 96px; }
 .orders-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
 .orders-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
@@ -1039,11 +1040,20 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .orders-skeleton { display: grid; gap: 12px; }
 .order-back-link { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; color: var(--commerce-muted); font-size: 11px; font-weight: 700; }
 .order-back-link:hover { color: var(--blue); }
+.order-number-copy { display: grid; gap: 2px; margin: 16px 0; }
+.order-number-copy-value { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; overflow-wrap: anywhere; }
+.order-number-copy-value > strong { color: var(--commerce-ink); font-size: 14px; }
+.order-copy-feedback { margin: 3px 0 0; color: var(--success); font-size: 11px; font-weight: 700; }
+.payment-order-number { align-items: start; }
+.payment-order-number > .order-number-copy { margin: 0; text-align: right; }
+.payment-order-number .order-number-copy-value { justify-content: flex-end; }
 .payment-orders-link { color: var(--blue); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .payment-orders-standalone { display: inline-flex; justify-content: center; margin-top: 12px; font-size: 12px; }
 @media (max-width: 640px) {
   .order-list-item { grid-template-columns: 1fr; }
   .order-list-side { justify-items: start; text-align: left; }
+  .payment-order-number > .order-number-copy { text-align: left; }
+  .payment-order-number .order-number-copy-value { justify-content: flex-start; }
 }
 .account-card { display: grid; gap: 14px; padding: 24px; }
 .account-card h2 { display: flex; align-items: center; gap: 9px; margin: 0; }

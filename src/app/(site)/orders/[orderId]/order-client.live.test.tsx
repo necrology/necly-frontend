@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getOrderMock, bootstrapAuthMock } = vi.hoisted(() => ({
@@ -71,6 +71,29 @@ describe("halaman pelacakan pesanan (live)", () => {
     await waitFor(() => expect(getOrderMock).toHaveBeenCalledWith(ORDER_ID));
     expect(bootstrapAuthMock).toHaveBeenCalled();
     expect(screen.getByText("Pesanan ORD-1760832000000-0192f0b0")).toBeInTheDocument();
+  });
+
+  it("menyalin nomor pesanan dan menampilkan umpan balik sukses", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<OrderClient orderId={ORDER_ID} />);
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /Salin nomor pesanan ORD-1760832000000-0192f0b0/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /Salin nomor pesanan ORD-1760832000000-0192f0b0/ }));
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("ORD-1760832000000-0192f0b0"));
+    expect(screen.getByRole("status")).toHaveTextContent("Nomor pesanan berhasil disalin.");
+  });
+
+  it("menampilkan arahan salin manual ketika clipboard gagal", async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error("Ditolak"));
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<OrderClient orderId={ORDER_ID} />);
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /Salin nomor pesanan ORD-1760832000000-0192f0b0/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /Salin nomor pesanan ORD-1760832000000-0192f0b0/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Nomor tidak dapat disalin otomatis");
   });
 
   it("menampilkan status dan item dari API", async () => {
