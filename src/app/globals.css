@@ -32,7 +32,7 @@ body {
   margin: 0;
   color: var(--ink);
   background: var(--paper);
-  font-family: "Sora", ui-sans-serif, system-ui, sans-serif;
+  font-family: "Montserrat", ui-sans-serif, system-ui, sans-serif;
   font-size: 12px;
   line-height: 1.6;
   text-rendering: optimizeLegibility;
@@ -735,7 +735,9 @@ body:has(.auth-form-login) { overflow: hidden; }
   --shadow-sm: 0 2px 7px rgb(27 21 51 / .05);
   --shadow-md: 0 22px 45px -30px rgb(27 21 51 / .3), 0 8px 20px -16px rgb(27 21 51 / .18);
 }
-body { background: #f4f4f4; font-family: "Sora", "Avenir Next", ui-sans-serif, system-ui, sans-serif; }
+body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-serif, system-ui, sans-serif; }
+/* Dashboard mempertahankan tipografi Sora yang sudah ada. */
+.dashboard-layout { font-family: "Sora", ui-sans-serif, system-ui, sans-serif; }
 .brand-text { background: none; -webkit-background-clip: initial; color: #fcbd50; }
 .eyebrow { color: #4c1ef9; letter-spacing: .09em; }
 .display, .h1, .h2, .h3 { letter-spacing: -.045em; }
