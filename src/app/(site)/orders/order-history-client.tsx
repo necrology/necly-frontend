@@ -9,15 +9,18 @@ import {
   PackageOpen,
   ReceiptText,
   RefreshCw,
+  Trash2,
   TriangleAlert,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { Modal } from "@/components/modal";
 import { StatusBadge } from "@/components/status-badge";
 import { ApiError, bootstrapAuth, checkoutApi, DEMO_MODE, type ApiOrder } from "@/lib/api";
 import { formatDateTimeID, formatIDR } from "@/lib/money";
 
 const PER_PAGE = 5;
+const ARCHIVABLE_STATUSES = new Set(["pending_payment", "completed", "cancelled", "expired", "refunded"]);
 
 type LoadError = {
   kind: "unauthorized" | "generic";
@@ -79,6 +82,10 @@ const DEMO_ORDERS: ApiOrder[] = [
   },
 ];
 
+function canArchiveOrder(order: ApiOrder) {
+  return ARCHIVABLE_STATUSES.has(order.status.toLowerCase());
+}
+
 function itemSummary(order: ApiOrder) {
   const items = order.items ?? [];
   if (items.length === 0) return "Detail layanan tersedia di halaman pesanan.";
@@ -97,6 +104,16 @@ function errorFromFailure(error: unknown): LoadError {
     kind: "generic",
     message: "Gagal memuat riwayat pesanan. Periksa koneksi Anda lalu coba lagi.",
   };
+}
+
+function archiveErrorMessage(error: unknown) {
+  if (error instanceof ApiError && error.status === 409) {
+    return "Pesanan aktif atau sedang diproses tidak dapat dihapus dari riwayat.";
+  }
+  if (error instanceof ApiError && [401, 403].includes(error.status)) {
+    return "Sesi Anda sudah berakhir. Masuk kembali lalu coba hapus riwayat pesanan ini.";
+  }
+  return "Gagal menghapus pesanan dari riwayat. Periksa koneksi Anda lalu coba lagi.";
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -144,6 +161,9 @@ export function OrderHistoryClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<LoadError | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [archiveTarget, setArchiveTarget] = useState<ApiOrder | null>(null);
+  const [archiving, setArchiving] = useState(false);
+  const [archiveError, setArchiveError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -225,6 +245,28 @@ export function OrderHistoryClient() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PER_PAGE)), [total]);
   const firstRow = total === 0 ? 0 : (page - 1) * PER_PAGE + 1;
   const lastRow = Math.min(page * PER_PAGE, total);
+
+  async function confirmArchive() {
+    if (!archiveTarget || archiving) return;
+
+    setArchiving(true);
+    setArchiveError(null);
+    try {
+      await checkoutApi.archiveOrder(archiveTarget.id);
+      setArchiveTarget(null);
+
+      // Bila item terakhir halaman saat ini diarsipkan, daftar berikutnya harus
+      // dimuat dari halaman valid sebelumnya. Effect pemuatan menangani juga
+      // perubahan total yang terjadi dari tab/perangkat lain.
+      if (orders.length === 1 && page > 1) setPage((value) => value - 1);
+      else setReloadToken((value) => value + 1);
+    } catch (failure) {
+      // Daftar lokal sengaja tidak diubah sebelum DELETE sukses.
+      setArchiveError(archiveErrorMessage(failure));
+    } finally {
+      setArchiving(false);
+    }
+  }
 
   return (
     <>
@@ -312,13 +354,29 @@ export function OrderHistoryClient() {
                     <div className="order-list-side">
                       <span className="muted small">Total</span>
                       <strong className="order-list-total tabular">{formatIDR(order.total)}</strong>
-                      <Link
-                        className="button button-secondary button-sm"
-                        href={`/orders/${encodeURIComponent(order.id)}`}
-                        aria-label={`Lihat detail pesanan ${order.number}`}
-                      >
-                        Lihat detail <ArrowRight size={14} aria-hidden="true" />
-                      </Link>
+                      <div className="order-list-actions">
+                        <Link
+                          className="button button-secondary button-sm"
+                          href={`/orders/${encodeURIComponent(order.id)}`}
+                          aria-label={`Lihat detail pesanan ${order.number}`}
+                        >
+                          Lihat detail <ArrowRight size={14} aria-hidden="true" />
+                        </Link>
+                        {canArchiveOrder(order) && (
+                          <button
+                            className="order-archive-button"
+                            type="button"
+                            onClick={() => {
+                              setArchiveTarget(order);
+                              setArchiveError(null);
+                            }}
+                            aria-label={`Hapus pesanan ${order.number} dari riwayat`}
+                            title="Hapus dari riwayat"
+                          >
+                            <Trash2 size={16} aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </article>
                 </li>
@@ -349,6 +407,33 @@ export function OrderHistoryClient() {
           </>
         )}
       </section>
+
+      {archiveTarget && (
+        <Modal
+          title="Hapus dari riwayat pesanan?"
+          description={`Pesanan ${archiveTarget.number} akan dihapus dari daftar riwayat Anda.`}
+          size="sm"
+          role="alertdialog"
+          onClose={() => {
+            if (!archiving) setArchiveTarget(null);
+          }}
+          footer={
+            <>
+              <button className="button button-secondary" type="button" onClick={() => setArchiveTarget(null)} disabled={archiving}>
+                Batal
+              </button>
+              <button className="button button-danger" type="button" onClick={() => void confirmArchive()} disabled={archiving}>
+                <Trash2 size={14} aria-hidden="true" /> {archiving ? "Menghapus…" : "Ya, hapus dari riwayat"}
+              </button>
+            </>
+          }
+        >
+          <p className="muted small" style={{ margin: 0 }}>
+            Tindakan ini hanya menghapus item dari tampilan riwayat Anda, bukan menghapus data transaksi secara permanen.
+          </p>
+          {archiveError && <p className="order-archive-error" role="alert">{archiveError}</p>}
+        </Modal>
+      )}
     </>
   );
 }

@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { listOrdersMock, bootstrapAuthMock } = vi.hoisted(() => ({
+const { archiveOrderMock, listOrdersMock, bootstrapAuthMock } = vi.hoisted(() => ({
+  archiveOrderMock: vi.fn(),
   listOrdersMock: vi.fn(),
   bootstrapAuthMock: vi.fn(),
 }));
@@ -12,7 +13,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
     ...actual,
     DEMO_MODE: false,
     bootstrapAuth: bootstrapAuthMock,
-    checkoutApi: { ...actual.checkoutApi, listOrders: listOrdersMock },
+    checkoutApi: { ...actual.checkoutApi, listOrders: listOrdersMock, archiveOrder: archiveOrderMock },
   };
 });
 
@@ -49,6 +50,7 @@ function order(index: number, overrides: Record<string, unknown> = {}) {
 
 describe("riwayat pesanan pelanggan", () => {
   beforeEach(() => {
+    archiveOrderMock.mockReset();
     listOrdersMock.mockReset();
     bootstrapAuthMock.mockReset();
     bootstrapAuthMock.mockResolvedValue({ id: "usr-1", role: "customer" });
@@ -73,6 +75,7 @@ describe("riwayat pesanan pelanggan", () => {
       "/orders/0192f0b0-0000-0000-0000-000000000001",
     );
     expect(screen.getByText(/Menampilkan 1–2 dari 2 pesanan/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Hapus pesanan ORD-W12-1 dari riwayat" })).not.toBeInTheDocument();
   });
 
   it("memakai state kosong tanpa data contoh saat API tidak mengembalikan pesanan", async () => {
@@ -144,6 +147,114 @@ describe("riwayat pesanan pelanggan", () => {
     expect(screen.queryByText("BROKEN")).not.toBeInTheDocument();
     expect(screen.queryByText(/RpNaN/)).not.toBeInTheDocument();
     expect(document.querySelector('a[href*="/orders/undefined"]')).toBeNull();
+  });
+
+  it("meminta konfirmasi sebelum menghapus pesanan yang dapat diarsipkan", async () => {
+    listOrdersMock.mockResolvedValue({
+      orders: [order(1, { status: "cancelled" })],
+      page: 1,
+      per_page: 5,
+      total: 1,
+    });
+
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Hapus pesanan ORD-W12-1 dari riwayat" }));
+
+    expect(screen.getByRole("alertdialog", { name: "Hapus dari riwayat pesanan?" })).toBeInTheDocument();
+    expect(screen.getByText(/bukan menghapus data transaksi secara permanen/)).toBeInTheDocument();
+    expect(archiveOrderMock).not.toHaveBeenCalled();
+  });
+
+  it("mengarsipkan pesanan setelah konfirmasi lalu memuat ulang daftar", async () => {
+    listOrdersMock
+      .mockResolvedValueOnce({ orders: [order(1, { status: "cancelled" })], page: 1, per_page: 5, total: 1 })
+      .mockResolvedValueOnce({ orders: [], page: 1, per_page: 5, total: 0 });
+    archiveOrderMock.mockResolvedValue(undefined);
+
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Hapus pesanan ORD-W12-1 dari riwayat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, hapus dari riwayat" }));
+
+    await waitFor(() => expect(archiveOrderMock).toHaveBeenCalledWith("0192f0b0-0000-0000-0000-000000000001"));
+    await waitFor(() => expect(screen.getByText("Belum ada pesanan")).toBeInTheDocument());
+    expect(listOrdersMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("mempertahankan item dan menjelaskan konflik 409 saat pengarsipan", async () => {
+    listOrdersMock.mockResolvedValue({
+      orders: [order(1, { status: "cancelled" })],
+      page: 1,
+      per_page: 5,
+      total: 1,
+    });
+    archiveOrderMock.mockRejectedValue(new ApiError("Pesanan aktif", 409, { code: "order_active" }));
+
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Hapus pesanan ORD-W12-1 dari riwayat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, hapus dari riwayat" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/Pesanan aktif atau sedang diproses/);
+    expect(screen.getByText("ORD-W12-1")).toBeInTheDocument();
+  });
+
+  it("mempertahankan item dan menjelaskan galat jaringan saat pengarsipan", async () => {
+    listOrdersMock.mockResolvedValue({
+      orders: [order(1, { status: "cancelled" })],
+      page: 1,
+      per_page: 5,
+      total: 1,
+    });
+    archiveOrderMock.mockRejectedValue(new Error("Network error"));
+
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Hapus pesanan ORD-W12-1 dari riwayat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, hapus dari riwayat" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(/Gagal menghapus pesanan dari riwayat/);
+    expect(screen.getByText("ORD-W12-1")).toBeInTheDocument();
+  });
+
+  it("kembali ke halaman sebelumnya setelah item terakhir halaman diarsipkan", async () => {
+    listOrdersMock
+      .mockResolvedValueOnce({
+        orders: Array.from({ length: 5 }, (_, index) => order(index + 1, { status: "cancelled" })),
+        page: 1,
+        per_page: 5,
+        total: 6,
+      })
+      .mockResolvedValueOnce({
+        orders: [order(6, { status: "cancelled" })],
+        page: 2,
+        per_page: 5,
+        total: 6,
+      })
+      .mockResolvedValueOnce({
+        orders: Array.from({ length: 5 }, (_, index) => order(index + 1, { status: "cancelled" })),
+        page: 1,
+        per_page: 5,
+        total: 5,
+      });
+    archiveOrderMock.mockResolvedValue(undefined);
+
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /Berikutnya/ }));
+    await waitFor(() => expect(screen.getByText("ORD-W12-6")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Hapus pesanan ORD-W12-6 dari riwayat" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, hapus dari riwayat" }));
+
+    await waitFor(() => expect(listOrdersMock).toHaveBeenLastCalledWith({ page: 1, per_page: 5 }));
+    await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
+    expect(screen.getByText(/Menampilkan 1–5 dari 5 pesanan/)).toBeInTheDocument();
   });
 
   it("kembali ke halaman terakhir saat total menyusut di tengah pagination", async () => {

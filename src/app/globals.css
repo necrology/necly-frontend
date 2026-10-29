@@ -1033,6 +1033,11 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .order-list-meta { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 11px; }
 .order-list-items { margin: 0; color: var(--commerce-muted); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .order-list-side { display: grid; justify-items: end; gap: 6px; text-align: right; }
+.order-list-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.order-archive-button { width: 34px; min-height: 34px; display: inline-grid; place-items: center; border: 1px solid #ffd1cc; border-radius: 6px; color: var(--danger); background: var(--danger-bg); cursor: pointer; }
+.order-archive-button:hover { background: #ffe8e5; }
+.order-archive-button:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+.order-archive-error { margin: 12px 0 0; color: var(--danger); font-size: 12px; line-height: 1.5; }
 .order-list-total { color: var(--commerce-ink); font-size: 16px; letter-spacing: -.02em; }
 .orders-state { display: grid; justify-items: center; gap: 12px; padding: 48px 24px; text-align: center; }
 .orders-state .button { margin-top: 6px; }
@@ -1052,6 +1057,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 @media (max-width: 640px) {
   .order-list-item { grid-template-columns: 1fr; }
   .order-list-side { justify-items: start; text-align: left; }
+  .order-list-actions { justify-content: flex-start; }
   .payment-order-number > .order-number-copy { text-align: left; }
   .payment-order-number .order-number-copy-value { justify-content: flex-start; }
 }
