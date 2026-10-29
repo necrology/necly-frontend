@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell, ChevronDown, LogOut, Menu, PanelLeftClose, Search, Store, UserRound } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, PanelLeftClose, Store, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DashboardGlobalSearch } from "@/components/dashboard-global-search";
 import { initialNotifications as seedNotifications, type NotificationItem } from "@/data/seed";
 import { adminApi, authApi, DEMO_MODE, useAuthStore } from "@/lib/api";
 import {
@@ -174,11 +175,7 @@ export function DashboardTopbar() {
         <Menu size={16} className="mobile-menu-button" />
         <PanelLeftClose size={16} className="nav-copy" />
       </button>
-      <div className="input-wrap topbar-search">
-        <Search size={14} />
-        <input className="input" type="search" placeholder="Cari pesanan, pelanggan, atau produk…" aria-label="Cari di dashboard" />
-        <span className="topbar-shortcut" style={{ position: "absolute", right: 10, top: 12, fontSize: 9, color: "var(--faint)" }}>Ctrl K</span>
-      </div>
+      <DashboardGlobalSearch />
       <span className="topbar-spacer" />
       <div className="dashboard-notifications" ref={notificationsRef}>
         <button

@@ -13,12 +13,14 @@ import { mapApiOrderToDashboardOrder } from "@/lib/admin-mappers";
 import { downloadCsv } from "@/lib/csv";
 import type { DashboardOrder } from "@/lib/types";
 import { ORDER_STATUS_OPTIONS } from "@/lib/order-status";
+import { useSearchQueryParam } from "@/lib/use-search-query-param";
 
 const statuses = ["Semua", ...ORDER_STATUS_OPTIONS] as const;
 type StatusType = (typeof statuses)[number];
 
 export default function OrdersAdminPage() {
   const [query, setQuery] = useState("");
+  useSearchQueryParam(setQuery);
   const [status, setStatus] = useState<StatusType>("Semua");
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [loadingMore, setLoadingMore] = useState(false);

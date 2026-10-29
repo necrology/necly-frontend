@@ -13,6 +13,7 @@ import { ApiError, adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { mapApiUserToCustomer } from "@/lib/admin-mappers";
 import type { Customer } from "@/lib/types";
 import type { ApiUser } from "@/lib/api";
+import { useSearchQueryParam } from "@/lib/use-search-query-param";
 
 type UserRole = "customer" | "seller" | "admin";
 
@@ -78,6 +79,7 @@ function describeAccessError(error: unknown): string {
 
 export default function CustomersPage() {
   const [query, setQuery] = useState("");
+  useSearchQueryParam(setQuery);
   const [status, setStatus] = useState<StatusFilter>("Semua");
   const [role, setRole] = useState<"Semua" | UserRole>("Semua");
   const [notice, setNotice] = useState("");
