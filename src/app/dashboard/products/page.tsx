@@ -25,6 +25,7 @@ import { productStatus, productStatusPayload, type ProductStatus } from "@/lib/p
 import { calculatePriceBreakdown } from "@/lib/pricing";
 import type { SubscriptionProduct } from "@/lib/types";
 import type { ApiProduct, ApiProductDuration } from "@/lib/api";
+import { useSearchQueryParam } from "@/lib/use-search-query-param";
 
 const statusOptions: ProductStatus[] = ["Aktif", "Coming Soon", "Nonaktif"];
 const statusFilters = ["Semua status", ...statusOptions] as const;
@@ -91,6 +92,7 @@ function slugify(value: string) {
 
 export default function DashboardProductsPage() {
   const [query, setQuery] = useState("");
+  useSearchQueryParam(setQuery);
   const [category, setCategory] = useState("Semua");
   const [statusFilter, setStatusFilter] = useState<(typeof statusFilters)[number]>("Semua status");
   const [loading, setLoading] = useState(!DEMO_MODE);

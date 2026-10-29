@@ -465,6 +465,31 @@ export type ApiOrderListResponse = {
   total: number;
 };
 
+/** Daftar produk admin. Bentuknya sengaja diketik agar pencarian global tidak
+ * perlu menebak isi `Record<string, unknown>`. */
+export type AdminProductListResponse = {
+  products: ApiProduct[];
+  page: number;
+  per_page: number;
+  total: number;
+};
+
+export type AdminCategoryListResponse = {
+  categories: ApiCategory[];
+  page: number;
+  per_page: number;
+  total: number;
+};
+
+/** Voucher masih dimap oleh `mapApiVoucher`, jadi field mentahnya tetap
+ * dipertahankan sebagai record sampai mapper memvalidasinya. */
+export type AdminVoucherListResponse = {
+  vouchers: Record<string, unknown>[];
+  page: number;
+  per_page: number;
+  total: number;
+};
+
 /**
  * Backend W8 mengembalikan daftar pesanan (lengkap dengan payments) untuk
  * halaman pembayaran, bukan baris payment datar. Frontend memetakan tiap
@@ -1051,8 +1076,13 @@ export const adminApi = {
   updateUser: (id: string, data: Record<string, unknown>) =>
     apiRequest<ApiUser>(`/admin/users/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteUser: (id: string) => apiRequest<void>(`/admin/users/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  listProducts: (params?: { page?: number; per_page?: number }) =>
-    apiRequest<Record<string, unknown>>(`/admin/products${toQuery(params)}`),
+  listProducts: (params?: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    category_id?: string;
+    active?: boolean;
+  }) => apiRequest<AdminProductListResponse>(`/admin/products${toQuery(params)}`),
   createProduct: (data: Record<string, unknown>) =>
     apiRequest<ApiProduct>("/admin/products", { method: "POST", body: JSON.stringify(data) }),
   updateProduct: (id: string, data: Record<string, unknown>) =>
@@ -1076,14 +1106,14 @@ export const adminApi = {
     apiRequest<void>(`/admin/products/${encodeURIComponent(productId)}/prices/${encodeURIComponent(priceId)}`, {
       method: "DELETE",
     }),
-  listCategories: (params?: { page?: number; per_page?: number }) =>
-    apiRequest<Record<string, unknown>>(`/admin/categories${toQuery(params)}`),
+  listCategories: (params?: { page?: number; per_page?: number; search?: string; active?: boolean }) =>
+    apiRequest<AdminCategoryListResponse>(`/admin/categories${toQuery(params)}`),
   createCategory: (data: { name: string; slug: string; description?: string }) =>
     apiRequest<ApiCategory>("/admin/categories", { method: "POST", body: JSON.stringify(data) }),
   updateCategory: (id: string, data: Record<string, unknown>) =>
     apiRequest<ApiCategory>(`/admin/categories/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(data) }),
   deleteCategory: (id: string) => apiRequest<void>(`/admin/categories/${encodeURIComponent(id)}`, { method: "DELETE" }),
-  listOrders: (params?: { page?: number; per_page?: number; status?: string }) =>
+  listOrders: (params?: { page?: number; per_page?: number; status?: string; search?: string }) =>
     apiRequest<ApiOrderListResponse>(`/admin/orders${toQuery(params)}`),
   getOrder: (id: string) => apiRequest<ApiOrder>(`/admin/orders/${encodeURIComponent(id)}`),
   updateOrderStatus: (id: string, status: string) =>
@@ -1146,8 +1176,8 @@ export const adminApi = {
     apiRequest<ApiAdminPaymentListResponse>(`/admin/payments${toQuery(params)}`),
   listNotifications: (params?: { page?: number; per_page?: number }) =>
     apiRequest<ApiAdminNotificationListResponse>(`/admin/notifications${toQuery(params)}`),
-  listVouchers: (params?: { page?: number; per_page?: number }) =>
-    apiRequest<Record<string, unknown>>(`/admin/vouchers${toQuery(params)}`),
+  listVouchers: (params?: { page?: number; per_page?: number; code?: string; active?: boolean }) =>
+    apiRequest<AdminVoucherListResponse>(`/admin/vouchers${toQuery(params)}`),
   createVoucher: (data: Record<string, unknown>) =>
     apiRequest<Record<string, unknown>>("/admin/vouchers", { method: "POST", body: JSON.stringify(data) }),
   updateVoucher: (id: string, data: Record<string, unknown>) =>

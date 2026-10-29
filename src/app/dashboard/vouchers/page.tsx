@@ -11,6 +11,7 @@ import { vouchers as seedVouchers, type Voucher } from "@/data/seed";
 import { ApiError, adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
 import { mapApiVoucher } from "@/lib/admin-mappers";
 import { formatDateID } from "@/lib/money";
+import { useSearchQueryParam } from "@/lib/use-search-query-param";
 
 function defaultExpiry() {
   const date = new Date();
@@ -21,6 +22,7 @@ function defaultExpiry() {
 export default function VouchersPage() {
   const [items, setItems] = useState<Voucher[]>(seedVouchers);
   const [query, setQuery] = useState("");
+  useSearchQueryParam(setQuery);
   const [creating, setCreating] = useState(false);
   const [voucherType, setVoucherType] = useState<"Persen" | "Nominal">("Persen");
   const [notice, setNotice] = useState("");

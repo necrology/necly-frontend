@@ -6,6 +6,7 @@ import { Modal } from "@/components/modal";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/status-badge";
 import { ApiError, adminApi, bootstrapAuth, DEMO_MODE } from "@/lib/api";
+import { useSearchQueryParam } from "@/lib/use-search-query-param";
 
 type ManagedCategory = {
   id: string;
@@ -59,6 +60,7 @@ export default function DashboardCategoriesPage() {
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  useSearchQueryParam(setQuery);
   const [form, setForm] = useState<CategoryForm | null>(null);
   const [formError, setFormError] = useState("");
   const [submitting, setSubmitting] = useState(false);

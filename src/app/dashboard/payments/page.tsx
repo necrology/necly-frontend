@@ -11,6 +11,7 @@ import { adminApi, bootstrapAuth, DEMO_MODE, type ApiOrder } from "@/lib/api";
 import { mapApiOrderPayment } from "@/lib/admin-mappers";
 import { downloadCsv } from "@/lib/csv";
 import type { Payment } from "@/lib/types";
+import { useSearchQueryParam } from "@/lib/use-search-query-param";
 
 const STATUS_FILTERS = ["Semua", "Berhasil", "Menunggu", "Dikembalikan", "Kedaluwarsa", "Gagal"] as const;
 const PAYMENT_PAGE_SIZE = 100;
@@ -23,6 +24,7 @@ function flattenPayments(orders: ApiOrder[]): Payment[] {
 
 export default function PaymentsPage() {
   const [query, setQuery] = useState("");
+  useSearchQueryParam(setQuery);
   const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]>("Semua");
   const [loading, setLoading] = useState(!DEMO_MODE);
   const [apiPayments, setApiPayments] = useState<Payment[] | null>(null);
