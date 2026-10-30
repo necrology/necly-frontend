@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Circle, ClipboardCopy, CreditCard, ExternalLink, Headphones, KeyRound, LoaderCircle, PackageCheck, RefreshCw } from "lucide-react";
+import { Check, Circle, ClipboardCopy, CreditCard, ExternalLink, KeyRound, LoaderCircle, PackageCheck, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ApiError, bootstrapAuth, checkoutApi, DEMO_MODE, accountOtpApi, type ApiAccountAccessResponse, type ApiOrder, type ApiOTPAccessCode } from "@/lib/api";
@@ -235,9 +235,10 @@ function OrderClientInner({ orderId }: OrderClientProps) {
           <div>
             <Link className="order-back-link" href="/orders">Semua pesanan</Link>
             <span className="eyebrow">Pelacakan pesanan</span>
-            <h1 className="h1" style={{ marginTop: 12 }}>Pesanan {order.number}</h1>
+            <h1 className="h1 order-detail-title">Detail Pesanan</h1>
+            <p className="order-header-number"><span>Nomor Pesanan:</span> <strong>{order.number}</strong></p>
           </div>
-          <div style={{ display: "grid", justifyItems: "end", gap: 8 }}>
+          <div className="order-header-meta">
             {DEMO_MODE ? <span className="badge status-info">Pesanan sandbox</span> : <StatusBadge status={order.status} />}
             <span className="muted small">Terakhir diperbarui {updatedAt ? formatDateTimeID(updatedAt) : "—"}</span>
           </div>
@@ -257,7 +258,7 @@ function OrderClientInner({ orderId }: OrderClientProps) {
             </div>
           )}
           <section className="card" style={{ padding: 27 }}>
-            <h2 className="h3">Progres</h2>
+            <h2 className="h3">Progres Pesanan</h2>
             {steps.length > 0 ? (
               <div className="order-timeline">
                 {steps.map((step) => (
@@ -278,10 +279,6 @@ function OrderClientInner({ orderId }: OrderClientProps) {
           </section>
           <section className="card" style={{ padding: 27 }}>
             <h2 className="h3">Detail pembayaran</h2>
-            <div className="order-number-copy">
-              <span className="muted small">Nomor pesanan</span>
-              <OrderNumberCopy number={order.number} />
-            </div>
             <div className="summary-lines">
               <div className="summary-line"><span>Subtotal</span><strong>{formatIDR(order.subtotal)}</strong></div>
               {order.discount > 0 && <div className="summary-line"><span>Diskon</span><strong style={{ color: "var(--success)" }}>-{formatIDR(order.discount)}</strong></div>}
@@ -371,9 +368,9 @@ function OrderClientInner({ orderId }: OrderClientProps) {
               </div>
             </section>
           )}
-          <section className="card" style={{ padding: 27 }}>
-            <h2 className="h3">Item pesanan</h2>
-            <div style={{ display: "grid", gap: 12 }}>
+          <section className="card order-items-card" style={{ padding: 27 }}>
+            <h2 className="h3">Item Pesanan</h2>
+            <div className="order-items-list">
               {(order.items ?? []).map((item) => (
                 <div key={item.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 12, alignItems: "center", paddingBottom: 12, borderBottom: "1px solid var(--border)" }}>
                   <div>
@@ -399,11 +396,11 @@ function OrderClientInner({ orderId }: OrderClientProps) {
               </div>
             </section>
           )}
-          <section className="card" style={{ padding: 22 }}>
-            <Headphones size={18} />
-            <h2 className="h3" style={{ marginTop: 10 }}>Butuh bantuan?</h2>
-            <p className="muted small">Salin nomor pesanan dari detail pembayaran saat menghubungi tim dukungan Necly atau membuat laporan.</p>
-            <Link className="button button-secondary button-sm" href="/laporan-kendala">Laporkan kendala</Link>
+          <section className="card order-help-card" style={{ padding: 22 }}>
+            <h2 className="h3">Butuh Bantuan?</h2>
+            <p className="muted small">Salin nomor pesanan saat menghubungi tim dukungan Necly atau membuat laporan.</p>
+            <OrderNumberCopy className="order-help-copy" number={order.number} />
+            <Link className="button button-warning button-sm order-help-report" href="/laporan-kendala">Laporkan kendala</Link>
           </section>
         </aside>
       </div>
