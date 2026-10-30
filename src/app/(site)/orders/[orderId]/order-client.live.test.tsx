@@ -1,4 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getOrderMock, bootstrapAuthMock } = vi.hoisted(() => ({
@@ -70,14 +72,52 @@ describe("halaman pelacakan pesanan (live)", () => {
 
     await waitFor(() => expect(getOrderMock).toHaveBeenCalledWith(ORDER_ID));
     expect(bootstrapAuthMock).toHaveBeenCalled();
-    expect(screen.getByText("Pesanan ORD-1760832000000-0192f0b0")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Detail Pesanan" })).toBeInTheDocument();
+    expect(screen.getByText("Nomor Pesanan:")).toBeInTheDocument();
+    expect(screen.getAllByText("ORD-1760832000000-0192f0b0").length).toBeGreaterThanOrEqual(2);
   });
 
-  it("menampilkan status dan item dari API", async () => {
+  it("menyalin nomor pesanan dari kartu bantuan dan menampilkan umpan balik sukses", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<OrderClient orderId={ORDER_ID} />);
+
+    const helpCard = await screen.findByRole("heading", { name: "Butuh Bantuan?" });
+    const copyButton = helpCard.parentElement?.querySelector<HTMLButtonElement>("button[aria-label]");
+    expect(copyButton).toHaveAccessibleName("Salin nomor pesanan ORD-1760832000000-0192f0b0");
+    fireEvent.click(copyButton!);
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("ORD-1760832000000-0192f0b0"));
+    expect(screen.getByRole("status")).toHaveTextContent("Nomor pesanan berhasil disalin.");
+  });
+
+  it("menampilkan arahan salin manual ketika clipboard gagal", async () => {
+    const writeText = vi.fn().mockRejectedValue(new Error("Ditolak"));
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<OrderClient orderId={ORDER_ID} />);
+
+    await waitFor(() => expect(screen.getByRole("button", { name: /Salin nomor pesanan ORD-1760832000000-0192f0b0/ })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /Salin nomor pesanan ORD-1760832000000-0192f0b0/ }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Nomor tidak dapat disalin otomatis");
+  });
+
+  it("meratakan metadata status header ke kiri sesuai QA", async () => {
+    const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+    expect(css).toContain(".order-header-meta { display: grid; justify-items: start; gap: 8px; text-align: left; }");
+
+    render(<OrderClient orderId={ORDER_ID} />);
+    expect(await screen.findByText("Terakhir diperbarui", { exact: false })).toBeInTheDocument();
+  });
+
+  it("menampilkan status dan item dari API dengan struktur detail pesanan terbaru", async () => {
     getOrderMock.mockResolvedValue(order({ status: "paid" }));
     render(<OrderClient orderId={ORDER_ID} />);
 
     await waitFor(() => expect(screen.getByText("Dibayar")).toBeInTheDocument());
+    expect(screen.getByRole("heading", { name: "Progres Pesanan" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Item Pesanan" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Laporkan kendala" })).toHaveClass("button-warning");
     expect(screen.getAllByText("Netflix Premium")).toHaveLength(1);
     expect(screen.getByText(/1 Bulan × 1/)).toBeInTheDocument();
   });

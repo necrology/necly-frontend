@@ -1036,6 +1036,13 @@ export const checkoutApi = {
   },
 
   getOrder: (id: string) => apiRequest<ApiOrder>(`/orders/${encodeURIComponent(id)}`),
+
+  /**
+   * Mengarsipkan lunak pesanan milik pengguna. Data transaksi tetap tersimpan
+   * untuk audit, tetapi tidak lagi muncul pada riwayat pesanan.
+   */
+  archiveOrder: (id: string) =>
+    apiRequest<void>(`/orders/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };
 
 export const accountOtpApi = {

@@ -70,6 +70,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .button-primary:hover { background: #102d4b; }
 .button-brand { color: #fff; background: var(--blue); }
 .button-brand:hover { background: #1d4fd1; }
+.button-warning { color: #3d2900; background: #fcbd50; border-color: #fcbd50; }
+.button-warning:hover { background: #e8a72f; border-color: #e8a72f; }
 .button-secondary { color: var(--ink); background: #fff; border-color: var(--line-strong); }
 .button-secondary:hover { border-color: #9fb2c6; background: var(--surface-2); }
 .button-ghost { color: var(--ink-2); background: transparent; }
@@ -314,6 +316,15 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .success-mark { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; color: var(--success); background: var(--success-bg); }
 
 .order-layout { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 48px; padding-bottom: 96px; }
+.order-detail-title { margin-top: 12px; color: #fcbd50; }
+.order-header-number { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.order-header-number strong { color: var(--ink-2); font-size: 11px; font-weight: 600; }
+.order-header-meta { display: grid; justify-items: start; gap: 8px; text-align: left; }
+.order-items-list { display: grid; gap: 12px; margin-top: 20px; }
+.order-help-card { display: grid; justify-items: start; }
+.order-help-card > p { margin: 10px 0 0; }
+.order-help-copy { width: 100%; margin-top: 14px; }
+.order-help-report { margin-top: 18px; }
 .order-timeline { display: grid; margin: 26px 0; }
 .order-step { display: grid; grid-template-columns: 28px 1fr; gap: 14px; min-height: 84px; }
 .order-step-mark { position: relative; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--faint); background: #fff; }
@@ -596,6 +607,7 @@ body:has(.auth-form-login) { overflow: hidden; }
   .catalog-layout { grid-template-columns: 1fr; gap: 24px; }
   .filter-panel { position: static; grid-template-columns: repeat(3, 1fr); }
   .product-layout, .commerce-layout, .order-layout { grid-template-columns: 1fr; }
+  .order-layout { gap: 24px; }
   .purchase-panel, .summary-card { position: static; }
   .auth-shell { grid-template-columns: 1fr; }
   .auth-story { min-height: 330px; }
@@ -1022,6 +1034,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .account-orders-link:hover { color: #2a2140; background: #ffd477; border-color: #ffd477; }
 .account-forgot-link { justify-self: start; margin-top: -8px; padding-inline: 0; }
 /* Riwayat pesanan pelanggan: daftar, status, total, dan pagination. */
+.orders-eyebrow { color: #fcbd50; }
 .orders-page { display: grid; gap: 16px; padding: 0 0 96px; }
 .orders-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
 .orders-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
@@ -1032,6 +1045,11 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .order-list-meta { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 11px; }
 .order-list-items { margin: 0; color: var(--commerce-muted); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .order-list-side { display: grid; justify-items: end; gap: 6px; text-align: right; }
+.order-list-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+.order-archive-button { width: 34px; min-height: 34px; display: inline-grid; place-items: center; border: 1px solid #ffd1cc; border-radius: 6px; color: var(--danger); background: var(--danger-bg); cursor: pointer; }
+.order-archive-button:hover { background: #ffe8e5; }
+.order-archive-button:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+.order-archive-error { margin: 12px 0 0; color: var(--danger); font-size: 12px; line-height: 1.5; }
 .order-list-total { color: var(--commerce-ink); font-size: 16px; letter-spacing: -.02em; }
 .orders-state { display: grid; justify-items: center; gap: 12px; padding: 48px 24px; text-align: center; }
 .orders-state .button { margin-top: 6px; }
@@ -1039,11 +1057,21 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .orders-skeleton { display: grid; gap: 12px; }
 .order-back-link { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px; color: var(--commerce-muted); font-size: 11px; font-weight: 700; }
 .order-back-link:hover { color: var(--blue); }
+.order-number-copy { display: grid; gap: 2px; margin: 16px 0; }
+.order-number-copy-value { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; overflow-wrap: anywhere; }
+.order-number-copy-value > strong { color: var(--commerce-ink); font-size: 14px; }
+.order-copy-feedback { margin: 3px 0 0; color: var(--success); font-size: 11px; font-weight: 700; }
+.payment-order-number { align-items: start; }
+.payment-order-number > .order-number-copy { margin: 0; text-align: right; }
+.payment-order-number .order-number-copy-value { justify-content: flex-end; }
 .payment-orders-link { color: var(--blue); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .payment-orders-standalone { display: inline-flex; justify-content: center; margin-top: 12px; font-size: 12px; }
 @media (max-width: 640px) {
   .order-list-item { grid-template-columns: 1fr; }
   .order-list-side { justify-items: start; text-align: left; }
+  .order-list-actions { justify-content: flex-start; }
+  .payment-order-number > .order-number-copy { text-align: left; }
+  .payment-order-number .order-number-copy-value { justify-content: flex-start; }
 }
 .account-card { display: grid; gap: 14px; padding: 24px; }
 .account-card h2 { display: flex; align-items: center; gap: 9px; margin: 0; }

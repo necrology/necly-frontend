@@ -54,6 +54,13 @@ describe("halaman Laporan Kendala", () => {
     createMock.mockReset();
   });
 
+  it('menjelaskan bahwa nomor pesanan dapat dilihat di halaman "Pesanan saya"', () => {
+    render(<IssueReportPage />);
+
+    expect(screen.getByLabelText(/^Nomor pesanan/)).toHaveAttribute("placeholder", 'Lihat nomor di halaman "Pesanan saya"');
+    expect(screen.getByText('Nomor pesanan dapat dilihat di halaman "Pesanan saya".')).toBeInTheDocument();
+  });
+
   it("mengirim laporan dengan nama field yang diharapkan backend", async () => {
     createMock.mockResolvedValue({ message: "Laporan kendala diterima", report: { id: "rep-1" } });
     render(<IssueReportPage />);

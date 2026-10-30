@@ -3,6 +3,7 @@
 import { Check, Clock3, ExternalLink, RefreshCw, ShieldCheck, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { OrderNumberCopy } from "@/components/order-number-copy";
 import { formatIDR } from "@/lib/money";
 import { bootstrapAuth, checkoutApi, DEMO_MODE, type ApiOrder } from "@/lib/api";
 
@@ -127,7 +128,7 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
     <div className="card payment-card">
       <div className="demo-banner"><ShieldCheck size={16} /><span><strong>Xendit Test Mode.</strong> Transaksi ini menggunakan lingkungan development dan tidak memindahkan uang sungguhan.</span></div>
       <div className="summary-lines">
-        <div className="summary-line"><span>Nomor pesanan</span><strong>{order.number}</strong></div>
+        <div className="summary-line payment-order-number"><span>Nomor pesanan</span><OrderNumberCopy number={order.number} /></div>
         <div className="summary-line summary-total"><span>Total pembayaran</span><span className="tabular">{formatIDR(order.total)}</span></div>
       </div>
       <div className="success-state" style={{ paddingTop: 24 }}>
