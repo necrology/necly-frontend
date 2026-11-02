@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ClipboardCopy, KeyRound, LoaderCircle, Mail, ShieldCheck } from "lucide-react";
+import { Check, ClipboardCopy, KeyRound, LoaderCircle, Mail, PlayCircle, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, type FormEvent, useState } from "react";
@@ -74,23 +74,12 @@ function OtpForm() {
     <section className="container otp-page">
       <header className="otp-head">
         <span className="eyebrow">Bantuan akses</span>
-        <h1 className="h1">Ambil kode OTP akun</h1>
-        <p className="lede">
+        <h1 className="h1 otp-title">Ambil kode OTP akun</h1>
+        <p className="lede otp-lede">
           Platform langganan Anda meminta kode OTP lewat email? Masukkan email akun yang Anda terima
           dan kode akses dari halaman pesanan untuk membaca kode terbaru tanpa membuka email akun.
         </p>
       </header>
-
-      <section className="card otp-help" style={{ padding: 20, marginBottom: 18 }} aria-label="Alur pengambilan OTP">
-        <KeyRound size={18} aria-hidden="true" />
-        <h2 className="h3">Alur pengambilan OTP</h2>
-        <ol className="otp-steps">
-          <li>Login ke platform yang dibeli. Saat platform meminta kode OTP lewat email, buka halaman ini.</li>
-          <li>Buka detail pesanan → bagian <strong>Akses akun &amp; OTP</strong> → tekan <strong>Buat kode akses OTP</strong>.</li>
-          <li>Masukkan email akun dan kode akses tersebut di form ini, lalu tunggu kode OTP terbaru muncul.</li>
-          <li>Salin kode OTP dan masukkan ke halaman verifikasi platform untuk menyelesaikan login.</li>
-        </ol>
-      </section>
 
       <div className="otp-grid">
         <form className="card otp-form" onSubmit={submit} noValidate>
@@ -98,7 +87,7 @@ function OtpForm() {
             <Mail size={18} aria-hidden="true" />
             <div>
               <h2 className="h3">Email akun &amp; kode akses</h2>
-              <p className="muted small">Keduanya dikirim saat akun pesanan Anda disetujui.</p>
+              <p className="muted small">Masukkan kode akses yang Anda dapatkan sebelumnya untuk mendapatkan akses penuh aplikasi.</p>
             </div>
           </div>
 
@@ -180,6 +169,16 @@ function OtpForm() {
               <Link className="button button-secondary button-sm" href="/orders">Buka pesanan saya</Link>
             </section>
           )}
+          <section className="card otp-video-slot" aria-label="Video tutorial penggunaan OTP">
+            <span className="otp-video-slot-icon" aria-hidden="true"><PlayCircle size={20} /></span>
+            <div>
+              <h2 className="h3">Video tutorial segera hadir</h2>
+              <p className="muted small">
+                Kami sedang menyiapkan panduan singkat berisi cara membuat kode akses dan mengambil OTP.
+                Sementara itu, ikuti langkah teks di atas; alur pengambilan OTP tetap dapat digunakan.
+              </p>
+            </div>
+          </section>
         </aside>
       </div>
     </section>

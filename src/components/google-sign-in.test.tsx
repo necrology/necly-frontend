@@ -28,14 +28,20 @@ describe("tombol masuk dengan Google", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("menampilkan tautan ke endpoint Google ketika aktif", async () => {
+  it("menampilkan tautan ke endpoint Google dan bantuan akun ketika aktif", async () => {
     providersMock.mockResolvedValue({ password: true, google: true });
 
-    render(<GoogleSignInButton label="Masuk dengan Google" />);
+    render(
+      <GoogleSignInButton
+        label="Masuk dengan Google"
+        help="Masuk dengan Google memakai akun yang sedang aktif di browser ini."
+      />,
+    );
 
     const link = await screen.findByRole("link", { name: /Masuk dengan Google/ });
     expect(link).toHaveAttribute("href", "https://api.example.test/api/v1/auth/google");
     expect(screen.getByText("atau")).toBeInTheDocument();
+    expect(screen.getByText(/akun yang sedang aktif di browser ini/)).toBeInTheDocument();
   });
 
   // The check runs over the network; a failure must degrade to "no button".

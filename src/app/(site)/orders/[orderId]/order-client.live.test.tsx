@@ -75,6 +75,8 @@ describe("halaman pelacakan pesanan (live)", () => {
     expect(screen.getByRole("heading", { name: "Detail Pesanan" })).toBeInTheDocument();
     expect(screen.getByText("Nomor Pesanan:")).toBeInTheDocument();
     expect(screen.getAllByText("ORD-1760832000000-0192f0b0").length).toBeGreaterThanOrEqual(2);
+    // Pesanan yang belum dibayar belum berhak mendapat kartu akses/OTP.
+    expect(screen.queryByRole("heading", { name: "Akses akun & OTP" })).not.toBeInTheDocument();
   });
 
   it("menyalin nomor pesanan dari kartu bantuan dan menampilkan umpan balik sukses", async () => {
