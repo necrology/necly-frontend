@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Clock3, Eye, Flame, Sparkles, Trophy, Zap } from "lucide-react";
+import { CheckCircle2, Clock3, Eye, Flame, ShoppingCart, Sparkles, Trophy, Zap } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import type { CommerceProduct } from "@/data/products";
@@ -8,6 +8,8 @@ import { formatRupiahLabel } from "@/lib/money";
 import { safeProductImageSrc } from "@/lib/product-image";
 import { ComingSoonRibbon } from "@/components/coming-soon-ribbon";
 import { ProductBrand } from "@/components/product-brand";
+import { useCartStore } from "@/stores/cart-store";
+import { useToast } from "@/hooks/use-toast";
 
 type CommerceProductCardProps = {
   product: CommerceProduct;
@@ -25,6 +27,32 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
   const photo = safeProductImageSrc(product.imageUrl);
   const [photoFailed, setPhotoFailed] = useState(false);
   const showPhoto = Boolean(photo && !photoFailed);
+  const addItem = useCartStore((state) => state.addItem);
+  const { toast } = useToast();
+
+  const firstPriceOption = product.priceOptions?.[0];
+  const isOutOfStock = product.stock === 0 || (firstPriceOption?.stock ?? 0) === 0;
+
+  const handleAddToCart = () => {
+    if (!firstPriceOption) return;
+    const cartItem = {
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      category: product.category,
+      categoryName: product.categoryName,
+      price: firstPriceOption.price,
+      stock: firstPriceOption.stock ?? product.stock,
+      accessType: product.accessType,
+      product_price_id: firstPriceOption.id,
+      selectedDuration: firstPriceOption.duration,
+      selectedPrice: firstPriceOption.price,
+      selectedStock: firstPriceOption.stock,
+      selectedDevice: product.deviceOptions?.[0] ?? 1,
+    };
+    addItem(cartItem);
+    toast("Ditambahkan ke keranjang", "success");
+  };
 
   return (
     <article className={`commerce-product-card ${compact ? "is-compact" : ""} ${comingSoon ? "is-coming-soon" : ""}`}>
@@ -37,18 +65,14 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
       )}
       <div className="commerce-card-brand-row">
         <ProductBrand product={product} compact={compact} />
-        {badgeLabel && BadgeIcon && <span className={`commerce-badge ${badgeLabel.toLowerCase().replace(" ", "-")}`}><BadgeIcon size={11} strokeWidth={2.5} aria-hidden="true" />{badgeLabel}</span>}
+        {!comingSoon && badgeLabel && BadgeIcon && <span className={`commerce-badge ${badgeLabel.toLowerCase().replace(" ", "-")}`}><BadgeIcon size={11} strokeWidth={2.5} aria-hidden="true" />{badgeLabel}</span>}
       </div>
       <div className="commerce-card-copy">
         <h3>{product.name}</h3>
         <p className="commerce-package">{product.packageName}</p>
         <p className="commerce-price"><strong>{formatRupiahLabel(product.price)}</strong><span>/ bulan</span>{compact && <s>{formatRupiahLabel(product.providerPrice)}</s>}</p>
         {compact ? (
-          comingSoon ? (
-            <div className="commerce-stock">
-              <span className="commerce-stock-pill coming-soon">Coming Soon</span>
-            </div>
-          ) : (
+          comingSoon ? null : (
             <div className="commerce-stock">
               <span className={`commerce-stock-pill ${product.stock <= 10 ? "limited" : "ready"}`}>{product.stock <= 10 ? "Stok Terbatas" : "Stok Tersedia"}</span>
               <span className="commerce-stock-bar"><i style={{ width: `${Math.min(100, Math.round((product.stock / 20) * 100))}%` }} /></span>
@@ -64,11 +88,21 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
           <>
             <span className="commerce-scheme-link is-disabled" aria-disabled="true"><Eye size={15} />Lihat Skema Harga</span>
             <span className="commerce-order-link is-disabled" aria-disabled="true">{actionLabel}</span>
+            <button className="commerce-cart-link is-disabled" aria-disabled="true" aria-label="Tambah ke keranjang (Coming Soon)"><ShoppingCart size={15} /></button>
           </>
         ) : (
           <>
             <Link href={`/products/${product.slug}`} className="commerce-scheme-link"><Eye size={15} />Lihat Skema Harga</Link>
             <Link href={`/products/${product.slug}`} className="commerce-order-link">{actionLabel}</Link>
+            <button
+              className={`commerce-cart-link ${isOutOfStock ? "is-disabled" : ""}`}
+              onClick={handleAddToCart}
+              disabled={isOutOfStock}
+              aria-label={`Tambah ${product.name} ke keranjang`}
+              aria-disabled={isOutOfStock}
+            >
+              <ShoppingCart size={15} />
+            </button>
           </>
         )}
       </div>

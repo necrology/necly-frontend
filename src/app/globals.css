@@ -565,7 +565,12 @@ body:has(.auth-form-login) { overflow: hidden; }
 .toggle.on { background: var(--blue); }
 .toggle.on::after { transform: translateX(16px); }
 
-.toast { position: fixed; right: 22px; bottom: 22px; z-index: 100; max-width: 340px; display: flex; gap: 10px; align-items: center; border: 1px solid #c6ead5; border-radius: 6px; padding: 13px 15px; color: var(--success); background: #fff; box-shadow: var(--shadow-md); font-size: 11px; }
+.toast-container { position: fixed; right: 22px; bottom: 22px; z-index: 100; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.toast { display: flex; gap: 10px; align-items: center; border-radius: 6px; padding: 13px 15px; color: var(--success); background: #fff; box-shadow: var(--shadow-md); font-size: 11px; border: 1px solid #c6ead5; max-width: 340px; pointer-events: auto; cursor: pointer; animation: toast-in 0.3s ease; }
+.toast-success { border-color: #c6ead5; color: var(--success); background: #fff; }
+.toast-error { border-color: #ffd1cc; color: var(--danger); background: #fff; }
+.toast-info { border-color: #cce3f6; color: #1769a6; background: #fff; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(100%); } to { opacity: 1; transform: translateX(0); } }
 .skeleton { overflow: hidden; position: relative; color: transparent; background: #e9eef3; }
 .skeleton::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgb(255 255 255 / .65), transparent); animation: shimmer 1.3s infinite; }
 @keyframes shimmer { 100% { transform: translateX(100%); } }
@@ -928,7 +933,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .offer-time i { position: absolute; right: -9px; top: 10px; color: #fff; font-size: 17px; font-style: normal; }
 .reference-catalog-main { padding-top: 16px; }
 .reference-product-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
-.catalog-card { min-width: 0; display: grid; grid-template-rows: 115px 1fr; overflow: hidden; border: 1px solid #e5e7f2; border-radius: 13px; background: #fff; box-shadow: 0 5px 16px rgb(53 58 112 / .08); transition: transform .18s ease, box-shadow .18s ease; }
+.catalog-card { min-width: 0; display: grid; grid-template-rows: 115px 1fr; overflow: hidden; border: 1px solid var(--sky); border-radius: 13px; background: #fff; box-shadow: 0 5px 16px rgb(53 58 112 / .08); transition: transform .18s ease, box-shadow .18s ease; }
 .catalog-card:hover { transform: translateY(-3px); box-shadow: 0 13px 24px rgb(53 58 112 / .14); }
 .catalog-card .service-visual { height: 115px !important; border-bottom: 1px solid #e9e9f2; }
 .catalog-card-content { display: grid; align-content: start; padding: 13px 14px 12px; }
@@ -1118,11 +1123,11 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
   .commerce-mobile-nav-link { min-height: 50px; display: flex; align-items: center; border-radius: 14px; padding: 0 14px; color: #ede6ff; font-size: 14px; font-weight: 600; }
   .commerce-mobile-nav-link:hover, .commerce-mobile-nav-link.active { color: #fff; background: rgb(255 255 255 / .15); }
   .commerce-mobile-login { min-height: 52px; display: grid; place-items: center; margin-top: 8px; border-radius: 999px; color: var(--commerce-violet-dark); background: var(--commerce-gold); font-size: 15px; font-weight: 700; }
-  /* NEC-88: "Akun & keamanan" dan "Keluar" tidak melebar penuh, berwarna
-     hitam di atas emas, dan sudutnya hanya sedikit membulat. Lebar keduanya
-     disamakan lewat max-width yang sama. */
-  .commerce-mobile-account-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }
-  .commerce-mobile-login-action { color: #fff; }
+  /* NEC-88: "Akun & keamanan", "Keluar", dan "Log In" tidak melebar penuh,
+     berwarna hitam di atas emas, dan sudutnya hanya sedikit membulat.
+     Lebar keduanya disamakan lewat max-width yang sama. */
+  .commerce-mobile-account-action,
+  .commerce-mobile-login-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }
 }
 
 /* ---------- Home hero ---------- */
@@ -1220,8 +1225,8 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .commerce-empty-state { grid-column: 1 / -1; border: 1px dashed var(--commerce-line); border-radius: 20px; padding: 56px 22px; color: var(--commerce-muted); background: #fff; font-size: 13px; text-align: center; }
 
 /* ---------- Product card ---------- */
-.commerce-product-card { min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--commerce-line); border-radius: 22px; padding: 18px; background: #fff; box-shadow: 0 8px 24px -20px rgb(48 14 118 / .5); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
-.commerce-product-card:hover { transform: translateY(-3px); border-color: #d9cdfb; box-shadow: 0 18px 32px -22px rgb(48 14 118 / .55); }
+.commerce-product-card { min-width: 0; display: flex; flex-direction: column; border: 1px solid var(--sky); border-radius: 22px; padding: 18px; background: #fff; box-shadow: 0 8px 24px -20px rgb(48 14 118 / .5); transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.commerce-product-card:hover { transform: translateY(-3px); border-color: var(--blue); box-shadow: 0 18px 32px -22px rgb(48 14 118 / .55); }
 .commerce-card-brand-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .commerce-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 5px 10px; color: #fff; font-size: 9px; font-weight: 700; line-height: 1; white-space: nowrap; }
 .commerce-badge svg { flex: 0 0 auto; }
@@ -1252,6 +1257,9 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .commerce-scheme-link:hover { color: #4c1ef9; }
 .commerce-order-link { min-width: 84px; min-height: 36px; display: inline-grid; place-items: center; border-radius: 12px; color: #4d3400; background: var(--commerce-gold); font-size: 12px; font-weight: 700; }
 .commerce-order-link:hover { background: var(--commerce-gold-dark); }
+.commerce-cart-link { width: 36px; height: 36px; display: inline-grid; place-items: center; border-radius: 12px; color: var(--commerce-violet); background: var(--commerce-paper); border: 1px solid var(--commerce-line); transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+.commerce-cart-link:hover:not(.is-disabled) { background: var(--commerce-violet); color: #fff; border-color: var(--commerce-violet); }
+.commerce-cart-link.is-disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 .commerce-all-products-link { min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 9px; width: fit-content; margin: 26px auto 0; border: 1px solid var(--commerce-line); border-radius: 999px; padding: 0 28px; color: #4c1ef9; background: #fff; font-size: 13px; font-weight: 700; }
 .commerce-all-products-link:hover { border-color: #d3c4fb; background: #f2f4ff; }
 
@@ -1297,7 +1305,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .commerce-product-detail-main { min-width: 0; display: grid; gap: 22px; }
 .commerce-product-showcase { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: 28px; border: 1px solid var(--commerce-line); border-radius: 24px; padding: 24px; background: #fff; }
 .commerce-product-image { position: relative; aspect-ratio: 4 / 3; min-height: 300px; overflow: hidden; border-radius: 20px; background: linear-gradient(150deg, #f2e9ff, #e2d4ff); }
-.commerce-product-image > img { object-fit: contain; object-position: center; padding: 26px; }
+.commerce-product-image > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .commerce-product-information { display: grid; align-content: start; gap: 10px; }
 .commerce-product-labels { display: flex; flex-wrap: wrap; gap: 8px; }
 .commerce-product-labels span { display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; padding: 5px 12px; color: #4c1ef9; background: #e8ebff; font-size: 10px; font-weight: 700; }
@@ -1571,6 +1579,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
   .commerce-card-actions { flex-direction: column; align-items: stretch; gap: 9px; }
   .commerce-scheme-link { justify-content: center; }
   .commerce-order-link { width: 100%; }
+  .commerce-cart-link { width: 100%; justify-content: center; }
   .commerce-badge { padding: 4px 8px; font-size: 8px; }
   /* Poin 12: logo tiap aplikasi diperbesar supaya terbaca jelas di mobile. */
   .product-brand { flex-wrap: wrap; min-height: 50px; padding: 9px 12px; border-radius: 13px; font-size: 14px; gap: 7px; line-height: 1.15; }
@@ -1600,7 +1609,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
   .commerce-product-detail-shell { grid-template-columns: 1fr; gap: 14px; }
   .commerce-product-showcase { gap: 16px; border-radius: 20px; padding: 14px; }
   .commerce-product-image { min-height: 190px; border-radius: 16px; }
-  .commerce-product-image > img { padding: 16px; }
+  .commerce-product-image > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
   .commerce-detail-price { font-size: 24px; }
   .commerce-duration-row { grid-template-columns: 1fr 1fr; }
   .commerce-detail-accordion { border-radius: 18px; }
@@ -1878,7 +1887,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .catalog-card,
 .commerce-product-card { position: relative; }
 .commerce-product-card { overflow: hidden; }
-.catalog-card.is-coming-soon { border-color: #f0d59a; }
+.catalog-card.is-coming-soon { border-color: var(--sky); }
 /* Pita diagonal di pojok kanan atas. Pembungkusnya yang memotong (overflow),
    jadi bayangan kartu tetap utuh dan pita tidak menutupi tombol aksi. */
 .coming-soon-ribbon { position: absolute; inset: 0 0 auto auto; z-index: 4; width: 124px; height: 124px; overflow: hidden; pointer-events: none; }
@@ -1907,12 +1916,12 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .catalog-card-actions .is-disabled { opacity: .65; cursor: not-allowed; pointer-events: none; }
 .catalog-order-button.is-disabled { color: #5f5677; background: #e7e2f4; box-shadow: none; }
 .commerce-order-link.is-disabled { color: #5f5677; background: #e7e2f4; }
-.commerce-product-image > img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; padding: 26px; }
+.commerce-product-image > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .commerce-product-labels span.is-coming-soon { color: #8a4b00; background: #fff1cc; }
 .commerce-product-labels span.is-coming-soon svg { color: #b45309; }
 .commerce-coming-soon-banner { display: flex; align-items: center; gap: 8px; width: fit-content; border: 1px solid #f0d59a; border-radius: 12px; padding: 9px 12px; color: #7a4b00; background: #fff7e3; font-size: 11px; font-weight: 600; line-height: 1.45; }
 .commerce-coming-soon-banner svg { flex: 0 0 auto; color: #b45309; }
-.commerce-product-card.is-coming-soon { border-color: #f0d59a; }
+.commerce-product-card.is-coming-soon { border-color: var(--sky); }
 .commerce-product-detail-shell.is-coming-soon .commerce-package-option,
 .commerce-product-detail-shell.is-coming-soon .commerce-duration-row button,
 .commerce-product-detail-shell.is-coming-soon .commerce-summary-line button { opacity: .62; cursor: not-allowed; }

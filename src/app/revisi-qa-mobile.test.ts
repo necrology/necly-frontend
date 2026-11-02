@@ -140,16 +140,18 @@ describe("revisi QA putaran kedua", () => {
     expect(css).toContain(".about-grid { grid-template-columns: 1fr; gap: 12px; }");
   });
 
-  it("baris 71 & NEC-88: teks akun dan keluar di menu mobile berwarna hitam", () => {
+  it("baris 71 & NEC-88: teks akun, keluar, dan Log In di menu mobile berwarna hitam", () => {
     expect(header.match(/commerce-mobile-account-action/g)).toHaveLength(2);
-    expect(css).toContain(".commerce-mobile-account-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }");
+    expect(css).toContain(".commerce-mobile-account-action,");
+    expect(css).toContain(".commerce-mobile-login-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }");
   });
 
-  it("NEC-88: tombol akun di drawer mobile tidak melebar penuh dan lebarnya sama", () => {
+  it("NEC-88: tombol akun, keluar, dan Log In di drawer mobile tidak melebar penuh dan lebarnya sama", () => {
     // Sebelumnya kedua tombol memakai lebar drawer (358px di 390px) karena
     // diwarisi dari CTA "Log In" yang memang selebar layar. Revisi berikutnya
     // menyamakan lebar keduanya lewat max-width yang sama.
-    expect(css).toContain("width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px;");
+    expect(css).toContain(".commerce-mobile-account-action,");
+    expect(css).toContain(".commerce-mobile-login-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }");
   });
 
   it("baris 66: ajakan daftar di halaman login diperbesar", () => {
@@ -220,9 +222,10 @@ describe("revisi QA putaran kedua", () => {
     expect(login).toContain("checked={remember}");
   });
 
-  it("baris 86: tombol Log In di menu mobile berwarna putih", () => {
+  it("baris 86: tombol Log In di menu mobile berwarna hitam sama dengan Akun & Keluar", () => {
     expect(header).toContain("commerce-mobile-login commerce-mobile-login-action");
-    expect(css).toContain(".commerce-mobile-login-action { color: #fff; }");
+    expect(css).toContain(".commerce-mobile-account-action,");
+    expect(css).toContain(".commerce-mobile-login-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }");
   });
 
   it("baris 87: jarak animasi hero mobile dirapatkan", () => {
@@ -268,7 +271,7 @@ describe("revisi QA putaran kedua", () => {
     expect(seed).not.toContain("MusicFlow Slot Keluarga");
     expect(seed).not.toContain("Readly Slot Keluarga");
     expect(inventoryPage).toContain('label="Akses tersedia"');
-    expect(inventoryPage).toContain("Tambah akses akun");
+    expect(inventoryPage).toContain("Tambah kuota akun");
     expect(inventoryPage).not.toContain("Konfirmasi tambah slot");
   });
 
