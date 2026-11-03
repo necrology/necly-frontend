@@ -93,7 +93,7 @@ type PendingStatusChange = {
   nextStatus: "active" | "inactive";
 };
 
-type PendingSlot = {
+type PendingQuota = {
   accountId: string;
   accountLabel: string;
   priceId: string;
@@ -197,7 +197,7 @@ function buildDemoAccounts(): AccountRow[] {
   }));
 }
 
-function describeInventoryError(error: unknown, action: "load" | "save" | "slot") {
+function describeInventoryError(error: unknown, action: "load" | "save" | "slot" | "quota") {
   if (error instanceof ApiError) {
     const code = apiErrorCode(error);
     switch (code) {
@@ -252,9 +252,9 @@ export default function InventoryPage() {
   const [pendingSave, setPendingSave] = useState<PendingAccountSave | null>(null);
   const [pendingStatus, setPendingStatus] = useState<PendingStatusChange | null>(null);
 
-  const [slotForm, setSlotForm] = useState<{ accountId: string; priceId: string; quantity: string } | null>(null);
-  const [slotError, setSlotError] = useState("");
-  const [pendingSlot, setPendingSlot] = useState<PendingSlot | null>(null);
+  const [quotaForm, setQuotaForm] = useState<{ accountId: string; priceId: string; quantity: string } | null>(null);
+  const [quotaError, setQuotaError] = useState("");
+  const [pendingQuota, setPendingQuota] = useState<PendingQuota | null>(null);
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<Record<string, AssignmentState>>({});
@@ -460,10 +460,10 @@ export default function InventoryPage() {
   }, [accounts]);
 
   const selectedSlotAccount = useMemo(
-    () => (slotForm ? accounts.find((account) => account.id === slotForm.accountId) ?? null : null),
-    [accounts, slotForm],
+    () => (quotaForm ? accounts.find((account) => account.id === quotaForm.accountId) ?? null : null),
+    [accounts, quotaForm],
   );
-  const slotProduct = selectedSlotAccount ? productById.get(selectedSlotAccount.productId) ?? null : null;
+  const quotaProduct = selectedSlotAccount ? productById.get(selectedSlotAccount.productId) ?? null : null;
 
   const openCreateForm = () => {
     setActionError("");
@@ -509,11 +509,11 @@ export default function InventoryPage() {
     setFormError("");
   };
 
-  const openSlotForm = (account?: AccountRow) => {
+  const openQuotaForm = (account?: AccountRow) => {
     setActionError("");
     setNotice("");
-    setSlotError("");
-    setPendingSlot(null);
+    setQuotaError("");
+    setPendingQuota(null);
     setPendingSave(null);
     setPendingStatus(null);
 
@@ -530,22 +530,22 @@ export default function InventoryPage() {
     const product = productById.get(fallback.productId);
     const priceId = product?.prices[0]?.id ?? "";
     const defaultQuantity = Math.max(1, Math.min(10, fallback.remainingSlots || 1));
-    setSlotForm({ accountId: fallback.id, priceId, quantity: String(defaultQuantity) });
+    setQuotaForm({ accountId: fallback.id, priceId, quantity: String(defaultQuantity) });
   };
 
-  const closeSlotForm = () => {
-    setSlotForm(null);
-    setSlotError("");
-    setPendingSlot(null);
+  const closeQuotaForm = () => {
+    setQuotaForm(null);
+    setQuotaError("");
+    setPendingQuota(null);
   };
 
-  const handleSlotAccountChange = (accountId: string) => {
+  const handleQuotaAccountChange = (accountId: string) => {
     const account = accounts.find((item) => item.id === accountId);
     const product = account ? productById.get(account.productId) : null;
     const defaultQuantity = Math.max(1, Math.min(10, account?.remainingSlots || 1));
-    setSlotError("");
-    setPendingSlot(null);
-    setSlotForm({
+    setQuotaError("");
+    setPendingQuota(null);
+    setQuotaForm({
       accountId,
       priceId: product?.prices[0]?.id ?? "",
       quantity: String(defaultQuantity),
@@ -637,7 +637,7 @@ export default function InventoryPage() {
           }
         }
 
-        setNotice(`Akun "${label}" dibuat. Klik "Tambah akses" pada baris akun untuk menambahkan slot jual.`);
+        setNotice(`Akun "${label}" dibuat. Klik "Tambah kuota" pada baris akun untuk menambahkan kuota jual.`);
         closeAccountForm();
         if (!DEMO_MODE) await refreshAccounts();
       } catch (error) {
@@ -755,61 +755,61 @@ export default function InventoryPage() {
     }
   };
 
-  const submitSlots = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submitQuotas = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!slotForm) return;
+    if (!quotaForm) return;
 
-    setSlotError("");
+    setQuotaError("");
     setActionError("");
 
     const account = selectedSlotAccount;
     if (!account) {
-      setSlotError("Pilih akun inventaris terlebih dahulu.");
+      setQuotaError("Pilih akun inventaris terlebih dahulu.");
       return;
     }
-    if (!slotForm.priceId) {
-      setSlotError("Pilih paket durasi untuk akses ini.");
+    if (!quotaForm.priceId) {
+      setQuotaError("Pilih paket durasi untuk akses ini.");
       return;
     }
 
-    const quantity = Number(slotForm.quantity);
+    const quantity = Number(quotaForm.quantity);
     if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
-      setSlotError("Jumlah akses harus berupa angka antara 1 dan 100.");
+      setQuotaError("Jumlah akses harus berupa angka antara 1 dan 100.");
       return;
     }
     if (!account.sellable) {
-      setSlotError("Akun ini nonaktif atau sudah kedaluwarsa. Aktifkan akun terlebih dahulu.");
+      setQuotaError("Akun ini nonaktif atau sudah kedaluwarsa. Aktifkan akun terlebih dahulu.");
       return;
     }
     if (quantity > account.remainingSlots) {
-      setSlotError(
+      setQuotaError(
         `Jumlah melebihi kapasitas akun. Sisa kapasitas ${account.label}: ${account.remainingSlots} akses (limit ${account.sharingLimit}).`,
       );
       return;
     }
 
-    const price = slotProduct?.prices.find((item) => item.id === slotForm.priceId);
-    setPendingSlot({
+    const price = quotaProduct?.prices.find((item) => item.id === quotaForm.priceId);
+    setPendingQuota({
       accountId: account.id,
       accountLabel: account.label,
-      priceId: slotForm.priceId,
-      priceLabel: price ? `${slotProduct?.name ?? account.productName} · ${price.label}` : slotForm.priceId,
+      priceId: quotaForm.priceId,
+      priceLabel: price ? `${quotaProduct?.name ?? account.productName} · ${price.label}` : quotaForm.priceId,
       quantity,
       remainingAfter: Math.max(account.remainingSlots - quantity, 0),
     });
   };
 
-  const applySlotCreation = async () => {
-    if (!pendingSlot) return;
-    const account = accounts.find((item) => item.id === pendingSlot.accountId);
+  const applyQuotaCreation = async () => {
+    if (!pendingQuota) return;
+    const account = accounts.find((item) => item.id === pendingQuota.accountId);
     if (!account) {
-      setSlotError("Akun inventaris tidak ditemukan. Muat ulang daftar akun.");
-      setPendingSlot(null);
+      setQuotaError("Akun inventaris tidak ditemukan. Muat ulang daftar akun.");
+      setPendingQuota(null);
       return;
     }
 
     setSubmitting(true);
-    setSlotError("");
+    setQuotaError("");
     setActionError("");
     try {
       if (DEMO_MODE) {
@@ -818,29 +818,29 @@ export default function InventoryPage() {
             item.id === account.id
               ? {
                   ...item,
-                  totalSlots: item.totalSlots + pendingSlot.quantity,
-                  availableSlots: item.availableSlots + pendingSlot.quantity,
-                  remainingSlots: Math.max(item.remainingSlots - pendingSlot.quantity, 0),
+                  totalSlots: item.totalSlots + pendingQuota.quantity,
+                  availableSlots: item.availableSlots + pendingQuota.quantity,
+                  remainingSlots: Math.max(item.remainingSlots - pendingQuota.quantity, 0),
                 }
               : item,
           ),
         );
-        setNotice(`${pendingSlot.quantity} akses demo ditambahkan ke akun "${account.label}".`);
+        setNotice(`${pendingQuota.quantity} akses demo ditambahkan ke akun "${account.label}".`);
       } else {
         const result = await adminApi.createInventorySlots({
-          product_price_id: pendingSlot.priceId,
-          quantity: pendingSlot.quantity,
-          inventory_account_id: pendingSlot.accountId,
+          product_price_id: pendingQuota.priceId,
+          quantity: pendingQuota.quantity,
+          inventory_account_id: pendingQuota.accountId,
         });
         setNotice(`${result.created} akses ditambahkan ke akun "${account.label}".`);
         await refreshAccounts();
         if (expandedId) await loadAssignments(expandedId, true);
       }
 
-      closeSlotForm();
+      closeQuotaForm();
     } catch (error) {
-      setSlotError(describeInventoryError(error, "slot"));
-      setPendingSlot(null);
+      setQuotaError(describeInventoryError(error, "quota"));
+      setPendingQuota(null);
       if (!DEMO_MODE) await refreshAccounts();
     } finally {
       setSubmitting(false);
@@ -977,8 +977,8 @@ export default function InventoryPage() {
         description="Kelola akun langganan yang dijual, batas sharing, kapasitas akses, dan assignment pesanan."
         actions={
           <>
-            <button className="button button-secondary button-sm" type="button" onClick={() => openSlotForm()} disabled={accounts.length === 0}>
-              <Boxes size={13} /> Tambah akses
+            <button className="button button-secondary button-sm" type="button" onClick={() => openQuotaForm()} disabled={accounts.length === 0}>
+              <Boxes size={13} /> Tambah kuota
             </button>
             <button className="button button-primary button-sm" type="button" onClick={openCreateForm}>
               <Plus size={13} /> Tambah akun
@@ -1186,80 +1186,80 @@ export default function InventoryPage() {
         </Modal>
       )}
 
-      {slotForm && (
+      {quotaForm && (
         <Modal
-          title="Tambah akses akun"
-          description="Tambahkan kapasitas jual pada akun inventaris yang masih memiliki sisa slot."
+          title="Tambah kuota akun"
+          description="Tambahkan kapasitas jual pada akun inventaris yang masih memiliki sisa kuota."
           size="lg"
-          onClose={closeSlotForm}
+          onClose={closeQuotaForm}
           footer={
             <>
-              <button className="button button-secondary" type="button" onClick={closeSlotForm} disabled={submitting}>
+              <button className="button button-secondary" type="button" onClick={closeQuotaForm} disabled={submitting}>
                 Batal
               </button>
               <button
                 className="button button-primary"
                 type="submit"
-                form="inventory-slot-form"
+                form="inventory-quota-form"
                 disabled={submitting || !selectedSlotAccount || selectedSlotAccount.remainingSlots === 0}
               >
-                {submitting ? "Menyimpan…" : "Simpan akses"}
+                {submitting ? "Menyimpan…" : "Simpan kuota"}
               </button>
             </>
           }
         >
-          <form id="inventory-slot-form" onSubmit={submitSlots} aria-label="Form tambah akses">
+          <form id="inventory-quota-form" onSubmit={submitQuotas} aria-label="Form tambah kuota">
             <div className="form-grid">
               <div className="field">
-                <label className="label" htmlFor="inv-slot-account">Akun</label>
+                <label className="label" htmlFor="inv-quota-account">Akun</label>
                 <SearchableSelect
-                  inputId="inv-slot-account"
+                  inputId="inv-quota-account"
                   ariaLabel="Akun"
-                  value={slotForm.accountId}
-                  onChange={handleSlotAccountChange}
+                  value={quotaForm.accountId}
+                  onChange={handleQuotaAccountChange}
                   required
                   options={accounts.map((account) => ({
                     value: account.id,
-                    label: `${account.productName} · ${account.label} · sisa ${account.remainingSlots} slot`,
+                    label: `${account.productName} · ${account.label} · sisa ${account.remainingSlots} kuota`,
                   }))}
                 />
               </div>
               <div className="field">
-                <label className="label" htmlFor="inv-slot-price">Paket</label>
+                <label className="label" htmlFor="inv-quota-price">Paket</label>
                 <SearchableSelect
-                  inputId="inv-slot-price"
+                  inputId="inv-quota-price"
                   ariaLabel="Paket"
-                  value={slotForm.priceId}
+                  value={quotaForm.priceId}
                   onChange={(value) => {
-                    setSlotForm({ ...slotForm, priceId: value });
-                    setPendingSlot(null);
+                    setQuotaForm({ ...quotaForm, priceId: value });
+                    setPendingQuota(null);
                   }}
                   placeholder="Pilih paket"
                   required
-                  options={(slotProduct?.prices ?? []).map((price) => ({ value: price.id, label: price.label }))}
+                  options={(quotaProduct?.prices ?? []).map((price) => ({ value: price.id, label: price.label }))}
                 />
-                {slotProduct && slotProduct.prices.length === 0 && (
+                {quotaProduct && quotaProduct.prices.length === 0 && (
                   <p className="muted" style={{ margin: 0, fontSize: 11 }}>Produk ini belum memiliki paket aktif.</p>
                 )}
               </div>
               <div className="field">
-                <label className="label" htmlFor="inv-slot-quantity">Jumlah akses</label>
+                <label className="label" htmlFor="inv-quota-quantity">Jumlah kuota</label>
                 <input
                   className="input"
-                  id="inv-slot-quantity"
+                  id="inv-quota-quantity"
                   type="number"
                   min="1"
                   max="100"
-                  value={slotForm.quantity}
+                  value={quotaForm.quantity}
                   onChange={(event) => {
-                    setSlotForm({ ...slotForm, quantity: event.target.value });
-                    setPendingSlot(null);
+                    setQuotaForm({ ...quotaForm, quantity: event.target.value });
+                    setPendingQuota(null);
                   }}
                   required
                 />
                 {selectedSlotAccount && (
                   <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                    Sisa kapasitas {selectedSlotAccount.label}: {selectedSlotAccount.remainingSlots} slot
+                    Sisa kapasitas {selectedSlotAccount.label}: {selectedSlotAccount.remainingSlots} kuota
                     {" "}(limit {selectedSlotAccount.sharingLimit}, terprovisi {selectedSlotAccount.totalSlots}).
                   </p>
                 )}
@@ -1269,23 +1269,23 @@ export default function InventoryPage() {
                   </p>
                 )}
               </div>
-              {slotError && (
+              {quotaError && (
                 <p className="field field-full" role="alert" style={{ color: "var(--danger)", fontSize: 11, margin: 0 }}>
-                  {slotError}
+                  {quotaError}
                 </p>
               )}
 
-              {pendingSlot && (
-                <div className="notice field-full" role="alertdialog" aria-label="Konfirmasi tambah akses">
+              {pendingQuota && (
+                <div className="notice field-full" role="alertdialog" aria-label="Konfirmasi tambah kuota">
                   <p style={{ margin: "0 0 12px" }}>
-                    Konfirmasi tambah akses: {pendingSlot.quantity} akses pada akun {`"${pendingSlot.accountLabel}"`} untuk paket{" "}
-                    {pendingSlot.priceLabel}. Sisa kapasitas setelah ditambahkan: {pendingSlot.remainingAfter} akses.
+                    Konfirmasi tambah kuota: {pendingQuota.quantity} kuota pada akun {`"${pendingQuota.accountLabel}"`} untuk paket{" "}
+                    {pendingQuota.priceLabel}. Sisa kapasitas setelah ditambahkan: {pendingQuota.remainingAfter} kuota.
                   </p>
                   <div className="table-actions" style={{ justifyContent: "flex-start" }}>
-                    <button className="button button-primary button-sm" type="button" onClick={applySlotCreation} disabled={submitting}>
-                      {submitting ? "Menyimpan…" : "Ya, tambahkan akses"}
+                    <button className="button button-primary button-sm" type="button" onClick={applyQuotaCreation} disabled={submitting}>
+                      {submitting ? "Menyimpan…" : "Ya, tambahkan kuota"}
                     </button>
-                    <button className="button button-secondary button-sm" type="button" onClick={() => setPendingSlot(null)} disabled={submitting}>
+                    <button className="button button-secondary button-sm" type="button" onClick={() => setPendingQuota(null)} disabled={submitting}>
                       Batal
                     </button>
                   </div>
@@ -1375,7 +1375,7 @@ export default function InventoryPage() {
                       onToggleAssignments={() => toggleAssignments(account.id)}
                       onLoadMoreAssignments={() => loadMoreAssignments(account.id)}
                       onEdit={() => openEditForm(account)}
-                      onAddSlot={() => openSlotForm(account)}
+                      onAddSlot={() => openQuotaForm(account)}
                       onToggleStatus={() =>
                         setPendingStatus({
                           accountId: account.id,
@@ -1474,10 +1474,10 @@ function AccountRows({
               className={account.totalSlots === 0 ? "button button-secondary button-sm" : "table-action"}
               type="button"
               onClick={onAddSlot}
-              title="Tambah akses"
-              aria-label={`Tambah akses ke ${account.label}`}
+              title="Tambah kuota"
+              aria-label={`Tambah kuota ke ${account.label}`}
             >
-              <Plus size={13} />{account.totalSlots === 0 ? " Tambah akses" : null}
+              <Plus size={13} />{account.totalSlots === 0 ? " Tambah kuota" : null}
             </button>
             <button
               className="table-action"

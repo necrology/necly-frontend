@@ -38,7 +38,7 @@ export function ServiceCard({ product }: { product: SubscriptionProduct }) {
             />
             <span className="catalog-category">{productCategoryLabel(product)}</span>
           </span>
-          {badge && <span className={`catalog-badge ${badge.className}`}>{badge.label}</span>}
+          {!comingSoon && badge && <span className={`catalog-badge ${badge.className}`}>{badge.label}</span>}
         </div>
         <h3>{product.name}</h3>
         <p className="catalog-duration">{product.duration} · {product.accessType}</p>

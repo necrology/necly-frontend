@@ -198,38 +198,38 @@ describe("Halaman Inventaris akun", () => {
     );
   });
 
-  it("menampilkan ajakan tambah akses saat akun belum punya slot", async () => {
+  it("menampilkan ajakan tambah kuota saat akun belum punya slot", async () => {
     mockAccounts([{ ...ACCOUNT, total_slots: 0, available_slots: 0, used_slots: 0, remaining_slots: 5 }]);
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
 
     const row = screen.getByText("Akun utama").closest("tr");
     expect(within(row as HTMLElement).getByText("Belum ada akses")).toBeInTheDocument();
-    const cta = within(row as HTMLElement).getByRole("button", { name: "Tambah akses ke Akun utama" });
-    expect(cta).toHaveTextContent("Tambah akses");
+    const cta = within(row as HTMLElement).getByRole("button", { name: "Tambah kuota ke Akun utama" });
+    expect(cta).toHaveTextContent("Tambah kuota");
 
     fireEvent.click(cta);
     expect(searchableSelectedText("Akun")).toContain("Akun utama");
     expect(searchableSelectedText("Paket")).toBe("1 Bulan");
   });
 
-  it("menambah akses pada akun yang dipilih dan meneruskan inventory_account_id", async () => {
+  it("menambah kuota pada akun yang dipilih dan meneruskan inventory_account_id", async () => {
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getByRole("button", { name: "Tambah akses ke Akun utama" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah kuota ke Akun utama" }));
     expect(searchableSelectedText("Akun")).toContain("Akun utama");
     expect(searchableSelectedText("Paket")).toBe("1 Bulan");
 
-    fireEvent.change(screen.getByLabelText("Jumlah akses"), { target: { value: "2" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan akses" }));
+    fireEvent.change(screen.getByLabelText("Jumlah kuota"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan kuota" }));
 
-    // Simpan akses hanya meminta konfirmasi; belum ada POST.
+    // Simpan kuota hanya meminta konfirmasi; belum ada POST.
     expect(createSlotsMock).not.toHaveBeenCalled();
-    expect(screen.getByText(/Konfirmasi tambah akses: 2 akses pada akun "Akun utama"/)).toBeInTheDocument();
-    expect(screen.getByText(/Sisa kapasitas setelah ditambahkan: 0 akses/)).toBeInTheDocument();
+    expect(screen.getByText(/Konfirmasi tambah kuota: 2 kuota pada akun "Akun utama"/)).toBeInTheDocument();
+    expect(screen.getByText(/Sisa kapasitas setelah ditambahkan: 0 kuota/)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan akses" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan kuota" }));
 
     await waitFor(() =>
       expect(createSlotsMock).toHaveBeenCalledTimes(1),
@@ -242,13 +242,13 @@ describe("Halaman Inventaris akun", () => {
     await screen.findByText(/2 akses ditambahkan ke akun "Akun utama"/);
   });
 
-  it("menolak jumlah akses yang melebihi sisa kapasitas tanpa memanggil API", async () => {
+  it("menolak jumlah kuota yang melebihi sisa kapasitas tanpa memanggil API", async () => {
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getByRole("button", { name: "Tambah akses ke Akun utama" }));
-    fireEvent.change(screen.getByLabelText("Jumlah akses"), { target: { value: "3" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan akses" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah kuota ke Akun utama" }));
+    fireEvent.change(screen.getByLabelText("Jumlah kuota"), { target: { value: "3" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan kuota" }));
 
     expect(createSlotsMock).not.toHaveBeenCalled();
     expect(screen.getByText(/Jumlah melebihi kapasitas akun\. Sisa kapasitas Akun utama: 2 akses/)).toBeInTheDocument();
@@ -262,11 +262,11 @@ describe("Halaman Inventaris akun", () => {
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
 
-    fireEvent.click(screen.getByRole("button", { name: "Tambah akses ke Akun utama" }));
-    fireEvent.change(screen.getByLabelText("Jumlah akses"), { target: { value: "2" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan akses" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah kuota ke Akun utama" }));
+    fireEvent.change(screen.getByLabelText("Jumlah kuota"), { target: { value: "2" } });
+    fireEvent.click(screen.getByRole("button", { name: "Simpan kuota" }));
     expect(createSlotsMock).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan akses" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, tambahkan kuota" }));
 
     await screen.findByText(/Limit sharing tercapai/);
     expect(createSlotsMock).toHaveBeenCalledTimes(1);

@@ -16,7 +16,7 @@ export default function HomePage() {
         </div>
         <div className="commerce-container commerce-home-hero-inner">
           <div className="commerce-home-hero-copy">
-            <h1>Langganan premium,<br /><span>lebih ringan bersama.</span></h1>
+            <h1>Mau Premium?<br /><span>Patungan Aja</span>,<br />Lebih <span>Hemat</span>!</h1>
             <p>Temukan pilihan layanan digital untuk hiburan, kerja, dan kebutuhan sehari-hari dengan proses yang jelas.</p>
             {/* Baris 9: ikon panah kanan dihapus, teks tombol dibuat putih lewat CSS. */}
             <Link className="commerce-hero-cta" href="/products">Lihat Layanan</Link>

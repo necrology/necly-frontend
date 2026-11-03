@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { contact } from "@/data/contact";
-import { defaultDeviceOptions } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
 import { productCategoryLabel } from "@/lib/product-category";
 import { continueToCheckout } from "@/lib/checkout-navigation";
@@ -28,7 +27,7 @@ function generateIdempotencyKey(): string {
 const lineKey = (item: Pick<CartItem, "id" | "product_price_id">) => item.product_price_id ?? item.id;
 
 function lineDetail(item: CartItem) {
-  const parts = [item.selectedDuration, item.selectedDevice ? `${item.selectedDevice} perangkat` : null].filter(Boolean);
+  const parts = [item.selectedDuration].filter(Boolean);
   return parts.length ? parts.join(" · ") : productCategoryLabel(item);
 }
 
@@ -74,21 +73,6 @@ export function CheckoutCommerceClient() {
   const [priceReview, setPriceReview] = useState<PriceReview | null>(null);
   const [reviewedPrice, setReviewedPrice] = useState<ReviewedPrice | null>(null);
   const [stockNotice, setStockNotice] = useState<string | null>(null);
-  // Baris 38 & 39: jumlah perangkat wajib dipilih. Bila pembeli sudah memilihnya
-  // di halaman detail, pilihannya ikut dari keranjang.
-  const [device, setDevice] = useState<number | null>(null);
-  const [showWarnings, setShowWarnings] = useState(false);
-
-  // Pilihan perangkat tidak lagi diambil dari data contoh. Nilai yang tersedia
-  // adalah pilihan yang memang dibawa item keranjang plus bawaan satu perangkat.
-  const deviceOptions = useMemo(() => {
-    const values = new Set<number>(defaultDeviceOptions);
-    for (const item of items) {
-      if (item.selectedDevice && item.selectedDevice > 0) values.add(item.selectedDevice);
-    }
-    return [...values].sort((left, right) => left - right);
-  }, [items]);
-  const selectedDevice = device ?? items[0]?.selectedDevice ?? null;
 
   // Seluruh angka di halaman ini berasal dari keranjang. Total yang ditampilkan
   // juga dikirim sebagai expected_subtotal supaya backend menolak percobaan bayar
@@ -120,11 +104,11 @@ export function CheckoutCommerceClient() {
   const lastFingerprint = useRef("");
   const attemptFingerprint = useMemo(() => JSON.stringify({
     items: items
-      .map((item) => ({ price: item.product_price_id ?? item.id, quantity: item.quantity, device: item.selectedDevice ?? selectedDevice }))
-      .sort((left, right) => left.price.localeCompare(right.price) || String(left.device).localeCompare(String(right.device))),
+      .map((item) => ({ price: item.product_price_id ?? item.id, quantity: item.quantity }))
+      .sort((left, right) => left.price.localeCompare(right.price)),
     voucher: voucher.trim().toUpperCase(),
     channel: paymentChannelForLabel(payment) ?? "unsupported",
-  }), [items, payment, selectedDevice, voucher]);
+  }), [items, payment, voucher]);
   useEffect(() => {
     if (lastFingerprint.current === attemptFingerprint) return;
     lastFingerprint.current = attemptFingerprint;
@@ -163,10 +147,6 @@ export function CheckoutCommerceClient() {
     setError("");
     setStockNotice(null);
     setUnsupportedChannel(null);
-    if (selectedDevice === null) {
-      setShowWarnings(true);
-      return;
-    }
     if (priceReview) return;
     const channel = paymentChannelForLabel(payment);
     if (!channel) {
@@ -224,19 +204,17 @@ export function CheckoutCommerceClient() {
       // dari halaman katalog lalu dari halaman detail. Backend menolak item
       // duplikat dalam satu pesanan, jadi baris seperti itu digabung lebih dulu,
       // dengan jumlah dijumlahkan sesuai yang terlihat di keranjang.
-      const merged = new Map<string, { product_price_id: string; quantity: number; device_count?: number }>();
+      const merged = new Map<string, { product_price_id: string; quantity: number }>();
       for (const item of payableItems) {
         const priceId = item.product_price_id ?? item.id;
         const existing = merged.get(priceId);
         if (existing) {
           existing.quantity += item.quantity;
-          existing.device_count = existing.device_count ?? item.selectedDevice ?? selectedDevice ?? undefined;
           continue;
         }
         merged.set(priceId, {
           product_price_id: priceId,
           quantity: item.quantity,
-          device_count: item.selectedDevice ?? selectedDevice ?? undefined,
         });
       }
 
@@ -306,11 +284,6 @@ export function CheckoutCommerceClient() {
           </p>
         </section>
         <section className="commerce-checkout-section">
-          <h2>Pilih Jumlah Perangkat <span className="commerce-required" aria-hidden="true">*</span></h2>
-          <div className="commerce-duration-choice-grid">{deviceOptions.map((devices) => <button key={devices} className={selectedDevice === devices ? "selected" : ""} type="button" aria-pressed={selectedDevice === devices} onClick={() => setDevice(devices)}><span className="commerce-radio" />{devices} Perangkat</button>)}</div>
-          {showWarnings && selectedDevice === null && <p className="commerce-field-warning" role="alert"><AlertCircle size={15} />Pilih jumlah perangkat dahulu sebelum membayar.</p>}
-        </section>
-        <section className="commerce-checkout-section">
           <h2>Detail Pesanan</h2>
           <ul className="commerce-checkout-lines">
             {items.map((item, index) => (
@@ -350,7 +323,6 @@ export function CheckoutCommerceClient() {
       <aside className="commerce-checkout-summary">
         <h2>Rincian Pembayaran</h2>
         <div><span>Subtotal ({totalUnits} item)</span><strong>{formatRupiahLabel(subtotal)}</strong></div>
-        <div><span>Jumlah Perangkat</span><strong>{selectedDevice === null ? "Belum dipilih" : `${selectedDevice} Perangkat`}</strong></div>
         <div><span>Metode</span><strong>{payment}</strong></div>
         <div><span>Voucher</span><strong>{voucher.trim() ? voucher.trim().toUpperCase() : "—"}</strong></div>
         {priceAdjustment !== 0 && <div><span>Penyesuaian harga server</span><strong>{priceAdjustment > 0 ? "+" : ""}{formatRupiahLabel(priceAdjustment)}</strong></div>}
