@@ -155,7 +155,10 @@ function LoginContent() {
         )}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Sedang masuk…" : <>Masuk <ArrowRight size={14} /></>}</button>
       </form>
-      <GoogleSignInButton label="Masuk dengan Google" />
+      <GoogleSignInButton
+        label="Masuk dengan Google"
+        help="Masuk dengan Google memakai akun yang aktif di browser ini. Untuk memilih akun lain, keluar dari akun Google atau gunakan jendela privat. Akun yang dibuat lewat Google: gunakan Lupa kata sandi? untuk membuat atau mengganti kata sandi bila tersedia."
+      />
       {DEMO_MODE && <><div className="auth-divider">Akses demo</div><Link className="button button-secondary" href="/dashboard">Buka demo admin</Link></>}
       {/* Baris 66: font bagian ini diperbesar supaya jelas terlihat. */}
       <p className="muted auth-register-prompt">Belum memiliki akun? <Link href="/register">Daftar</Link></p>

@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { lookupMock, ApiErrorMock } = vi.hoisted(() => {
@@ -33,14 +35,21 @@ describe("halaman ambil OTP akun", () => {
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
   });
 
-  it("mengisi form dari tautan pesanan lalu menampilkan OTP", async () => {
+  it("menampilkan form paling awal dengan copy baru lalu menampilkan OTP", async () => {
     lookupMock.mockResolvedValue({ otp: "482913", received_at: "2026-10-21T10:00:00Z" });
     render(<AccountOtpPage />);
 
-    expect(screen.getByRole("heading", { name: "Alur pengambilan OTP" })).toBeInTheDocument();
-    expect(screen.getByText(/Salin kode OTP dan masukkan ke halaman verifikasi platform/)).toBeInTheDocument();
+    const formHeading = screen.getByRole("heading", { name: "Email akun & kode akses" });
+    expect(screen.getByText("Masukkan kode akses yang Anda dapatkan sebelumnya untuk mendapatkan akses penuh aplikasi.")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Alur pengambilan OTP" })).not.toBeInTheDocument();
+    expect(formHeading.compareDocumentPosition(screen.getByRole("heading", { name: "Belum punya kode akses?" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Video tutorial segera hadir" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Email akun/)).toHaveValue("family@example.test");
     expect(screen.getByLabelText(/Kode akses/)).toHaveValue("ABCD234567");
+
+    const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+    expect(css).toContain(".otp-title { font-size: clamp(1.45rem, 3.2vw, 1.75rem);");
+    expect(css).toContain(".otp-lede { font-size: clamp(.92rem, 2vw, 1rem) !important;");
 
     fireEvent.click(screen.getByRole("button", { name: "Ambil kode OTP" }));
 

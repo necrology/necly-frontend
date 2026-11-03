@@ -3,8 +3,10 @@
 import {
   ArrowRight,
   CalendarDays,
+  Check,
   ChevronLeft,
   ChevronRight,
+  ClipboardCopy,
   LogIn,
   PackageOpen,
   ReceiptText,
@@ -13,18 +15,29 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "@/components/modal";
 import { StatusBadge } from "@/components/status-badge";
 import { ApiError, bootstrapAuth, checkoutApi, DEMO_MODE, type ApiOrder } from "@/lib/api";
 import { formatDateTimeID, formatIDR } from "@/lib/money";
 
 const PER_PAGE = 5;
-const ARCHIVABLE_STATUSES = new Set(["pending_payment", "completed", "cancelled", "expired", "refunded"]);
+const ARCHIVABLE_STATUSES = new Set([
+  "pending_payment",
+  "delivered",
+  "completed",
+  "cancelled",
+  "expired",
+  "refunded",
+]);
 
 type LoadError = {
   kind: "unauthorized" | "generic";
   message: string;
+};
+
+type ArchiveRequest = {
+  orders: ApiOrder[];
 };
 
 /**
@@ -161,9 +174,15 @@ export function OrderHistoryClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<LoadError | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
-  const [archiveTarget, setArchiveTarget] = useState<ApiOrder | null>(null);
+  const [archiveRequest, setArchiveRequest] = useState<ArchiveRequest | null>(null);
   const [archiving, setArchiving] = useState(false);
   const [archiveError, setArchiveError] = useState<string | null>(null);
+  const [archiveNotice, setArchiveNotice] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [copiedOrderId, setCopiedOrderId] = useState("");
+  const [copyError, setCopyError] = useState("");
+  const selectAllRef = useRef<HTMLInputElement | null>(null);
+  const copyTimer = useRef<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -245,32 +264,144 @@ export function OrderHistoryClient() {
   const totalPages = useMemo(() => Math.max(1, Math.ceil(total / PER_PAGE)), [total]);
   const firstRow = total === 0 ? 0 : (page - 1) * PER_PAGE + 1;
   const lastRow = Math.min(page * PER_PAGE, total);
+  const archivableOrders = useMemo(() => orders.filter(canArchiveOrder), [orders]);
+  const selectedOrders = useMemo(
+    () => archivableOrders.filter((order) => selectedIds.has(order.id)),
+    [archivableOrders, selectedIds],
+  );
+  const allSelected = archivableOrders.length > 0 && selectedOrders.length === archivableOrders.length;
+  const someSelected = selectedOrders.length > 0 && !allSelected;
+  const archiveCount = archiveRequest?.orders.length ?? 0;
+
+  // Pilihan selalu dipakai lewat irisan dengan pesanan yang tampil, sehingga
+  // ID dari halaman lama tidak ikut terhitung. Pindah halaman membersihkan
+  // pilihan; pesanan yang gagal diarsipkan tetap terpilih untuk dicoba lagi.
+  useEffect(() => {
+    if (selectAllRef.current) selectAllRef.current.indeterminate = someSelected;
+  }, [someSelected]);
+
+  useEffect(() => () => {
+    if (copyTimer.current) clearTimeout(copyTimer.current);
+  }, []);
+
+  function changePage(nextPage: number) {
+    setSelectedIds(new Set());
+    setPage(nextPage);
+  }
+
+  function toggleOrderSelection(orderId: string) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+    setArchiveNotice("");
+  }
+
+  function toggleAllOnPage() {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allSelected) {
+        for (const order of archivableOrders) next.delete(order.id);
+      } else {
+        for (const order of archivableOrders) next.add(order.id);
+      }
+      return next;
+    });
+    setArchiveNotice("");
+  }
+
+  async function copyOrderNumber(order: ApiOrder) {
+    setCopyError("");
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard API tidak tersedia");
+      await navigator.clipboard.writeText(order.number);
+      setCopiedOrderId(order.id);
+      if (copyTimer.current) clearTimeout(copyTimer.current);
+      copyTimer.current = window.setTimeout(() => {
+        setCopiedOrderId((current) => (current === order.id ? "" : current));
+      }, 2000);
+    } catch {
+      setCopiedOrderId("");
+      setCopyError(
+        `Nomor pesanan ${order.number} tidak dapat disalin otomatis. Pilih teks nomor pesanan lalu salin secara manual.`,
+      );
+    }
+  }
+
+  function closeArchiveDialog() {
+    if (archiving) return;
+    setArchiveRequest(null);
+    setArchiveError(null);
+  }
 
   async function confirmArchive() {
-    if (!archiveTarget || archiving) return;
+    if (!archiveRequest || archiveRequest.orders.length === 0 || archiving) return;
 
     setArchiving(true);
     setArchiveError(null);
-    try {
-      await checkoutApi.archiveOrder(archiveTarget.id);
-      setArchiveTarget(null);
+    setArchiveNotice("");
 
-      // Bila item terakhir halaman saat ini diarsipkan, daftar berikutnya harus
-      // dimuat dari halaman valid sebelumnya. Effect pemuatan menangani juga
-      // perubahan total yang terjadi dari tab/perangkat lain.
-      if (orders.length === 1 && page > 1) setPage((value) => value - 1);
-      else setReloadToken((value) => value + 1);
-    } catch (failure) {
-      // Daftar lokal sengaja tidak diubah sebelum DELETE sukses.
-      setArchiveError(archiveErrorMessage(failure));
-    } finally {
-      setArchiving(false);
+    const succeeded: ApiOrder[] = [];
+    const failed: Array<{ order: ApiOrder; error: unknown }> = [];
+
+    // Arsipkan satu per satu agar kegagalan pada satu pesanan tidak
+    // menghentikan pesanan lain, dan UI dapat melaporkan hasil parsial.
+    for (const target of archiveRequest.orders) {
+      try {
+        await checkoutApi.archiveOrder(target.id);
+        succeeded.push(target);
+      } catch (failure) {
+        failed.push({ order: target, error: failure });
+      }
     }
+
+    const succeededIds = new Set(succeeded.map((order) => order.id));
+    if (succeeded.length > 0) {
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        for (const id of succeededIds) next.delete(id);
+        return next;
+      });
+    }
+
+    if (failed.length === 0 && succeeded.length > 0) {
+      setArchiveRequest(null);
+      setArchiveNotice(
+        succeeded.length === 1
+          ? "Pesanan berhasil dihapus dari riwayat."
+          : `${succeeded.length} pesanan berhasil dihapus dari riwayat.`,
+      );
+
+      // Bila seluruh item halaman ini terarsip, halaman tersebut tidak lagi
+      // valid. Turun satu halaman agar tidak menampilkan daftar kosong palsu.
+      const allVisibleArchived =
+        orders.length > 0 && orders.every((order) => succeededIds.has(order.id));
+      if (allVisibleArchived && page > 1) setPage((value) => Math.max(1, value - 1));
+      else setReloadToken((value) => value + 1);
+    } else if (succeeded.length > 0) {
+      // Sebagian gagal: tutup dialog, muat ulang daftar agar item yang sudah
+      // terarsip hilang, tetapi pesanan yang gagal tetap terlihat dan terpilih.
+      setArchiveRequest(null);
+      setArchiveError(
+        `${succeeded.length} pesanan berhasil dihapus, ${failed.length} gagal dihapus. ${archiveErrorMessage(failed[0].error)}`,
+      );
+      setReloadToken((value) => value + 1);
+    } else {
+      setArchiveError(
+        failed.length === 1
+          ? archiveErrorMessage(failed[0].error)
+          : `${failed.length} pesanan gagal dihapus. ${archiveErrorMessage(failed[0].error)}`,
+      );
+    }
+
+    setArchiving(false);
   }
 
   return (
     <>
-      <header className="page-hero">
+      <header className="page-hero orders-hero">
         <div className="container">
           <span className="eyebrow orders-eyebrow">Pesanan saya</span>
           <h1 className="h1" style={{ marginTop: 12 }}>Riwayat pesanan</h1>
@@ -336,13 +467,79 @@ export function OrderHistoryClient() {
               </p>
             </div>
 
+            {archiveNotice && <div className="notice success" role="status">{archiveNotice}</div>}
+            {archiveError && !archiveRequest && (
+              <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>
+                {archiveError}
+              </div>
+            )}
+            {copyError && (
+              <div className="notice" role="alert" style={{ color: "var(--danger)", borderColor: "#ffd1cc", background: "var(--danger-bg)" }}>
+                {copyError}
+              </div>
+            )}
+
+            {archivableOrders.length > 0 && (
+              <div className="orders-bulk-toolbar">
+                <label className="orders-bulk-select">
+                  <input
+                    ref={selectAllRef}
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAllOnPage}
+                    aria-checked={someSelected ? "mixed" : allSelected}
+                  />
+                  <span>Pilih semua</span>
+                </label>
+                <div className="orders-bulk-actions">
+                  <span className="orders-bulk-count" aria-live="polite">
+                    {selectedOrders.length > 0
+                      ? `${selectedOrders.length} pesanan dipilih`
+                      : "Pilih pesanan yang ingin dihapus"}
+                  </span>
+                  <button
+                    className="button button-danger button-sm"
+                    type="button"
+                    onClick={() => {
+                      setArchiveError(null);
+                      setArchiveNotice("");
+                      setArchiveRequest({ orders: selectedOrders });
+                    }}
+                    disabled={selectedOrders.length === 0 || archiving}
+                  >
+                    <Trash2 size={14} aria-hidden="true" /> Hapus terpilih
+                  </button>
+                </div>
+              </div>
+            )}
+
             <ul className="orders-list">
               {orders.map((order) => (
                 <li key={order.id}>
-                  <article className="card order-list-item">
+                  <article className={`card order-list-item${selectedIds.has(order.id) ? " is-selected" : ""}`}>
                     <div className="order-list-main">
                       <div className="order-list-title">
+                        {canArchiveOrder(order) && (
+                          <label className="order-list-select">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(order.id)}
+                              onChange={() => toggleOrderSelection(order.id)}
+                              aria-label={`Pilih pesanan ${order.number}`}
+                            />
+                          </label>
+                        )}
                         <strong>{order.number}</strong>
+                        <button
+                          className="button button-secondary button-sm order-copy-button"
+                          type="button"
+                          onClick={() => void copyOrderNumber(order)}
+                          aria-label={`Salin nomor pesanan ${order.number}`}
+                        >
+                          {copiedOrderId === order.id
+                            ? <><Check size={13} aria-hidden="true" /> Tersalin</>
+                            : <><ClipboardCopy size={13} aria-hidden="true" /> Salin</>}
+                        </button>
                         <StatusBadge status={order.status} />
                       </div>
                       <p className="muted order-list-meta">
@@ -367,8 +564,8 @@ export function OrderHistoryClient() {
                             className="order-archive-button"
                             type="button"
                             onClick={() => {
-                              setArchiveTarget(order);
                               setArchiveError(null);
+                              setArchiveRequest({ orders: [order] });
                             }}
                             aria-label={`Hapus pesanan ${order.number} dari riwayat`}
                             title="Hapus dari riwayat"
@@ -389,7 +586,7 @@ export function OrderHistoryClient() {
                   className="button button-secondary button-sm"
                   type="button"
                   disabled={page <= 1}
-                  onClick={() => setPage((value) => Math.max(1, value - 1))}
+                  onClick={() => changePage(Math.max(1, page - 1))}
                 >
                   <ChevronLeft size={14} /> Sebelumnya
                 </button>
@@ -398,7 +595,7 @@ export function OrderHistoryClient() {
                   className="button button-secondary button-sm"
                   type="button"
                   disabled={page >= totalPages}
-                  onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+                  onClick={() => changePage(Math.min(totalPages, page + 1))}
                 >
                   Berikutnya <ChevronRight size={14} />
                 </button>
@@ -408,28 +605,36 @@ export function OrderHistoryClient() {
         )}
       </section>
 
-      {archiveTarget && (
+      {archiveRequest && (
         <Modal
-          title="Hapus dari riwayat pesanan?"
-          description={`Pesanan ${archiveTarget.number} akan dihapus dari daftar riwayat Anda.`}
+          title={archiveCount === 1 ? "Hapus dari riwayat pesanan?" : `Hapus ${archiveCount} pesanan dari riwayat?`}
+          description={
+            archiveCount === 1
+              ? `Pesanan ${archiveRequest.orders[0].number} akan dihapus dari daftar riwayat Anda.`
+              : `${archiveCount} pesanan yang dipilih akan dihapus dari daftar riwayat Anda.`
+          }
           size="sm"
           role="alertdialog"
-          onClose={() => {
-            if (!archiving) setArchiveTarget(null);
-          }}
+          onClose={closeArchiveDialog}
           footer={
             <>
-              <button className="button button-secondary" type="button" onClick={() => setArchiveTarget(null)} disabled={archiving}>
+              <button className="button button-secondary" type="button" onClick={closeArchiveDialog} disabled={archiving}>
                 Batal
               </button>
               <button className="button button-danger" type="button" onClick={() => void confirmArchive()} disabled={archiving}>
-                <Trash2 size={14} aria-hidden="true" /> {archiving ? "Menghapus…" : "Ya, hapus dari riwayat"}
+                <Trash2 size={14} aria-hidden="true" />{" "}
+                {archiving
+                  ? "Menghapus…"
+                  : archiveCount === 1
+                    ? "Ya, hapus dari riwayat"
+                    : `Ya, hapus ${archiveCount} pesanan`}
               </button>
             </>
           }
         >
           <p className="muted small" style={{ margin: 0 }}>
             Tindakan ini hanya menghapus item dari tampilan riwayat Anda, bukan menghapus data transaksi secara permanen.
+            {archiveCount > 1 ? " Pesanan yang gagal dihapus akan tetap tampil di daftar." : ""}
           </p>
           {archiveError && <p className="order-archive-error" role="alert">{archiveError}</p>}
         </Modal>

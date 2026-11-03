@@ -56,8 +56,26 @@ describe("akses akun dan OTP pada detail pesanan", () => {
 
     await waitFor(() => expect(issueCodeMock).toHaveBeenCalledWith(ORDER_ID, ITEM_ID));
     expect(await screen.findByText("ABCD234567")).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: "Ambil OTP" });
+    const link = screen.getByRole("link", { name: "Dapatkan akses Apps" });
     expect(link).toHaveAttribute("href", "/otp?email=family%40example.test&code=ABCD234567");
+
+    const accessHeading = screen.getByRole("heading", { name: "Akses akun & OTP" });
+    const progressHeading = screen.getByRole("heading", { name: "Progres Pesanan" });
+    const paymentHeading = screen.getByRole("heading", { name: "Detail pembayaran" });
+    expect(accessHeading.compareDocumentPosition(progressHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(accessHeading.compareDocumentPosition(paymentHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("tidak memuat atau menampilkan akses untuk pesanan yang belum berhak", async () => {
+    getOrderMock.mockResolvedValue({
+      ...(await getOrderMock()),
+      status: "pending_payment",
+    });
+    render(<OrderClient orderId={ORDER_ID} />);
+
+    await screen.findByRole("heading", { name: "Detail Pesanan" });
+    expect(listAccessMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: "Akses akun & OTP" })).not.toBeInTheDocument();
   });
 
   it("menonaktifkan pembuatan kode saat mailbox OTP belum aktif", async () => {

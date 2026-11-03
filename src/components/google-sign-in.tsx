@@ -20,7 +20,7 @@ function GoogleMark() {
  * unconfigured deployment never shows a button that leads nowhere. The check
  * happens at runtime, which means enabling Google later needs no rebuild here.
  */
-export function GoogleSignInButton({ label }: { label: string }) {
+export function GoogleSignInButton({ label, help }: { label: string; help?: string }) {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
@@ -45,6 +45,7 @@ export function GoogleSignInButton({ label }: { label: string }) {
         <GoogleMark />
         {label}
       </a>
+      {help && <p className="muted small auth-google-help">{help}</p>}
     </>
   );
 }

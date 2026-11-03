@@ -85,6 +85,9 @@ describe("halaman akun", () => {
     expect(screen.getByText("budi@example.id")).toBeInTheDocument();
     expect(screen.getByText("Terverifikasi")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Pesanan saya" })).toHaveAttribute("href", "/orders");
+    expect(screen.getByRole("heading", { name: "Bantuan masuk dengan Google" })).toBeInTheDocument();
+    expect(screen.getByText(/akun Google yang sedang aktif di browser ini/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Lupa kata sandi?" })).toHaveAttribute("href", "/forgot-password");
 
     // Perangkat yang sedang dipakai ditandai, dan tidak bisa diakhiri dari sini.
     expect(screen.getByText("Perangkat ini")).toBeInTheDocument();

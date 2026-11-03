@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { archiveOrderMock, listOrdersMock, bootstrapAuthMock } = vi.hoisted(() => ({
@@ -54,12 +56,51 @@ describe("riwayat pesanan pelanggan", () => {
     listOrdersMock.mockReset();
     bootstrapAuthMock.mockReset();
     bootstrapAuthMock.mockResolvedValue({ id: "usr-1", role: "customer" });
+    Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
     listOrdersMock.mockResolvedValue({
       orders: [order(1), order(2)],
       page: 1,
       per_page: 5,
       total: 2,
     });
+  });
+
+  it("memakai hero biru yang menutup judul dan seluruh body text", async () => {
+    render(<OrderHistoryClient />);
+
+    const heading = await screen.findByRole("heading", { name: "Riwayat pesanan" });
+    const hero = heading.closest("header");
+    expect(hero).toHaveClass("orders-hero");
+    expect(hero).toHaveTextContent(/Semua pesanan.*akses layanan/);
+
+    const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
+    expect(css).toMatch(/\.orders-hero\s*\{[^}]*background: #4c1ef9;/);
+    expect(css).toMatch(/\.orders-hero\s*\{[^}]*padding: 54px 0 42px;/);
+  });
+
+  it("menyalin nomor pesanan langsung dari kartu riwayat tanpa membuka detail", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
+    const copyButton = screen.getByRole("button", { name: "Salin nomor pesanan ORD-W12-1" });
+    fireEvent.click(copyButton);
+
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("ORD-W12-1"));
+    expect(copyButton).toHaveTextContent("Tersalin");
+  });
+
+  it("memberi arahan salin manual ketika Clipboard API tidak tersedia", async () => {
+    Object.assign(navigator, { clipboard: {} });
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-1")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Salin nomor pesanan ORD-W12-1" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Pilih teks nomor pesanan lalu salin secara manual",
+    );
   });
 
   it("memuat pesanan milik pengguna dan menautkan setiap baris ke detail", async () => {
@@ -281,6 +322,62 @@ describe("riwayat pesanan pelanggan", () => {
     expect(screen.queryByText("Belum ada pesanan")).not.toBeInTheDocument();
     expect(listOrdersMock).toHaveBeenCalledTimes(3);
     expect(screen.getByText(/Menampilkan 1–1 dari 1 pesanan/)).toBeInTheDocument();
+  });
+
+  it("memilih semua pesanan yang boleh diarsipkan lalu menghapusnya setelah konfirmasi", async () => {
+    const archivableOne = order(1, { status: "cancelled" });
+    const archivableTwo = order(2, { status: "delivered" });
+    const active = order(3, { status: "paid" });
+    listOrdersMock
+      .mockResolvedValueOnce({ orders: [archivableOne, archivableTwo, active], page: 1, per_page: 5, total: 3 })
+      .mockResolvedValueOnce({ orders: [active], page: 1, per_page: 5, total: 1 });
+    archiveOrderMock.mockResolvedValue(undefined);
+
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-3")).toBeInTheDocument());
+    expect(screen.queryByRole("checkbox", { name: "Pilih pesanan ORD-W12-3" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Pilih semua" }));
+    expect(screen.getByText("2 pesanan dipilih")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hapus terpilih" }));
+
+    expect(screen.getByRole("alertdialog", { name: "Hapus 2 pesanan dari riwayat?" })).toBeInTheDocument();
+    expect(screen.getByText(/2 pesanan yang dipilih/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Ya, hapus 2 pesanan" }));
+
+    await waitFor(() => expect(archiveOrderMock).toHaveBeenCalledTimes(2));
+    expect(archiveOrderMock.mock.calls.map(([id]) => id)).toEqual([archivableOne.id, archivableTwo.id]);
+    expect(await screen.findByText("2 pesanan berhasil dihapus dari riwayat.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("ORD-W12-3")).toBeInTheDocument());
+    expect(screen.queryByText("ORD-W12-1")).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Pilih semua" })).not.toBeInTheDocument();
+  });
+
+  it("melaporkan kegagalan parsial tanpa menyembunyikan pesanan yang gagal", async () => {
+    const first = order(1, { status: "cancelled" });
+    const second = order(2, { status: "completed" });
+    listOrdersMock
+      .mockResolvedValueOnce({ orders: [first, second], page: 1, per_page: 5, total: 2 })
+      .mockResolvedValueOnce({ orders: [second], page: 1, per_page: 5, total: 1 });
+    archiveOrderMock
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new ApiError("Pesanan aktif", 409, { code: "order_active" }));
+
+    render(<OrderHistoryClient />);
+
+    await waitFor(() => expect(screen.getByText("ORD-W12-2")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("checkbox", { name: "Pilih semua" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hapus terpilih" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ya, hapus 2 pesanan" }));
+
+    await waitFor(() => expect(archiveOrderMock).toHaveBeenCalledTimes(2));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "1 pesanan berhasil dihapus, 1 gagal dihapus",
+    );
+    await waitFor(() => expect(screen.queryByText("ORD-W12-1")).not.toBeInTheDocument());
+    expect(screen.getByText("ORD-W12-2")).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "Pilih pesanan ORD-W12-2" })).toBeChecked();
   });
 
   it("memuat lima riwayat per halaman memakai parameter pagination API", async () => {

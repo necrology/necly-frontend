@@ -25,5 +25,7 @@ describe("halaman pelacakan pesanan (demo)", () => {
 
     expect(await screen.findByText("Pesanan sandbox")).toBeInTheDocument();
     expect(getOrderMock).not.toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: "Akses akun & OTP" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Dapatkan akses Apps" })).not.toBeInTheDocument();
   });
 });
