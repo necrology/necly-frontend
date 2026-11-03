@@ -257,46 +257,6 @@ function OrderClientInner({ orderId }: OrderClientProps) {
               </span>
             </div>
           )}
-          <section className="card" style={{ padding: 27 }}>
-            <h2 className="h3">Progres Pesanan</h2>
-            {steps.length > 0 ? (
-              <div className="order-timeline">
-                {steps.map((step) => (
-                  <div className={cn("order-step", step.state)} key={step.label}>
-                    <span className="order-step-mark">{step.state === "complete" ? <Check size={13} /> : <Circle size={8} fill="currentColor" />}</span>
-                    <div>
-                      <strong style={{ fontSize: 12 }}>{step.label}</strong>
-                      <p className="muted" style={{ margin: "3px 0 0", fontSize: 10 }}>
-                        {step.state === "complete" ? "Selesai dan dicatat" : step.state === "current" ? "Tahap saat ini" : step.state === "cancelled" ? "Pesanan tidak akan dilanjutkan" : "Dimulai setelah tahap sebelumnya"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="muted small">Status pesanan belum dapat dipetakan.</p>
-            )}
-          </section>
-          <section className="card" style={{ padding: 27 }}>
-            <h2 className="h3">Detail pembayaran</h2>
-            <div className="summary-lines">
-              <div className="summary-line"><span>Subtotal</span><strong>{formatIDR(order.subtotal)}</strong></div>
-              {order.discount > 0 && <div className="summary-line"><span>Diskon</span><strong style={{ color: "var(--success)" }}>-{formatIDR(order.discount)}</strong></div>}
-              <div className="summary-line summary-total"><span>Total</span><strong>{formatIDR(order.total)}</strong></div>
-              {order.payment_due_at && <div className="summary-line"><span>Batas pembayaran</span><strong>{formatDateTimeID(order.payment_due_at)}</strong></div>}
-            </div>
-            {latestPayment && (
-              <p className="muted small" style={{ margin: "14px 0 0" }}>
-                Pembayaran terakhir: <strong>{paymentStatusLabels[latestPayment.status] ?? orderStatusLabel(latestPayment.status)}</strong> · {formatIDR(latestPayment.amount)}
-                {latestPayment.paid_at ? ` · ${formatDateTimeID(latestPayment.paid_at)}` : ""}
-              </p>
-            )}
-            {pendingPayment?.checkout_url && (
-              <a className="button button-primary button-sm" style={{ marginTop: 16 }} href={pendingPayment.checkout_url} rel="noreferrer">
-                Lanjutkan ke pembayaran <ExternalLink size={14} />
-              </a>
-            )}
-          </section>
           {access && access.items.length > 0 && (
             <section className="card order-access" style={{ padding: 27 }}>
               <h2 className="h3"><KeyRound size={17} aria-hidden="true" /> Akses akun &amp; OTP</h2>
@@ -338,7 +298,7 @@ function OrderClientInner({ orderId }: OrderClientProps) {
                               className="button button-primary button-sm"
                               href={`/otp?email=${encodeURIComponent(item.account_email)}&code=${encodeURIComponent(issued.code)}`}
                             >
-                              Ambil OTP
+                              Dapatkan akses Apps
                             </Link>
                           </div>
                           <span className="muted small">
@@ -368,6 +328,46 @@ function OrderClientInner({ orderId }: OrderClientProps) {
               </div>
             </section>
           )}
+          <section className="card" style={{ padding: 27 }}>
+            <h2 className="h3">Progres Pesanan</h2>
+            {steps.length > 0 ? (
+              <div className="order-timeline">
+                {steps.map((step) => (
+                  <div className={cn("order-step", step.state)} key={step.label}>
+                    <span className="order-step-mark">{step.state === "complete" ? <Check size={13} /> : <Circle size={8} fill="currentColor" />}</span>
+                    <div>
+                      <strong style={{ fontSize: 12 }}>{step.label}</strong>
+                      <p className="muted" style={{ margin: "3px 0 0", fontSize: 10 }}>
+                        {step.state === "complete" ? "Selesai dan dicatat" : step.state === "current" ? "Tahap saat ini" : step.state === "cancelled" ? "Pesanan tidak akan dilanjutkan" : "Dimulai setelah tahap sebelumnya"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="muted small">Status pesanan belum dapat dipetakan.</p>
+            )}
+          </section>
+          <section className="card" style={{ padding: 27 }}>
+            <h2 className="h3">Detail pembayaran</h2>
+            <div className="summary-lines">
+              <div className="summary-line"><span>Subtotal</span><strong>{formatIDR(order.subtotal)}</strong></div>
+              {order.discount > 0 && <div className="summary-line"><span>Diskon</span><strong style={{ color: "var(--success)" }}>-{formatIDR(order.discount)}</strong></div>}
+              <div className="summary-line summary-total"><span>Total</span><strong>{formatIDR(order.total)}</strong></div>
+              {order.payment_due_at && <div className="summary-line"><span>Batas pembayaran</span><strong>{formatDateTimeID(order.payment_due_at)}</strong></div>}
+            </div>
+            {latestPayment && (
+              <p className="muted small" style={{ margin: "14px 0 0" }}>
+                Pembayaran terakhir: <strong>{paymentStatusLabels[latestPayment.status] ?? orderStatusLabel(latestPayment.status)}</strong> · {formatIDR(latestPayment.amount)}
+                {latestPayment.paid_at ? ` · ${formatDateTimeID(latestPayment.paid_at)}` : ""}
+              </p>
+            )}
+            {pendingPayment?.checkout_url && (
+              <a className="button button-primary button-sm" style={{ marginTop: 16 }} href={pendingPayment.checkout_url} rel="noreferrer">
+                Lanjutkan ke pembayaran <ExternalLink size={14} />
+              </a>
+            )}
+          </section>
           <section className="card order-items-card" style={{ padding: 27 }}>
             <h2 className="h3">Item Pesanan</h2>
             <div className="order-items-list">

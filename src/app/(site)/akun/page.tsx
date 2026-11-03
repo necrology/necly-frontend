@@ -204,6 +204,17 @@ export default function AccountPage() {
         </button>
       </article>
 
+      <article className="card account-card account-google-help">
+        <h2 className="h3">Bantuan masuk dengan Google</h2>
+        <p className="muted small">
+          Jika Anda masuk lewat Google, aplikasi memakai akun Google yang sedang aktif di browser ini.
+          Untuk memilih akun lain, keluar dari akun Google atau gunakan jendela privat sebelum masuk lagi.
+          Untuk akun yang dibuat lewat Google, gunakan{" "}
+          <Link className="account-help-link" href="/forgot-password">Lupa kata sandi?</Link>{" "}
+          untuk membuat atau mengganti kata sandi bila fitur ini tersedia.
+        </p>
+      </article>
+
       <article className="card account-card">
         <h2 className="h3"><KeyRound size={16} aria-hidden="true" /> Ubah kata sandi</h2>
         <p className="muted small account-password-hint">

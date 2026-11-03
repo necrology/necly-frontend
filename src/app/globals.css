@@ -371,6 +371,8 @@ body:has(.auth-form-login) { overflow: hidden; }
 .auth-google-button { width: 100%; gap: 10px; color: #1f1f1f; background: #fff; border-color: #d9d9e8; font-weight: 600; }
 .auth-google-button:hover { background: #f7f7fb; }
 .auth-google-button svg { flex: 0 0 auto; }
+.auth-google-help { margin: -4px 0 0; font-size: 11px !important; line-height: 1.55; text-align: left; }
+.account-help-link { color: var(--blue); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .auth-form-login .figma-desktop-auth-logo { margin-top: 0; }
 .auth-form-login .figma-desktop-auth-logo img { width: clamp(68px, 12vh, 100px); height: clamp(68px, 12vh, 100px); }
 
@@ -1034,14 +1036,34 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .account-orders-link:hover { color: #2a2140; background: #ffd477; border-color: #ffd477; }
 .account-forgot-link { justify-self: start; margin-top: -8px; padding-inline: 0; }
 /* Riwayat pesanan pelanggan: daftar, status, total, dan pagination. */
-.orders-eyebrow { color: #fcbd50; }
+/* Hero riwayat pesanan memakai bidang biru yang menutup judul dan seluruh body
+   text, bukan hanya eyebrow/judul. Padding bawah sengaja cukup untuk paragraf
+   terakhir sampai kata "akses layanan" di mobile maupun desktop. */
+.orders-hero { position: relative; overflow: hidden; padding: 54px 0 42px; color: #fff; background: #4c1ef9; border-radius: 0 0 28px 28px; }
+.orders-hero .container { position: relative; z-index: 1; }
+.orders-hero .orders-eyebrow { color: #fcbd50; }
+.orders-hero .h1 { color: #fff; }
+.orders-hero .lede { color: #e9e1ff; }
+.orders-hero::after { content: ""; position: absolute; width: 260px; height: 260px; right: -130px; bottom: -170px; border: 1px solid rgb(255 255 255 / .2); border-radius: 50%; box-shadow: 0 0 0 34px rgb(255 255 255 / .05), 0 0 0 68px rgb(255 255 255 / .03); }
+@media (max-width: 767px) {
+  .orders-hero { padding: 30px 0 34px; border-radius: 0 0 24px 24px; }
+}
 .orders-page { display: grid; gap: 16px; padding: 0 0 96px; }
 .orders-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
 .orders-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .order-list-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center; padding: 20px 22px; }
+.order-list-item.is-selected { border-color: #c3d0fb; box-shadow: 0 0 0 3px rgb(76 30 249 / .08); }
 .order-list-main { display: grid; gap: 8px; min-width: 0; }
 .order-list-title { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.order-list-title strong { color: var(--commerce-ink); font-size: 14px; letter-spacing: -.01em; }
+.order-list-title strong { color: var(--commerce-ink); font-size: 14px; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.order-list-select { display: inline-flex; align-items: center; cursor: pointer; }
+.order-list-select input { width: 17px; height: 17px; margin: 0; accent-color: var(--blue); }
+.order-copy-button { min-height: 30px; padding: 5px 9px; gap: 5px; font-size: 11px; }
+.orders-bulk-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; background: #fff; }
+.orders-bulk-select { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 12px; font-weight: 600; cursor: pointer; }
+.orders-bulk-select input { width: 17px; height: 17px; margin: 0; accent-color: var(--blue); }
+.orders-bulk-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.orders-bulk-count { color: var(--muted); font-size: 11px; }
 .order-list-meta { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 11px; }
 .order-list-items { margin: 0; color: var(--commerce-muted); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .order-list-side { display: grid; justify-items: end; gap: 6px; text-align: right; }
@@ -1070,6 +1092,8 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
   .order-list-item { grid-template-columns: 1fr; }
   .order-list-side { justify-items: start; text-align: left; }
   .order-list-actions { justify-content: flex-start; }
+  .orders-bulk-toolbar { align-items: flex-start; flex-direction: column; }
+  .orders-bulk-actions { width: 100%; justify-content: space-between; }
   .payment-order-number > .order-number-copy { text-align: left; }
   .payment-order-number .order-number-copy-value { justify-content: flex-start; }
 }
@@ -1986,6 +2010,8 @@ body.modal-open { overflow: hidden; }
 /* Halaman ambil OTP email akun (NEC-93). */
 .otp-page { padding: 56px 0 90px; display: grid; gap: 30px; }
 .otp-head { max-width: 720px; display: grid; gap: 12px; }
+.otp-title { font-size: clamp(1.45rem, 3.2vw, 1.75rem); line-height: 1.15; }
+.otp-lede { font-size: clamp(.92rem, 2vw, 1rem) !important; line-height: 1.65 !important; }
 .otp-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); gap: 22px; align-items: start; }
 .otp-form { padding: 26px; display: grid; gap: 18px; }
 .otp-form-heading { display: flex; gap: 12px; align-items: flex-start; }
@@ -1999,10 +2025,20 @@ body.modal-open { overflow: hidden; }
 .otp-code { display: block; width: 100%; padding: 18px 14px; border: 1px dashed var(--brand); border-radius: 10px; color: var(--ink); background: #f7f3ff; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: clamp(30px, 5vw, 42px); font-weight: 800; letter-spacing: .28em; text-align: center; }
 .otp-result-note { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .otp-steps { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.otp-video-slot { display: flex; align-items: flex-start; gap: 12px; padding: 18px; }
+.otp-video-slot-icon { width: 38px; height: 38px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 11px; color: var(--blue); background: #f1eeff; }
+.otp-video-slot h2 { margin: 0 0 5px; font-size: 1rem; }
+.otp-video-slot p { margin: 0; }
 @media (max-width: 900px) {
   .otp-page { padding-top: 34px; }
   .otp-grid { grid-template-columns: 1fr; }
   .otp-side { position: static; }
+}
+@media (max-width: 580px) {
+  .otp-page { padding-top: 26px; gap: 22px; }
+  .otp-head { gap: 9px; }
+  .otp-title { font-size: clamp(1.4rem, 6.4vw, 1.65rem); }
+  .otp-lede { font-size: .9rem !important; line-height: 1.6 !important; }
 }
 
 /* Bagian akses akun + OTP pada detail pesanan (NEC-93). */
