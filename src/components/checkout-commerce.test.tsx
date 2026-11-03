@@ -69,8 +69,7 @@ describe("CheckoutCommerceClient", () => {
     replaceItemsMock.mockReset();
     clearCartMock.mockReset();
     // Sebuah baris keranjang yang sah: id harganya UUID dari katalog API.
-    // Jumlah perangkat diambil dari item keranjang (default 1).
-    cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1, selectedDevice: 1 }];
+    cartItems.value = [{ id: "netflix", slug: "netflix", name: "Netflix Premium", category: "Streaming", price: 50_000, stock: 5, product_price_id: PRICE_ID, quantity: 1 }];
   });
 
   // Total di layar harus sama dengan yang ditagih backend: jumlah harga ×
@@ -168,8 +167,7 @@ describe("CheckoutCommerceClient", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
 
     await waitFor(() => expect(checkoutMock).toHaveBeenCalled());
-    // Jumlah perangkat diambil dari item keranjang (default 1).
-    expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: PRICE_ID, quantity: 1, device_count: 1 }]);
+    expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: PRICE_ID, quantity: 1 }]);
     expect(clearCartMock).toHaveBeenCalledTimes(1);
     expect(pushMock).toHaveBeenCalledWith("/payment/ord-123");
   });
@@ -186,7 +184,7 @@ describe("CheckoutCommerceClient", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "Bayar" })[0]);
 
     await waitFor(() => expect(checkoutMock).toHaveBeenCalled());
-    expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: PRICE_ID, quantity: 3, device_count: 2 }]);
+    expect(checkoutMock.mock.calls[0][0].items).toEqual([{ product_price_id: PRICE_ID, quantity: 3 }]);
   });
 
   // Keranjang lama tidak boleh mengunci pembeli; checkout akan memigrasikan id
@@ -258,7 +256,7 @@ describe("CheckoutCommerceClient", () => {
 
     await waitFor(() => expect(checkoutMock).toHaveBeenCalled());
     expect(checkoutMock.mock.calls[0][0]).toMatchObject({
-      items: [{ product_price_id: PRICE_ID, quantity: 1, device_count: 1 }],
+      items: [{ product_price_id: PRICE_ID, quantity: 1 }],
       expected_subtotal: 50_000,
       payment_channel: "bni_va",
     });

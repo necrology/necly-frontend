@@ -74,9 +74,6 @@ export function CheckoutCommerceClient() {
   const [reviewedPrice, setReviewedPrice] = useState<ReviewedPrice | null>(null);
   const [stockNotice, setStockNotice] = useState<string | null>(null);
 
-  // Jumlah perangkat diambil dari item keranjang (default 1), tidak ada lagi pemilih manual.
-  const selectedDevice = items[0]?.selectedDevice ?? 1;
-
   // Seluruh angka di halaman ini berasal dari keranjang. Total yang ditampilkan
   // juga dikirim sebagai expected_subtotal supaya backend menolak percobaan bayar
   // bila harga berubah di antara tampilan dan permintaan.
@@ -207,19 +204,17 @@ export function CheckoutCommerceClient() {
       // dari halaman katalog lalu dari halaman detail. Backend menolak item
       // duplikat dalam satu pesanan, jadi baris seperti itu digabung lebih dulu,
       // dengan jumlah dijumlahkan sesuai yang terlihat di keranjang.
-      const merged = new Map<string, { product_price_id: string; quantity: number; device_count?: number }>();
+      const merged = new Map<string, { product_price_id: string; quantity: number }>();
       for (const item of payableItems) {
         const priceId = item.product_price_id ?? item.id;
         const existing = merged.get(priceId);
         if (existing) {
           existing.quantity += item.quantity;
-          existing.device_count = existing.device_count ?? item.selectedDevice ?? 1;
           continue;
         }
         merged.set(priceId, {
           product_price_id: priceId,
           quantity: item.quantity,
-          device_count: item.selectedDevice ?? 1,
         });
       }
 
