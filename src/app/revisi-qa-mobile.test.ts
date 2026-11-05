@@ -242,11 +242,11 @@ describe("revisi QA putaran kedua", () => {
     expect(brandSource).toContain('tone: "dropbox"');
   });
 
-  it("baris 90: logo Canva, Google One, dan Dropbox tersedia", () => {
-    expect(productBrand).toContain("/design-assets/logo-canva.svg");
-    expect(productBrand).toContain("/design-assets/logo-google-one.svg");
-    expect(productBrand).toContain("/design-assets/logo-dropbox.svg");
-    for (const logo of ["logo-canva.svg", "logo-google-one.svg", "logo-dropbox.svg"]) {
+  it("baris 89: logo lampiran Canva, Google One, dan Dropbox tersedia", () => {
+    expect(productBrand).toContain("/design-assets/logo-canva.png");
+    expect(productBrand).toContain("/design-assets/logo-google-one.avif");
+    expect(productBrand).toContain("/design-assets/logo-dropbox.png");
+    for (const logo of ["logo-canva.png", "logo-google-one.avif", "logo-dropbox.png"]) {
       expect(existsSync(join(process.cwd(), "public", "design-assets", logo))).toBe(true);
     }
   });
