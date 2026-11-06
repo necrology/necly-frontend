@@ -29,6 +29,7 @@ describe("akses akun dan OTP pada detail pesanan", () => {
     getOrderMock.mockReset();
     listAccessMock.mockReset();
     issueCodeMock.mockReset();
+    window.localStorage.clear();
     bootstrapAuthMock.mockReset();
     bootstrapAuthMock.mockResolvedValue({ id: "usr-1" });
     getOrderMock.mockResolvedValue({
@@ -73,7 +74,7 @@ describe("akses akun dan OTP pada detail pesanan", () => {
     });
     render(<OrderClient orderId={ORDER_ID} />);
 
-    await screen.findByRole("heading", { name: "Detail Pesanan" });
+    await screen.findByRole("heading", { name: "Detail & Progres Pesanan" });
     expect(listAccessMock).not.toHaveBeenCalled();
     expect(screen.queryByRole("heading", { name: "Akses akun & OTP" })).not.toBeInTheDocument();
   });

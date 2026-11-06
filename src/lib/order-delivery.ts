@@ -19,7 +19,7 @@ export type DeliveryErrorGuidance = {
 const deliveryErrorGuidance: Record<string, DeliveryErrorGuidance> = {
   account_full: {
     label: "Akun penuh",
-    action: "Pilih akun lain yang masih punya slot, atau tambah akun inventaris baru.",
+    action: "Pilih akun lain yang masih punya kuota akun, atau tambah akun inventaris baru.",
   },
   account_unavailable: {
     label: "Akun tidak tersedia",

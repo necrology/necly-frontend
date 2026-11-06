@@ -368,6 +368,8 @@ export type ApiAccountAccess = {
   account_email: string;
   /** False when neither the central mailbox nor this account's app password is configured. */
   otp_ready?: boolean;
+  /** Metadata server-side untuk memulihkan cooldown tanpa mengembalikan token lama. */
+  code_cooldown_until?: string | null;
 };
 
 export type ApiAccountAccessResponse = {
@@ -380,6 +382,9 @@ export type ApiOTPAccessCode = {
   expires_at: string;
   emails: string[];
   email_sent: boolean;
+  /** Batas waktu server sebelum kode baru boleh dibuat. */
+  code_cooldown_until?: string | null;
+  retry_after?: number;
 };
 
 export type ApiOTPLookup = {
@@ -1051,8 +1056,8 @@ export const accountOtpApi = {
     apiRequest<ApiAccountAccessResponse>(`/orders/${encodeURIComponent(orderId)}/account-access`),
 
   /**
-   * Membuat kode akses 15 menit. Kode dikembalikan sekali dan juga dikirim ke
-   * email pembeli; kata sandi akun/mailbox tidak pernah ikut.
+   * Membuat kode akses berumur pendek. Kode dikembalikan sekali dan juga
+   * dikirim ke email pembeli; kata sandi akun/mailbox tidak pernah ikut.
    */
   issueCode: (orderId: string, itemId: string) =>
     apiRequest<ApiOTPAccessCode>(

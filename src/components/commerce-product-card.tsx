@@ -26,12 +26,13 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
   const BadgeIcon = badgeLabel ? badgeIcons[badgeLabel] : null;
   const photo = safeProductImageSrc(product.imageUrl);
   const [photoFailed, setPhotoFailed] = useState(false);
+  const [cartFeedback, setCartFeedback] = useState("");
   const showPhoto = Boolean(photo && !photoFailed);
   const addItem = useCartStore((state) => state.addItem);
   const { toast } = useToast();
 
-  const firstPriceOption = product.priceOptions?.[0];
-  const isOutOfStock = product.stock === 0 || (firstPriceOption?.stock ?? 0) === 0;
+  const firstPriceOption = product.priceOptions?.find((option) => (option.stock ?? product.stock) > 0);
+  const isOutOfStock = !firstPriceOption;
 
   const handleAddToCart = () => {
     if (!firstPriceOption) return;
@@ -51,7 +52,9 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
       selectedDevice: product.deviceOptions?.[0] ?? 1,
     };
     addItem(cartItem);
-    toast("Ditambahkan ke keranjang", "success");
+    const message = `${product.name} ditambahkan ke keranjang.`;
+    setCartFeedback(message);
+    toast(message, "success");
   };
 
   return (
@@ -88,7 +91,7 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
           <>
             <span className="commerce-scheme-link is-disabled" aria-disabled="true"><Eye size={15} />Lihat Skema Harga</span>
             <span className="commerce-order-link is-disabled" aria-disabled="true">{actionLabel}</span>
-            <button className="commerce-cart-link is-disabled" aria-disabled="true" aria-label="Tambah ke keranjang (Coming Soon)"><ShoppingCart size={15} /></button>
+            <button className="commerce-cart-link is-disabled" type="button" disabled aria-label="Tambah ke keranjang (Coming Soon)"><ShoppingCart size={15} aria-hidden="true" /></button>
           </>
         ) : (
           <>
@@ -96,16 +99,17 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
             <Link href={`/products/${product.slug}`} className="commerce-order-link">{actionLabel}</Link>
             <button
               className={`commerce-cart-link ${isOutOfStock ? "is-disabled" : ""}`}
+              type="button"
               onClick={handleAddToCart}
               disabled={isOutOfStock}
               aria-label={`Tambah ${product.name} ke keranjang`}
-              aria-disabled={isOutOfStock}
             >
-              <ShoppingCart size={15} />
+              <ShoppingCart size={15} aria-hidden="true" />
             </button>
           </>
         )}
       </div>
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">{cartFeedback}</span>
     </article>
   );
 }

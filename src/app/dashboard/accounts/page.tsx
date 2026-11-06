@@ -169,11 +169,11 @@ function describeAccountError(error: unknown, action: "load" | "save" | "delete"
       case "rate_limited":
         return "Terlalu banyak permintaan OTP. Tunggu sekitar satu menit lalu coba lagi.";
       case "needs_review":
-        return "Akun ini masih di atas batas lima pengguna. Turunkan limit sharing ke 5 atau kurang sebelum menambah slot.";
+        return "Akun ini masih di atas batas lima pengguna. Turunkan limit sharing ke 5 atau kurang sebelum menambah kuota akun.";
       case "sharing_limit_exceeded":
-        return "Kapasitas akun tidak mencukupi. Kurangi jumlah slot atau naikkan limit sharing (maksimal 5).";
+        return "Kapasitas akun tidak mencukupi. Kurangi jumlah kuota akun atau naikkan limit sharing (maksimal 5).";
       case "inventory_account_in_use":
-        return "Akun tidak dapat dihapus karena masih memiliki slot yang terpakai, dipesan, atau tertaut pesanan.";
+        return "Akun tidak dapat dihapus karena masih memiliki kuota akun yang terpakai, dipesan, atau tertaut pesanan.";
       case "inventory_account_unavailable":
         return "Akun tidak aktif atau sudah kedaluwarsa. Pilih akun lain atau perbarui masa aktifnya.";
       case "inventory_account_mismatch":
@@ -197,7 +197,7 @@ function describeAccountError(error: unknown, action: "load" | "save" | "delete"
           : "Data akun tidak ditemukan. Muat ulang daftar akun.";
       case 409:
         return action === "delete"
-          ? "Akun tidak dapat dihapus karena masih dipakai. Lepaskan semua slot terlebih dahulu."
+          ? "Akun tidak dapat dihapus karena masih dipakai. Lepaskan semua kuota akun terlebih dahulu."
           : error.message || "Perubahan bertentangan dengan kapasitas atau status akun saat ini.";
       case 429:
         return "Terlalu banyak permintaan. Tunggu sebentar lalu coba lagi.";
@@ -300,7 +300,7 @@ function historyFor(account: ManagedAccount, slots: ManagedSlot[]) {
       rows.push({
         key: `${slot.id}-created`,
         at: slot.createdAt,
-        title: "Slot dibuat",
+        title: "Kuota akun dibuat",
         detail: `${owner} · ${slot.status}`,
       });
     }
@@ -324,7 +324,7 @@ function historyFor(account: ManagedAccount, slots: ManagedSlot[]) {
       rows.push({
         key: `${slot.id}-updated`,
         at: slot.updatedAt,
-        title: "Slot diperbarui",
+        title: "Kuota akun diperbarui",
         detail: `${owner} · ${slot.status}`,
       });
     }
@@ -846,19 +846,19 @@ export default function AccountsPage() {
       return;
     }
     if (!slotForm.priceId) {
-      setSlotForm({ ...slotForm, error: "Pilih paket untuk slot ini." });
+      setSlotForm({ ...slotForm, error: "Pilih paket untuk kuota akun ini." });
       return;
     }
 
     const quantity = Number(slotForm.quantity);
     if (!Number.isInteger(quantity) || quantity < 1) {
-      setSlotForm({ ...slotForm, error: "Jumlah slot harus berupa angka bulat minimal 1." });
+      setSlotForm({ ...slotForm, error: "Jumlah kuota akun harus berupa angka bulat minimal 1." });
       return;
     }
     if (quantity > account.remainingSlots) {
       setSlotForm({
         ...slotForm,
-        error: `Jumlah melebihi sisa kapasitas akun (${account.remainingSlots} slot).`,
+        error: `Jumlah melebihi sisa kapasitas akun (${account.remainingSlots} kuota).`,
       });
       return;
     }
@@ -886,7 +886,7 @@ export default function AccountsPage() {
           inventory_account_id: account.id,
         });
       }
-      setNotice(`${quantity} slot ditambahkan ke akun "${account.label}".`);
+      setNotice(`${quantity} kuota akun ditambahkan ke akun "${account.label}".`);
       setSlotForm(null);
       await refreshAccounts();
       if (detailId === account.id) await loadDetail(account.id, true);
@@ -946,7 +946,7 @@ export default function AccountsPage() {
         <MetricCard
           label="Pengguna tertaut"
           value={String(metrics.linkedUsers)}
-          change="User unik dengan slot akun"
+          change="Pengguna unik dengan kuota akun"
         />
         <MetricCard
           label="OTP siap"
@@ -1221,7 +1221,7 @@ export default function AccountsPage() {
           }
         >
           <p className="muted" style={{ margin: 0, fontSize: 12 }}>
-            Akun yang masih memiliki slot terpakai, dipesan, atau tertaut pesanan akan ditolak server (409).
+            Akun yang masih memiliki kuota akun terpakai, dipesan, atau tertaut pesanan akan ditolak server (409).
             Tindakan ini tidak dapat dibatalkan.
           </p>
           {deleteTarget.error && (
@@ -1293,7 +1293,7 @@ export default function AccountsPage() {
 
       {slotForm && (
         <Modal
-          title={`Tambah slot — ${slotForm.label}`}
+          title={`Tambah kuota akun — ${slotForm.label}`}
           size="sm"
           onClose={() => setSlotForm(null)}
           footer={
@@ -1307,12 +1307,12 @@ export default function AccountsPage() {
                 form="slot-form"
                 disabled={submitting || !slotAccount || slotAccount.remainingSlots === 0}
               >
-                {submitting ? "Menyimpan…" : "Simpan slot"}
+                {submitting ? "Menyimpan…" : "Simpan kuota"}
               </button>
             </>
           }
         >
-          <form id="slot-form" onSubmit={submitSlot} aria-label={`Form tambah slot ${slotForm.label}`}>
+          <form id="slot-form" onSubmit={submitSlot} aria-label={`Form tambah kuota akun ${slotForm.label}`}>
             <div className="form-grid">
               <div className="field">
                 <label className="label" htmlFor="slot-price">Paket</label>
@@ -1334,7 +1334,7 @@ export default function AccountsPage() {
                 )}
               </div>
               <div className="field">
-                <label className="label" htmlFor="slot-quantity">Jumlah slot</label>
+                <label className="label" htmlFor="slot-quantity">Jumlah kuota akun</label>
                 <input
                   className="input"
                   id="slot-quantity"
@@ -1347,7 +1347,7 @@ export default function AccountsPage() {
                 />
                 {slotAccount && (
                   <p className="muted" style={{ margin: 0, fontSize: 11 }}>
-                    Sisa kapasitas: {slotAccount.remainingSlots} slot dari limit {slotAccount.sharingLimit}.
+                    Sisa kapasitas: {slotAccount.remainingSlots} kuota dari limit {slotAccount.sharingLimit}.
                   </p>
                 )}
               </div>
@@ -1455,7 +1455,7 @@ export default function AccountsPage() {
                       <div
                         className="inventory-bar"
                         role="progressbar"
-                        aria-label={`${account.usedSlots} dari ${account.sharingLimit} slot terpakai`}
+                        aria-label={`${account.usedSlots} dari ${account.sharingLimit} kuota akun terpakai`}
                         aria-valuenow={account.usedSlots}
                         aria-valuemin={0}
                         aria-valuemax={account.sharingLimit}
@@ -1547,14 +1547,14 @@ export default function AccountsPage() {
                     disabled={detailAccount.needsReview || !detailAccount.sellable || detailAccount.remainingSlots === 0}
                     title={
                       detailAccount.needsReview
-                        ? "Akun perlu review: turunkan limit sharing ke 5 atau kurang sebelum menambah slot."
+                        ? "Akun perlu review: turunkan limit sharing ke 5 atau kurang sebelum menambah kuota akun."
                         : detailAccount.remainingSlots === 0
                           ? "Kapasitas akun sudah penuh."
                           : undefined
                     }
-                    aria-label={`Tambah slot ke ${detailAccount.label}`}
+                    aria-label={`Tambah kuota akun ke ${detailAccount.label}`}
                   >
-                    <Plus size={12} /> Tambah slot
+                    <Plus size={12} /> Tambah kuota
                   </button>
                   <button
                     className="button button-secondary button-sm"
@@ -1603,7 +1603,7 @@ export default function AccountsPage() {
                 <div>
                   <div className="muted" style={{ fontSize: 10 }}>Pemakaian sharing</div>
                   <div className="tabular">
-                    {detailAccount.usedSlots}/{detailAccount.sharingLimit} slot
+                    {detailAccount.usedSlots}/{detailAccount.sharingLimit} kuota akun
                   </div>
                   <span className="muted">
                     {detailAccount.assignedUsers} pengguna · sisa {detailAccount.remainingSlots}
@@ -1629,8 +1629,8 @@ export default function AccountsPage() {
 
               {detailAccount.needsReview && (
                 <div className="notice" role="alert" style={{ marginBottom: 18, color: "var(--danger)" }}>
-                  Akun ini melebihi batas lima pengguna dari aturan lama. Slot yang sudah terjual tetap aman,
-                  tetapi penambahan slot dinonaktifkan sampai limit sharing diturunkan ke 5 atau kurang.
+                  Akun ini melebihi batas lima pengguna dari aturan lama. Kuota akun yang sudah terjual tetap aman,
+                  tetapi penambahan kuota akun dinonaktifkan sampai limit sharing diturunkan ke 5 atau kurang.
                 </div>
               )}
 
@@ -1680,11 +1680,11 @@ export default function AccountsPage() {
               )}
 
               <div className="panel-header" style={{ marginBottom: 10 }}>
-                <h3 className="panel-title">Daftar slot</h3>
-                <span className="muted" style={{ fontSize: 10 }}>{detail.slots.length} slot</span>
+                <h3 className="panel-title">Daftar kuota akun</h3>
+                <span className="muted" style={{ fontSize: 10 }}>{detail.slots.length} kuota</span>
               </div>
               {detail.slots.length === 0 ? (
-                <p className="muted" style={{ margin: "0 0 18px", fontSize: 11 }}>Belum ada slot pada akun ini.</p>
+                <p className="muted" style={{ margin: "0 0 18px", fontSize: 11 }}>Belum ada kuota pada akun ini.</p>
               ) : (
                 <div className="table-scroll" style={{ marginBottom: 18 }}>
                   <table className="data-table">
@@ -1718,8 +1718,8 @@ export default function AccountsPage() {
               )}
 
               <div className="panel-header" style={{ marginBottom: 10 }}>
-                <h3 className="panel-title">Riwayat slot</h3>
-                <span className="muted" style={{ fontSize: 10 }}>Ditinjau dari data slot dan pesanan</span>
+                <h3 className="panel-title">Riwayat kuota akun</h3>
+                <span className="muted" style={{ fontSize: 10 }}>Ditinjau dari data kuota akun dan pesanan</span>
               </div>
               {history.length === 0 ? (
                 <p className="muted" style={{ margin: 0, fontSize: 11 }}>Belum ada riwayat untuk akun ini.</p>

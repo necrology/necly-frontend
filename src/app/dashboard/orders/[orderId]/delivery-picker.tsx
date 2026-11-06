@@ -57,7 +57,7 @@ function AccountChoices({
                   </span>
                   <span className="account-meta" style={{ display: "flex" }}>
                     <span>Pemakaian {accountUsageLabel(account)}</span>
-                    <span>Slot tersisa {account.remaining_slots}</span>
+                    <span>Kuota akun tersisa {account.remaining_slots}</span>
                     <span>
                       {account.days_remaining === null || account.days_remaining === undefined
                         ? "Tanpa batas waktu"
@@ -243,7 +243,7 @@ export function ReplaceAccountPanel({
         <div>
           <h2 className="panel-title" id="replace-account-title">Ganti akun {itemName}</h2>
           <p className="muted small" id="replace-account-description" style={{ margin: "4px 0 0" }}>
-            Pilih akun aktif lain untuk pembeli. Sistem menandai slot lama released dan mengirim email pengganti.
+            Pilih akun aktif lain untuk pembeli. Sistem menandai kuota akun lama released dan mengirim email pengganti.
             Tidak ada order atau pembayaran baru yang dibuat.
           </p>
         </div>

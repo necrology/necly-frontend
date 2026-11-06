@@ -404,7 +404,7 @@ export function AdminOrderDetail({ orderId }: { orderId: string }) {
     setRevokeOpen(false);
     setOrder(result.order);
     setActionNotice(
-      `Akses pesanan dicabut dan ${result.released_slots} slot dikembalikan ke stok. ` +
+      `Akses pesanan dicabut dan ${result.released_slots} kuota akun dikembalikan ke stok. ` +
         (result.accounts.length > 0
           ? "Pastikan kata sandi baru sudah dikirim ke pelanggan lain yang masih aktif."
           : ""),

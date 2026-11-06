@@ -3,9 +3,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getOrderMock, bootstrapAuthMock } = vi.hoisted(() => ({
+const { getOrderMock, bootstrapAuthMock, listAccessMock, issueCodeMock } = vi.hoisted(() => ({
   getOrderMock: vi.fn(),
   bootstrapAuthMock: vi.fn(),
+  listAccessMock: vi.fn(),
+  issueCodeMock: vi.fn(),
 }));
 
 vi.mock("@/lib/api", async (importOriginal) => {
@@ -14,6 +16,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
     ...actual,
     DEMO_MODE: false,
     checkoutApi: { ...actual.checkoutApi, getOrder: getOrderMock },
+    accountOtpApi: { ...actual.accountOtpApi, listAccess: listAccessMock, issueCode: issueCodeMock },
     bootstrapAuth: bootstrapAuthMock,
   };
 });
@@ -22,6 +25,7 @@ import { ApiError } from "@/lib/api";
 import { OrderClient } from "./order-client";
 
 const ORDER_ID = "0192f0b0-0000-0000-0000-000000000001";
+const ACCESS_COOLDOWN_COPY = "Kode akses & OTP dapat digunakan selama 5 menit, untuk saat ini gunakan kode akses yang sudah dibuat.";
 
 function order(overrides: Record<string, unknown> = {}) {
   return {
@@ -65,6 +69,9 @@ describe("halaman pelacakan pesanan (live)", () => {
     bootstrapAuthMock.mockReset();
     bootstrapAuthMock.mockResolvedValue({ id: "usr-1" });
     getOrderMock.mockResolvedValue(order());
+    listAccessMock.mockReset().mockResolvedValue({ items: [], otp_inbox_ready: true });
+    issueCodeMock.mockReset();
+    window.localStorage.clear();
   });
 
   it("memulihkan sesi lalu memanggil checkoutApi.getOrder", async () => {
@@ -72,22 +79,21 @@ describe("halaman pelacakan pesanan (live)", () => {
 
     await waitFor(() => expect(getOrderMock).toHaveBeenCalledWith(ORDER_ID));
     expect(bootstrapAuthMock).toHaveBeenCalled();
-    expect(screen.getByRole("heading", { name: "Detail Pesanan" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Detail & Progres Pesanan" })).toBeInTheDocument();
+    expect(screen.queryByText("Pelacakan pesanan")).not.toBeInTheDocument();
     expect(screen.getByText("Nomor Pesanan:")).toBeInTheDocument();
-    expect(screen.getAllByText("ORD-1760832000000-0192f0b0").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("ORD-1760832000000-0192f0b0").length).toBeGreaterThanOrEqual(1);
     // Pesanan yang belum dibayar belum berhak mendapat kartu akses/OTP.
     expect(screen.queryByRole("heading", { name: "Akses akun & OTP" })).not.toBeInTheDocument();
   });
 
-  it("menyalin nomor pesanan dari kartu bantuan dan menampilkan umpan balik sukses", async () => {
+  it("menyalin nomor pesanan dari header dan menampilkan umpan balik sukses", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.assign(navigator, { clipboard: { writeText } });
     render(<OrderClient orderId={ORDER_ID} />);
 
-    const helpCard = await screen.findByRole("heading", { name: "Butuh Bantuan?" });
-    const copyButton = helpCard.parentElement?.querySelector<HTMLButtonElement>("button[aria-label]");
-    expect(copyButton).toHaveAccessibleName("Salin nomor pesanan ORD-1760832000000-0192f0b0");
-    fireEvent.click(copyButton!);
+    const copyButton = await screen.findByRole("button", { name: "Salin nomor pesanan ORD-1760832000000-0192f0b0" });
+    fireEvent.click(copyButton);
 
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("ORD-1760832000000-0192f0b0"));
     expect(screen.getByRole("status")).toHaveTextContent("Nomor pesanan berhasil disalin.");
@@ -106,7 +112,7 @@ describe("halaman pelacakan pesanan (live)", () => {
 
   it("meratakan metadata status header ke kiri sesuai QA", async () => {
     const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
-    expect(css).toContain(".order-header-meta { display: grid; justify-items: start; gap: 8px; text-align: left; }");
+    expect(css).toMatch(/\.order-header-meta \{[^}]*justify-items: start;[^}]*text-align: left;/);
 
     render(<OrderClient orderId={ORDER_ID} />);
     expect(await screen.findByText("Terakhir diperbarui", { exact: false })).toBeInTheDocument();
@@ -119,9 +125,104 @@ describe("halaman pelacakan pesanan (live)", () => {
     await waitFor(() => expect(screen.getByText("Dibayar")).toBeInTheDocument());
     expect(screen.getByRole("heading", { name: "Progres Pesanan" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Item Pesanan" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Butuh Bantuan?" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Laporkan kendala" })).toHaveClass("button-warning");
+    expect(screen.getAllByRole("button", { name: /Salin nomor pesanan/ })).toHaveLength(1);
     expect(screen.getAllByText("Netflix Premium")).toHaveLength(1);
     expect(screen.getByText(/1 Bulan × 1/)).toBeInTheDocument();
+  });
+
+  it("menegakkan cooldown kode akses dari metadata server dan mempertahankannya setelah render ulang", async () => {
+    const cooldownUntil = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    getOrderMock.mockResolvedValue(order({ status: "processing" }));
+    listAccessMock.mockResolvedValue({
+      otp_inbox_ready: true,
+      items: [{
+        order_item_id: "0192f0b2-0000-0000-0000-000000000001",
+        product_name: "Netflix Premium",
+        duration_name: "1 Bulan",
+        account_label: "Akun keluarga",
+        account_email: "family@example.test",
+        otp_ready: true,
+        code_cooldown_until: cooldownUntil,
+      }],
+    });
+
+    const first = render(<OrderClient orderId={ORDER_ID} />);
+    const button = await screen.findByRole("button", { name: /Buat kode dalam/ });
+    expect(button).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Kode akses & OTP dapat digunakan selama 5 menit, untuk saat ini gunakan kode akses yang sudah dibuat.");
+    fireEvent.click(button);
+    expect(issueCodeMock).not.toHaveBeenCalled();
+
+    first.unmount();
+    listAccessMock.mockResolvedValue({
+      otp_inbox_ready: true,
+      items: [{
+        order_item_id: "0192f0b2-0000-0000-0000-000000000001",
+        product_name: "Netflix Premium",
+        duration_name: "1 Bulan",
+        account_label: "Akun keluarga",
+        account_email: "family@example.test",
+        otp_ready: true,
+      }],
+    });
+    render(<OrderClient orderId={ORDER_ID} />);
+    expect(await screen.findByRole("button", { name: /Buat kode dalam/ })).toBeDisabled();
+  });
+
+  it("memulai cooldown lima menit setelah API membuat kode tanpa mengandalkan timer sebagai enforcement server", async () => {
+    getOrderMock.mockResolvedValue(order({ status: "processing" }));
+    listAccessMock.mockResolvedValue({
+      otp_inbox_ready: true,
+      items: [{
+        order_item_id: "0192f0b2-0000-0000-0000-000000000001",
+        product_name: "Netflix Premium",
+        duration_name: "1 Bulan",
+        account_label: "Akun keluarga",
+        account_email: "family@example.test",
+        otp_ready: true,
+      }],
+    });
+    issueCodeMock.mockResolvedValue({
+      code: "ABCD234567",
+      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      emails: ["family@example.test"],
+      email_sent: true,
+    });
+
+    render(<OrderClient orderId={ORDER_ID} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Buat kode akses OTP" }));
+
+    await waitFor(() => expect(issueCodeMock).toHaveBeenCalledWith(ORDER_ID, "0192f0b2-0000-0000-0000-000000000001"));
+    expect(screen.getByRole("button", { name: /Buat ulang dalam/ })).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent("Kode akses & OTP dapat digunakan selama 5 menit");
+  });
+
+  it("mengikuti kontrak 429 backend untuk enforcement cooldown", async () => {
+    getOrderMock.mockResolvedValue(order({ status: "processing" }));
+    listAccessMock.mockResolvedValue({
+      otp_inbox_ready: true,
+      items: [{
+        order_item_id: "0192f0b2-0000-0000-0000-000000000001",
+        product_name: "Netflix Premium",
+        duration_name: "1 Bulan",
+        account_label: "Akun keluarga",
+        account_email: "family@example.test",
+        otp_ready: true,
+      }],
+    });
+    issueCodeMock.mockRejectedValue(new ApiError(ACCESS_COOLDOWN_COPY, 429, {
+      code: "otp_access_code_cooldown",
+      retry_after: 300,
+      cooldown_until: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    }));
+
+    render(<OrderClient orderId={ORDER_ID} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Buat kode akses OTP" }));
+
+    expect(await screen.findByRole("button", { name: /Buat kode dalam/ })).toBeDisabled();
+    expect(screen.getByRole("status")).toHaveTextContent(ACCESS_COOLDOWN_COPY);
   });
 
   it("memetakan status terminal refunded tanpa data contoh", async () => {

@@ -198,11 +198,12 @@ describe("Halaman Inventaris akun", () => {
     );
   });
 
-  it("menampilkan ajakan tambah kuota saat akun belum punya slot", async () => {
+  it("menampilkan ajakan tambah kuota saat akun belum punya kuota akun", async () => {
     mockAccounts([{ ...ACCOUNT, total_slots: 0, available_slots: 0, used_slots: 0, remaining_slots: 5 }]);
     render(<InventoryPage />);
     await screen.findByText("Akun utama");
 
+    expect(screen.getByRole("columnheader", { name: "Kuota akun" })).toBeInTheDocument();
     const row = screen.getByText("Akun utama").closest("tr");
     expect(within(row as HTMLElement).getByText("Belum ada akses")).toBeInTheDocument();
     const cta = within(row as HTMLElement).getByRole("button", { name: "Tambah kuota ke Akun utama" });

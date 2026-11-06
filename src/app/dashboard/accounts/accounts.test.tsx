@@ -340,7 +340,7 @@ describe("Halaman Manajemen akun (NEC-98)", () => {
     await screen.findByText(/Secret OTP belum diatur untuk akun ini/);
   });
 
-  it("menonaktifkan tambah slot untuk akun needs_review", async () => {
+  it("menonaktifkan tambah kuota akun untuk akun needs_review", async () => {
     getAccountMock.mockResolvedValueOnce(LEGACY_ACCOUNT);
     listSlotsMock.mockResolvedValueOnce({ slots: [SLOT], page: 1, per_page: 100, total: 1 });
 
@@ -349,10 +349,10 @@ describe("Halaman Manajemen akun (NEC-98)", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Lihat detail akun Akun lama" }));
 
-    const addSlot = await screen.findByRole("button", { name: "Tambah slot ke Akun lama" });
+    const addSlot = await screen.findByRole("button", { name: "Tambah kuota akun ke Akun lama" });
     expect(addSlot).toBeDisabled();
     expect(
-      screen.getByText(/penambahan slot dinonaktifkan sampai limit sharing diturunkan ke 5 atau kurang/),
+      screen.getByText(/penambahan kuota akun dinonaktifkan sampai limit sharing diturunkan ke 5 atau kurang/),
     ).toBeInTheDocument();
   });
 
@@ -368,7 +368,7 @@ describe("Halaman Manajemen akun (NEC-98)", () => {
     expect(screen.getByRole("alertdialog", { name: "Konfirmasi hapus akun" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Ya, hapus akun" }));
 
-    expect(await screen.findByText(/Akun tidak dapat dihapus karena masih memiliki slot/)).toBeInTheDocument();
+    expect(await screen.findByText(/Akun tidak dapat dihapus karena masih memiliki kuota akun/)).toBeInTheDocument();
     expect(screen.getByText("Akun utama")).toBeInTheDocument();
     expect(deleteAccountMock).toHaveBeenCalledWith("acc-1");
   });

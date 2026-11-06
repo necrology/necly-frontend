@@ -6,10 +6,11 @@ import { useState } from "react";
 type OrderNumberCopyProps = {
   number: string;
   className?: string;
+  showHelp?: boolean;
 };
 
 /** Nomor pesanan tetap berupa teks biasa agar dapat disalin manual bila Clipboard API tidak tersedia. */
-export function OrderNumberCopy({ number, className }: OrderNumberCopyProps) {
+export function OrderNumberCopy({ number, className, showHelp = true }: OrderNumberCopyProps) {
   const [feedback, setFeedback] = useState<"success" | "error" | null>(null);
 
   const copy = async () => {
@@ -36,9 +37,11 @@ export function OrderNumberCopy({ number, className }: OrderNumberCopyProps) {
           {feedback === "success" ? <><Check size={14} aria-hidden="true" /> Tersalin</> : <><ClipboardCopy size={14} aria-hidden="true" /> Salin nomor</>}
         </button>
       </div>
-      <p className="muted small" style={{ margin: "7px 0 0" }}>
-        Salin nomor ini saat membuat Laporan Kendala agar tim dapat menemukan pesanan Anda.
-      </p>
+      {showHelp && (
+        <p className="muted small" style={{ margin: "7px 0 0" }}>
+          Salin nomor ini saat membuat Laporan Kendala agar tim dapat menemukan pesanan Anda.
+        </p>
+      )}
       {feedback === "success" && <p className="order-copy-feedback" role="status">Nomor pesanan berhasil disalin.</p>}
       {feedback === "error" && <p className="field-error" role="alert">Nomor tidak dapat disalin otomatis. Pilih dan salin nomor pesanan secara manual.</p>}
     </div>

@@ -98,12 +98,12 @@ export function SiteHeader() {
         {user ? (
           <>
             <Link className="commerce-mobile-nav-link" href="/orders" onClick={closeMobileMenu}>Pesanan saya</Link>
-            <Link className="commerce-mobile-login commerce-mobile-account-action" href="/akun" onClick={closeMobileMenu}>Akun &amp; keamanan</Link>
+            <Link className="commerce-mobile-login commerce-mobile-auth-action" href="/akun" onClick={closeMobileMenu}>Akun &amp; keamanan</Link>
             {canUseDashboard && <Link className="commerce-mobile-login" href="/dashboard" onClick={closeMobileMenu}>Dashboard</Link>}
-            <button className="commerce-mobile-login commerce-mobile-signout commerce-mobile-account-action" type="button" onClick={signOut} disabled={signingOut}>{signingOut ? "Keluar…" : `Keluar (${user.name.split(" ")[0]})`}</button>
+            <button className="commerce-mobile-login commerce-mobile-signout commerce-mobile-auth-action" type="button" onClick={signOut} disabled={signingOut}>{signingOut ? "Keluar…" : `Keluar (${user.name.split(" ")[0]})`}</button>
           </>
         ) : (
-          <Link className="commerce-mobile-login commerce-mobile-login-action" href="/login" onClick={closeMobileMenu}>Log In</Link>
+          <Link className="commerce-mobile-login commerce-mobile-auth-action" href="/login" onClick={closeMobileMenu}>Log In</Link>
         )}
       </nav>
     </header>

@@ -54,11 +54,13 @@ describe("halaman Laporan Kendala", () => {
     createMock.mockReset();
   });
 
-  it('menjelaskan bahwa nomor pesanan dapat dilihat di halaman "Pesanan saya"', () => {
+  it('menyimpan petunjuk nomor pesanan hanya di placeholder tanpa bantuan duplikat', () => {
     render(<IssueReportPage />);
 
-    expect(screen.getByLabelText(/^Nomor pesanan/)).toHaveAttribute("placeholder", 'Lihat nomor di halaman "Pesanan saya"');
-    expect(screen.getByText('Nomor pesanan dapat dilihat di halaman "Pesanan saya".')).toBeInTheDocument();
+    const field = screen.getByLabelText(/^Nomor pesanan/);
+    expect(field).toHaveAttribute("placeholder", 'Lihat nomor di halaman "Pesanan saya"');
+    expect(field).not.toHaveAttribute("aria-describedby");
+    expect(screen.queryByText('Nomor pesanan dapat dilihat di halaman "Pesanan saya".')).not.toBeInTheDocument();
   });
 
   it("mengirim laporan dengan nama field yang diharapkan backend", async () => {
@@ -139,6 +141,8 @@ describe("halaman Laporan Kendala", () => {
 
     expect(createMock).not.toHaveBeenCalled();
     expect(screen.getByText("Nama wajib diisi.")).toBeInTheDocument();
-    expect(screen.getByText("Nomor pesanan wajib diisi.")).toBeInTheDocument();
+    const orderError = screen.getByText("Nomor pesanan wajib diisi.");
+    expect(orderError).toHaveAttribute("id", "order-number-error");
+    expect(screen.getByLabelText(/^Nomor pesanan/)).toHaveAttribute("aria-describedby", "order-number-error");
   });
 });

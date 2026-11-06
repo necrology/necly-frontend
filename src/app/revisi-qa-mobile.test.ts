@@ -141,17 +141,13 @@ describe("revisi QA putaran kedua", () => {
   });
 
   it("baris 71 & NEC-88: teks akun, keluar, dan Log In di menu mobile berwarna hitam", () => {
-    expect(header.match(/commerce-mobile-account-action/g)).toHaveLength(2);
-    expect(css).toContain(".commerce-mobile-account-action,");
-    expect(css).toContain(".commerce-mobile-login-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }");
+    expect(header.match(/commerce-mobile-auth-action/g)).toHaveLength(3);
+    expect(css).toContain(".commerce-mobile-auth-action { width: 100%; max-width: 220px;");
+    expect(css).toContain("border-radius: 10px; padding-inline: 24px; color: #000; text-align: center;");
   });
 
   it("NEC-88: tombol akun, keluar, dan Log In di drawer mobile tidak melebar penuh dan lebarnya sama", () => {
-    // Sebelumnya kedua tombol memakai lebar drawer (358px di 390px) karena
-    // diwarisi dari CTA "Log In" yang memang selebar layar. Revisi berikutnya
-    // menyamakan lebar keduanya lewat max-width yang sama.
-    expect(css).toContain(".commerce-mobile-account-action,");
-    expect(css).toContain(".commerce-mobile-login-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }");
+    expect(css).toContain(".commerce-mobile-auth-action { width: 100%; max-width: 220px;");
   });
 
   it("baris 66: ajakan daftar di halaman login diperbesar", () => {
@@ -223,9 +219,8 @@ describe("revisi QA putaran kedua", () => {
   });
 
   it("baris 86: tombol Log In di menu mobile berwarna hitam sama dengan Akun & Keluar", () => {
-    expect(header).toContain("commerce-mobile-login commerce-mobile-login-action");
-    expect(css).toContain(".commerce-mobile-account-action,");
-    expect(css).toContain(".commerce-mobile-login-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }");
+    expect(header).toContain("commerce-mobile-login commerce-mobile-auth-action");
+    expect(css).toContain(".commerce-mobile-auth-action { width: 100%; max-width: 220px;");
   });
 
   it("baris 87: jarak animasi hero mobile dirapatkan", () => {

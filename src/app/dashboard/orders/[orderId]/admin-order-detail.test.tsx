@@ -237,7 +237,7 @@ describe("detail pesanan admin (C19)", () => {
 
     expect(await screen.findByText("Pilih akun untuk dikirim")).toBeInTheDocument();
     expect(screen.getAllByText("Pemakaian 1/5").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Slot tersisa 4").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Kuota akun tersisa 4").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("Sudah dipakai user ini").length).toBeGreaterThanOrEqual(1);
 
     const usedRadio = screen.getByRole("radio", { name: /Akun Dipakai/ });
@@ -294,7 +294,7 @@ describe("detail pesanan admin (C19)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Simpan akun & kirim/ }));
 
     expect(await screen.findByText(/Akun penuh \(account_full\)/)).toBeInTheDocument();
-    expect(screen.getByText(/Pilih akun lain yang masih punya slot/)).toBeInTheDocument();
+    expect(screen.getByText(/Pilih akun lain yang masih punya kuota akun/)).toBeInTheDocument();
     expect(approveDeliveryMock).not.toHaveBeenCalled();
   });
 

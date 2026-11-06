@@ -116,7 +116,7 @@ export function RevokeAccessPanel({ orderId, orderStatus, onClose, onSuccess }: 
         <div>
           <h2 className="panel-title" id="revoke-access-title">Batalkan langganan &amp; cabut akses</h2>
           <p className="muted small" id="revoke-access-description" style={{ margin: "4px 0 0" }}>
-            Pesanan dihentikan, kode OTP lama langsung tidak berlaku, dan slot akun dilepas setelah kata sandi
+            Pesanan dihentikan, kode OTP lama langsung tidak berlaku, dan kuota akun dilepas setelah kata sandi
             platform diganti.
           </p>
         </div>
@@ -153,7 +153,7 @@ export function RevokeAccessPanel({ orderId, orderStatus, onClose, onSuccess }: 
             </div>
           ) : (
             <p className="muted small" role="status" style={{ margin: "0 0 14px" }}>
-              Akun belum pernah dikirim ke pembeli. Pembatalan cukup melepas slot reservasi.
+              Akun belum pernah dikirim ke pembeli. Pembatalan cukup melepas kuota akun yang direservasi.
             </p>
           )}
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getOrderMock } = vi.hoisted(() => ({ getOrderMock: vi.fn() }));
@@ -24,6 +24,10 @@ describe("halaman pelacakan pesanan (demo)", () => {
     render(<OrderClient orderId="ord-1" />);
 
     expect(await screen.findByText("Pesanan sandbox")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Detail & Progres Pesanan" })).toBeInTheDocument();
+    expect(screen.queryByText("Pelacakan pesanan")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Salin nomor pesanan NCL-DEMO-ord-1/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Laporkan kendala" })).toHaveClass("button-warning");
     expect(getOrderMock).not.toHaveBeenCalled();
     expect(screen.queryByRole("heading", { name: "Akses akun & OTP" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Dapatkan akses Apps" })).not.toBeInTheDocument();

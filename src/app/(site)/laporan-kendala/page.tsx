@@ -127,9 +127,15 @@ export default function IssueReportPage() {
                 <label className="field">
                   <span className="label">Nomor pesanan <span className="commerce-required" aria-hidden="true">*</span></span>
                   {/* Baris 55: nomor pesanan wajib dan harus cocok dengan email pemesan. */}
-                  <input className="input" required name="order" placeholder={'Lihat nomor di halaman "Pesanan saya"'} aria-describedby="order-number-help" aria-invalid={Boolean(errors.order_number)} />
-                  <span id="order-number-help" className="muted small">Nomor pesanan dapat dilihat di halaman &quot;Pesanan saya&quot;.</span>
-                  {errors.order_number && <span className="field-error" role="alert">{errors.order_number}</span>}
+                  <input
+                    className="input"
+                    required
+                    name="order"
+                    placeholder={'Lihat nomor di halaman "Pesanan saya"'}
+                    aria-describedby={errors.order_number ? "order-number-error" : undefined}
+                    aria-invalid={Boolean(errors.order_number)}
+                  />
+                  {errors.order_number && <span id="order-number-error" className="field-error" role="alert">{errors.order_number}</span>}
                 </label>
                 <label className="field">
                   <span className="label">Kategori kendala <span className="commerce-required" aria-hidden="true">*</span></span>

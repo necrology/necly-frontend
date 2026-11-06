@@ -20,6 +20,38 @@ type LoadError = {
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ACCESS_CODE_COOLDOWN_MS = 5 * 60 * 1000;
+const ACCESS_CODE_COOLDOWN_COPY = "Kode akses & OTP dapat digunakan selama 5 menit, untuk saat ini gunakan kode akses yang sudah dibuat.";
+const ACCESS_CODE_COOLDOWN_PREFIX = "necly-otp-code-cooldown:";
+
+function currentTimestamp() {
+  return Date.now();
+}
+
+function cooldownStorageKey(orderId: string, itemId: string) {
+  return `${ACCESS_CODE_COOLDOWN_PREFIX}${orderId}:${itemId}`;
+}
+
+function readStoredCooldown(orderId: string, itemId: string) {
+  if (typeof window === "undefined") return 0;
+  const value = Number(window.localStorage.getItem(cooldownStorageKey(orderId, itemId)));
+  if (!Number.isFinite(value) || value <= Date.now()) {
+    window.localStorage.removeItem(cooldownStorageKey(orderId, itemId));
+    return 0;
+  }
+  return value;
+}
+
+function storeCooldown(orderId: string, itemId: string, until: number) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(cooldownStorageKey(orderId, itemId), String(until));
+}
+
+function cooldownFrom(value: unknown) {
+  if (typeof value !== "string") return 0;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
 
 function MailIcon() {
   return <span aria-hidden="true" className="order-access-mail-icon">@</span>;
@@ -85,6 +117,8 @@ function OrderClientInner({ orderId }: OrderClientProps) {
   const [accessCodes, setAccessCodes] = useState<Record<string, ApiOTPAccessCode>>({});
   const [accessBusy, setAccessBusy] = useState("");
   const [accessError, setAccessError] = useState("");
+  const [accessCooldowns, setAccessCooldowns] = useState<Record<string, number>>({});
+  const [cooldownNow, setCooldownNow] = useState(() => Date.now());
   const [copiedCode, setCopiedCode] = useState("");
 
   const loadOrder = useCallback(async () => {
@@ -120,7 +154,21 @@ function OrderClientInner({ orderId }: OrderClientProps) {
       // menunggu pembayaran/approval tidak perlu memanggil endpoint ini.
       if (["processing", "shipped", "delivered", "completed"].includes(data.status)) {
         try {
-          setAccess(await accountOtpApi.listAccess(orderId));
+          const nextAccess = await accountOtpApi.listAccess(orderId);
+          setAccess(nextAccess);
+          setAccessCooldowns((current) => {
+            const next = { ...current };
+            nextAccess.items.forEach((item) => {
+              const serverUntil = cooldownFrom(item.code_cooldown_until);
+              const storedUntil = readStoredCooldown(orderId, item.order_item_id);
+              const until = Math.max(serverUntil, storedUntil);
+              if (until > Date.now()) {
+                next[item.order_item_id] = until;
+                storeCooldown(orderId, item.order_item_id, until);
+              }
+            });
+            return next;
+          });
         } catch {
           setAccess(null);
         }
@@ -143,17 +191,43 @@ function OrderClientInner({ orderId }: OrderClientProps) {
     return () => { cancelled = true; };
   }, [loadOrder, reloadToken]);
 
+  useEffect(() => {
+    const hasActiveCooldown = Object.values(accessCooldowns).some((until) => until > cooldownNow);
+    if (!hasActiveCooldown) return;
+    const timer = window.setInterval(() => setCooldownNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [accessCooldowns, cooldownNow]);
+
+  const setItemCooldown = (itemId: string, until: number) => {
+    if (!order || until <= currentTimestamp()) return;
+    storeCooldown(order.id, itemId, until);
+    setAccessCooldowns((current) => ({ ...current, [itemId]: until }));
+    setCooldownNow(currentTimestamp());
+  };
+
   const issueAccessCode = async (itemId: string) => {
-    if (!order) return;
+    if (!order || (accessCooldowns[itemId] ?? 0) > currentTimestamp()) return;
     setAccessBusy(itemId);
     setAccessError("");
     try {
       const issued = await accountOtpApi.issueCode(order.id, itemId);
       setAccessCodes((current) => ({ ...current, [itemId]: issued }));
+      const serverUntil = cooldownFrom(issued.code_cooldown_until);
+      const now = currentTimestamp();
+      setItemCooldown(itemId, serverUntil > now ? serverUntil : now + ACCESS_CODE_COOLDOWN_MS);
     } catch (failure) {
       if (failure instanceof ApiError) {
         const payload = failure.payload as { code?: string } | undefined;
-        if (payload?.code === "otp_unavailable") {
+        if (failure.status === 429 || payload?.code === "otp_access_code_cooldown" || payload?.code === "otp_code_cooldown") {
+          const cooldownPayload = failure.payload as { retry_after?: unknown; code_cooldown_until?: unknown; cooldown_until?: unknown };
+          const retryAfter = typeof cooldownPayload.retry_after === "number" ? cooldownPayload.retry_after * 1000 : 0;
+          const serverUntil = Math.max(
+            cooldownFrom(cooldownPayload.code_cooldown_until),
+            cooldownFrom(cooldownPayload.cooldown_until),
+          );
+          const now = currentTimestamp();
+          setItemCooldown(itemId, serverUntil > now ? serverUntil : now + (retryAfter > 0 ? retryAfter : ACCESS_CODE_COOLDOWN_MS));
+        } else if (payload?.code === "otp_unavailable") {
           setAccessError("Layanan ambil OTP belum aktif. Hubungi dukungan Necly dengan nomor pesanan ini.");
         } else if (payload?.code === "order_not_approved") {
           setAccessError("Kode akses baru bisa dibuat setelah admin mengirim akun pesanan ini.");
@@ -234,9 +308,11 @@ function OrderClientInner({ orderId }: OrderClientProps) {
         <div className="container page-hero-row">
           <div>
             <Link className="order-back-link" href="/orders">Semua pesanan</Link>
-            <span className="eyebrow">Pelacakan pesanan</span>
-            <h1 className="h1 order-detail-title">Detail Pesanan</h1>
-            <p className="order-header-number"><span>Nomor Pesanan:</span> <strong>{order.number}</strong></p>
+            <h1 className="h1 order-detail-title">Detail &amp; Progres Pesanan</h1>
+            <div className="order-header-number">
+              <span>Nomor Pesanan:</span>
+              <OrderNumberCopy className="order-header-copy" number={order.number} showHelp={false} />
+            </div>
           </div>
           <div className="order-header-meta">
             {DEMO_MODE ? <span className="badge status-info">Pesanan sandbox</span> : <StatusBadge status={order.status} />}
@@ -262,7 +338,7 @@ function OrderClientInner({ orderId }: OrderClientProps) {
               <h2 className="h3"><KeyRound size={17} aria-hidden="true" /> Akses akun &amp; OTP</h2>
               <p className="muted small" style={{ marginTop: 8 }}>
                 Saat platform meminta kode OTP, buat kode akses di bawah lalu gunakan halaman Ambil OTP.
-                Kode akses berlaku 15 menit dan tidak sama dengan kata sandi akun.
+                Kode akses &amp; OTP dapat digunakan selama 5 menit dan tidak sama dengan kata sandi akun.
               </p>
               {!access.otp_inbox_ready && (
                 <div className="demo-banner" role="status">
@@ -274,6 +350,10 @@ function OrderClientInner({ orderId }: OrderClientProps) {
               <div className="order-access-list">
                 {access.items.map((item) => {
                   const issued = accessCodes[item.order_item_id];
+                  const cooldownUntil = accessCooldowns[item.order_item_id] ?? 0;
+                  const coolingDown = cooldownUntil > cooldownNow;
+                  const cooldownSeconds = Math.max(0, Math.ceil((cooldownUntil - cooldownNow) / 1000));
+                  const cooldownLabel = `${Math.floor(cooldownSeconds / 60)}:${String(cooldownSeconds % 60).padStart(2, "0")}`;
                   // Mailbox pusat bisa aktif sementara akun tertentu tetap tanpa
                   // app password, jadi kesiapan dicek per akun juga.
                   const otpReady = access.otp_inbox_ready && item.otp_ready !== false;
@@ -304,6 +384,15 @@ function OrderClientInner({ orderId }: OrderClientProps) {
                           <span className="muted small">
                             {issued.email_sent ? "Kode akses juga dikirim ke email akun Necly Anda." : "Kode akses tampil di sini; email kode tidak terkirim."}
                           </span>
+                          <button
+                            className="button button-secondary button-sm"
+                            type="button"
+                            disabled={!otpReady || coolingDown || accessBusy === item.order_item_id}
+                            onClick={() => issueAccessCode(item.order_item_id)}
+                          >
+                            {accessBusy === item.order_item_id ? "Membuat kode…" : coolingDown ? `Buat ulang dalam ${cooldownLabel}` : "Buat ulang kode akses OTP"}
+                          </button>
+                          {coolingDown && <span className="otp-cooldown-message" role="status">{ACCESS_CODE_COOLDOWN_COPY}</span>}
                         </div>
                       ) : (
                         <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
@@ -315,11 +404,12 @@ function OrderClientInner({ orderId }: OrderClientProps) {
                           <button
                             className="button button-primary button-sm"
                             type="button"
-                            disabled={!otpReady || accessBusy === item.order_item_id}
+                            disabled={!otpReady || coolingDown || accessBusy === item.order_item_id}
                             onClick={() => issueAccessCode(item.order_item_id)}
                           >
-                            {accessBusy === item.order_item_id ? "Membuat kode…" : "Buat kode akses OTP"}
+                            {accessBusy === item.order_item_id ? "Membuat kode…" : coolingDown ? `Buat kode dalam ${cooldownLabel}` : "Buat kode akses OTP"}
                           </button>
+                          {coolingDown && <span className="otp-cooldown-message" role="status">{ACCESS_CODE_COOLDOWN_COPY}</span>}
                         </div>
                       )}
                     </div>
@@ -399,7 +489,6 @@ function OrderClientInner({ orderId }: OrderClientProps) {
           <section className="card order-help-card" style={{ padding: 22 }}>
             <h2 className="h3">Butuh Bantuan?</h2>
             <p className="muted small">Salin nomor pesanan saat menghubungi tim dukungan Necly atau membuat laporan.</p>
-            <OrderNumberCopy className="order-help-copy" number={order.number} />
             <Link className="button button-warning button-sm order-help-report" href="/laporan-kendala">Laporkan kendala</Link>
           </section>
         </aside>

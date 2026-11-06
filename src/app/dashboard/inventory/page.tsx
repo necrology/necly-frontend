@@ -1039,7 +1039,7 @@ export default function InventoryPage() {
           <p className="muted" style={{ margin: 0, fontSize: 12 }}>
             {pendingStatus.nextStatus === "active"
               ? "Akun akan bisa dipakai kembali untuk akses baru."
-              : "Slot yang sudah ada tetap terpakai, tetapi akun tidak akan dipilih untuk kapasitas baru."}
+              : "Kuota akun yang sudah ada tetap terpakai, tetapi akun tidak akan dipilih untuk kapasitas baru."}
           </p>
         </Modal>
       )}
@@ -1344,7 +1344,7 @@ export default function InventoryPage() {
                 <th>Status</th>
                 <th>Kedaluwarsa</th>
                 <th>Limit sharing</th>
-                <th>Slot</th>
+                <th>Kuota akun</th>
                 <th>Assignment</th>
                 <th aria-label="Aksi" />
               </tr>

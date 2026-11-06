@@ -316,15 +316,18 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .success-mark { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; color: var(--success); background: var(--success-bg); }
 
 .order-layout { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 48px; padding-bottom: 96px; }
-.order-detail-title { margin-top: 12px; color: #fcbd50; }
-.order-header-number { margin: 10px 0 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
-.order-header-number strong { color: var(--ink-2); font-size: 11px; font-weight: 600; }
-.order-header-meta { display: grid; justify-items: start; gap: 8px; text-align: left; }
+.order-detail-title { margin-top: 4px; color: #fcbd50; }
+.order-header-number { display: grid; justify-items: start; gap: 5px; margin: 12px 0 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+.order-header-copy { margin: 0; }
+.order-header-copy .order-number-copy-value > strong { color: var(--ink-2); font-size: 13px; font-weight: 600; }
+.order-header-copy .button { min-height: 30px; padding: 5px 9px; }
+.order-header-meta { display: grid; justify-items: start; align-content: start; gap: 6px; padding-top: 28px; text-align: left; }
+.order-items-card { margin-top: 4px; }
 .order-items-list { display: grid; gap: 12px; margin-top: 20px; }
 .order-help-card { display: grid; justify-items: start; }
 .order-help-card > p { margin: 10px 0 0; }
-.order-help-copy { width: 100%; margin-top: 14px; }
-.order-help-report { margin-top: 18px; }
+.order-help-report { margin-top: 22px; color: #2a2140; }
+.order-help-report:hover { color: #2a2140; }
 .order-timeline { display: grid; margin: 26px 0; }
 .order-step { display: grid; grid-template-columns: 28px 1fr; gap: 14px; min-height: 84px; }
 .order-step-mark { position: relative; width: 26px; height: 26px; display: grid; place-items: center; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--faint); background: #fff; }
@@ -615,6 +618,8 @@ body:has(.auth-form-login) { overflow: hidden; }
   .filter-panel { position: static; grid-template-columns: repeat(3, 1fr); }
   .product-layout, .commerce-layout, .order-layout { grid-template-columns: 1fr; }
   .order-layout { gap: 24px; }
+  .order-header-meta { padding-top: 4px; }
+  .order-help-card { margin-top: 4px; }
   .purchase-panel, .summary-card { position: static; }
   .auth-shell { grid-template-columns: 1fr; }
   .auth-story { min-height: 330px; }
@@ -1054,7 +1059,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
   .orders-hero { padding: 30px 0 34px; border-radius: 0 0 24px 24px; }
 }
 .orders-page { display: grid; gap: 16px; padding: 0 0 96px; }
-.orders-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+.orders-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
 .orders-list { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .order-list-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: center; padding: 20px 22px; }
 .order-list-item.is-selected { border-color: #c3d0fb; box-shadow: 0 0 0 3px rgb(76 30 249 / .08); }
@@ -1147,11 +1152,8 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
   .commerce-mobile-nav-link { min-height: 50px; display: flex; align-items: center; border-radius: 14px; padding: 0 14px; color: #ede6ff; font-size: 14px; font-weight: 600; }
   .commerce-mobile-nav-link:hover, .commerce-mobile-nav-link.active { color: #fff; background: rgb(255 255 255 / .15); }
   .commerce-mobile-login { min-height: 52px; display: grid; place-items: center; margin-top: 8px; border-radius: 999px; color: var(--commerce-violet-dark); background: var(--commerce-gold); font-size: 15px; font-weight: 700; }
-  /* NEC-88: "Akun & keamanan", "Keluar", dan "Log In" tidak melebar penuh,
-     berwarna hitam di atas emas, dan sudutnya hanya sedikit membulat.
-     Lebar keduanya disamakan lewat max-width yang sama. */
-  .commerce-mobile-account-action,
-  .commerce-mobile-login-action { width: 100%; max-width: 200px; justify-self: start; padding-inline: 24px; border-radius: 10px; color: #000; }
+  /* Ketiga aksi autentikasi memakai geometri yang sama di semua state menu. */
+  .commerce-mobile-auth-action { width: 100%; max-width: 220px; min-height: 52px; justify-self: start; border: 0; border-radius: 10px; padding-inline: 24px; color: #000; text-align: center; }
 }
 
 /* ---------- Home hero ---------- */
@@ -2059,6 +2061,7 @@ body.modal-open { overflow: hidden; }
 .order-access-code { display: grid; justify-items: end; gap: 7px; }
 .order-access-code code { border: 1px dashed var(--brand); border-radius: 7px; padding: 7px 12px; color: var(--ink); background: #f7f3ff; font-size: 18px; font-weight: 800; letter-spacing: .18em; }
 .order-access-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.otp-cooldown-message { max-width: 390px; color: #75520d; font-size: 11px; font-weight: 600; line-height: 1.5; text-align: left; }
 @media (max-width: 700px) {
   .order-access-row { grid-template-columns: 1fr; }
   .order-access-code { justify-items: start; }
