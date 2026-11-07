@@ -38,14 +38,14 @@ export function ProductIcon({
   const source = safeProductImageSrc(iconUrl);
   const failed = Boolean(source && failedSource === source);
 
-  if (!source || failed) return <>{fallback}</>;
-
-  const handleError = () => setFailedSource(source);
+  const handleError = () => source && setFailedSource(source);
   const label = `Icon ${name}`;
+  const canvasStyle = { width, height };
 
-  if (isHttpsImageUrl(source) || source.startsWith("data:")) {
-    return (
-      <span className={cn("product-icon", className)} data-testid="product-icon">
+  let content = fallback;
+  if (source && !failed) {
+    content = isHttpsImageUrl(source) || source.startsWith("data:") ? (
+      <>
         {/* Data URL dan URL eksternal tidak kompatibel dengan optimizer Next. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -55,15 +55,10 @@ export function ProductIcon({
           width={width}
           height={height}
           loading={loading}
-          style={{ width, height }}
           onError={handleError}
         />
-      </span>
-    );
-  }
-
-  return (
-    <span className={cn("product-icon", className)} data-testid="product-icon">
+      </>
+    ) : (
       <Image
         className="product-icon-image"
         unoptimized
@@ -72,9 +67,14 @@ export function ProductIcon({
         width={width}
         height={height}
         loading={loading}
-        style={{ width, height }}
         onError={handleError}
       />
+    );
+  }
+
+  return (
+    <span className={cn("product-icon", className)} data-testid="product-icon" style={canvasStyle}>
+      {content}
     </span>
   );
 }

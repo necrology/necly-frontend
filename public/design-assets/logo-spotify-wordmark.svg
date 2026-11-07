@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="30 219 540 162" role="img" aria-label="Spotify">
+  <!-- ViewBox mengikuti batas wordmark pada aset sumber agar whitespace bawaan
+       tidak membuat logo tampak lebih kecil di canvas bersama. -->
+  <image href="logo-spotify.png" width="600" height="600" preserveAspectRatio="xMidYMid meet" />
+</svg>

@@ -1920,11 +1920,9 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .coming-soon-ribbon-text { position: absolute; top: 25px; right: -42px; width: 176px; transform: rotate(45deg); padding: 7px 0; color: #fff; background: linear-gradient(135deg, #f59e0b, #b45309); box-shadow: 0 6px 16px rgb(120 53 15 / .28); font-size: 10px; font-weight: 800; letter-spacing: .08em; line-height: 1; text-align: center; text-transform: uppercase; }
 .catalog-card-meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .catalog-product-icon { flex: 0 0 auto; border: 1px solid #ececf4; border-radius: 7px; padding: 2px 5px; background: #fff; }
-.product-icon { display: inline-flex; align-items: center; justify-content: center; min-width: 0; }
-.product-icon-image { display: block; max-width: 100%; object-fit: contain; }
+.product-icon { display: inline-flex; align-items: center; justify-content: center; min-width: 0; overflow: hidden; }
+.product-icon-image { width: 100%; height: 100%; display: block; object-fit: contain; object-position: center; }
 .product-brand-icon { max-width: 100%; }
-.product-brand-icon .product-icon-image { max-height: 40px; width: auto !important; height: auto !important; }
-.product-brand.compact .product-brand-icon .product-icon-image { max-height: 30px; }
 @media (max-width: 580px) {
   .coming-soon-ribbon { width: 104px; height: 104px; }
   .coming-soon-ribbon-text { top: 21px; right: -36px; width: 148px; font-size: 9px; }

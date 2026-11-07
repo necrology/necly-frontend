@@ -20,14 +20,14 @@ function ProductLogoAssets({ product }: Pick<ProductBrandProps, "product">) {
   if (product.logoTone === "viu") return <Image unoptimized src="/design-assets/logo-viu.png" alt="" width={239} height={90} />;
   if (product.logoTone === "nord") return <Image unoptimized src="/design-assets/logo-nordvpn.png" alt="" width={1200} height={267} />;
   if (product.logoTone === "netflix") return <Image unoptimized src="/design-assets/logo-netflix.png" alt="" width={2226} height={678} />;
-  if (product.logoTone === "spotify") return <span className="spotify-asset-crop"><Image unoptimized src="/design-assets/logo-spotify.png" alt="" width={600} height={600} /></span>;
-  if (product.logoTone === "youtube") return <><Image unoptimized src="/design-assets/logo-youtube.png" alt="" width={216} height={90} /><strong className="youtube-premium-label">Premium</strong></>;
+  if (product.logoTone === "spotify") return <Image unoptimized src="/design-assets/logo-spotify-wordmark.svg" alt="" width={540} height={162} />;
+  if (product.logoTone === "youtube") return <Image unoptimized src="/design-assets/logo-youtube.png" alt="" width={216} height={90} />;
   if (product.logoTone === "microsoft") return <Image unoptimized src="/design-assets/logo-microsoft-365.png" alt="" width={376} height={62} />;
-  // Aset ini disediakan langsung oleh pemilik produk. Gunakan rasio intrinsik
-  // supaya logo tidak terdistorsi saat dipakai pada kartu maupun detail.
-  if (product.logoTone === "canva") return <Image unoptimized src="/design-assets/logo-canva.png" alt="" width={800} height={800} />;
-  if (product.logoTone === "googleone") return <Image unoptimized src="/design-assets/logo-google-one.avif" alt="" width={1280} height={640} />;
-  if (product.logoTone === "dropbox") return <Image unoptimized src="/design-assets/logo-dropbox.png" alt="" width={547} height={365} />;
+  // SVG wordmark ini memiliki viewBox rapat sehingga canvas bersama dapat
+  // menormalkan footprint tanpa crop atau distorsi aset persegi sumbernya.
+  if (product.logoTone === "canva") return <Image unoptimized src="/design-assets/logo-canva.svg" alt="" width={240} height={64} />;
+  if (product.logoTone === "googleone") return <Image unoptimized src="/design-assets/logo-google-one.svg" alt="" width={280} height={64} />;
+  if (product.logoTone === "dropbox") return <Image unoptimized src="/design-assets/logo-dropbox.svg" alt="" width={280} height={64} />;
   return null;
 }
 
