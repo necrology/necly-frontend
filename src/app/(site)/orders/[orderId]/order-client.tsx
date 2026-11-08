@@ -337,8 +337,9 @@ function OrderClientInner({ orderId }: OrderClientProps) {
             <section className="card order-access" style={{ padding: 27 }}>
               <h2 className="h3"><KeyRound size={17} aria-hidden="true" /> Akses akun &amp; OTP</h2>
               <p className="muted small" style={{ marginTop: 8 }}>
-                Saat platform meminta kode OTP, buat kode akses di bawah lalu gunakan halaman Ambil OTP.
-                Kode akses &amp; OTP dapat digunakan selama 5 menit dan tidak sama dengan kata sandi akun.
+                Ikuti alur login platform dengan kredensial akun yang diberikan. Hanya jika platform
+                meminta verifikasi email/OTP, buat kode akses di bawah lalu buka halaman Ambil OTP. Kode
+                akses bukan kata sandi akun; kode akses dan OTP berlaku selama 5 menit.
               </p>
               {!access.otp_inbox_ready && (
                 <div className="demo-banner" role="status">
@@ -365,6 +366,13 @@ function OrderClientInner({ orderId }: OrderClientProps) {
                           {item.account_label} · {item.duration_name}
                         </p>
                         <p className="order-access-email"><MailIcon /> {item.account_email}</p>
+                        {/chatgpt/i.test(item.product_name) && (
+                          <p className="order-access-login-guide">
+                            <strong>Alur login ChatGPT:</strong> buka ChatGPT → masukkan email akun → klik
+                            Lanjut → masukkan password akun. Ambil OTP hanya jika ChatGPT kemudian meminta
+                            verifikasi email/OTP.
+                          </p>
+                        )}
                       </div>
                       {issued ? (
                         <div className="order-access-code">
@@ -378,7 +386,7 @@ function OrderClientInner({ orderId }: OrderClientProps) {
                               className="button button-primary button-sm"
                               href={`/otp?email=${encodeURIComponent(item.account_email)}&code=${encodeURIComponent(issued.code)}`}
                             >
-                              Dapatkan akses Apps
+                              Buka halaman Ambil OTP
                             </Link>
                           </div>
                           <span className="muted small">

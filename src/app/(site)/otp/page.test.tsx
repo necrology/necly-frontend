@@ -40,8 +40,15 @@ describe("halaman ambil OTP akun", () => {
     render(<AccountOtpPage />);
 
     const formHeading = screen.getByRole("heading", { name: "Email akun & kode akses" });
-    expect(screen.getByText("Masukkan kode akses yang Anda dapatkan sebelumnya untuk mendapatkan akses penuh aplikasi.")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Alur pengambilan OTP" })).not.toBeInTheDocument();
+    expect(screen.getByText("Kode akses digunakan untuk mengambil email OTP, bukan sebagai password akun.")).toBeInTheDocument();
+    expect(screen.getByText(/Kode akses dan OTP berlaku 5 menit/)).toBeInTheDocument();
+    expect(screen.getByText(/Buka halaman ini hanya jika platform meminta verifikasi email\/OTP/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Login ChatGPT terlebih dahulu" })).toBeInTheDocument();
+    expect(screen.getByText(/masukkan email akun, lalu klik/)).toHaveTextContent(
+      "Buka ChatGPT, masukkan email akun, lalu klik Lanjut.",
+    );
+    expect(screen.getByText("Masukkan password akun pada langkah berikutnya.")).toBeInTheDocument();
+    expect(screen.getByText(/Hanya jika ChatGPT meminta verifikasi email\/OTP/)).toBeInTheDocument();
     expect(formHeading.compareDocumentPosition(screen.getByRole("heading", { name: "Belum punya kode akses?" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Video tutorial segera hadir" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Email akun/)).toHaveValue("family@example.test");
@@ -50,6 +57,8 @@ describe("halaman ambil OTP akun", () => {
     const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
     expect(css).toContain(".otp-title { font-size: clamp(1.45rem, 3.2vw, 1.75rem);");
     expect(css).toContain(".otp-lede { font-size: clamp(.92rem, 2vw, 1rem) !important;");
+    expect(css).toContain(".otp-form { min-width: 0;");
+    expect(css).toContain(".order-access-actions .button { max-width: 100%; white-space: normal;");
 
     fireEvent.click(screen.getByRole("button", { name: "Ambil kode OTP" }));
 

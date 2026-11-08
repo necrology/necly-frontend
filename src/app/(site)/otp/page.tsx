@@ -76,8 +76,8 @@ function OtpForm() {
         <span className="eyebrow">Bantuan akses</span>
         <h1 className="h1 otp-title">Ambil kode OTP akun</h1>
         <p className="lede otp-lede">
-          Platform langganan Anda meminta kode OTP lewat email? Masukkan email akun yang Anda terima
-          dan kode akses dari halaman pesanan untuk membaca kode terbaru tanpa membuka email akun.
+          Buka halaman ini hanya jika platform meminta verifikasi email/OTP. Masukkan email akun dan
+          kode akses dari detail pesanan untuk mengambil email OTP terbaru tanpa membuka email akun.
         </p>
       </header>
 
@@ -87,7 +87,9 @@ function OtpForm() {
             <Mail size={18} aria-hidden="true" />
             <div>
               <h2 className="h3">Email akun &amp; kode akses</h2>
-              <p className="muted small">Masukkan kode akses yang Anda dapatkan sebelumnya untuk mendapatkan akses penuh aplikasi.</p>
+              <p className="muted small">
+                Kode akses digunakan untuk mengambil email OTP, bukan sebagai password akun.
+              </p>
             </div>
           </div>
 
@@ -123,7 +125,7 @@ function OtpForm() {
             />
             {errors.code && <span className="field-error" role="alert">{errors.code}</span>}
             <span className="otp-hint">
-              Buat kode di detail pesanan pada bagian <strong>Akses akun &amp; OTP</strong>. Kode berlaku 15 menit.
+              Buat kode di detail pesanan pada bagian <strong>Akses akun &amp; OTP</strong>. Kode akses dan OTP berlaku 5 menit.
             </span>
           </label>
 
@@ -158,16 +160,27 @@ function OtpForm() {
               </p>
             </section>
           ) : (
-            <section className="card otp-help">
-              <KeyRound size={18} aria-hidden="true" />
-              <h2 className="h3">Belum punya kode akses?</h2>
-              <ol className="otp-steps">
-                <li>Buka detail pesanan Anda.</li>
-                <li>Cari bagian <strong>Akses akun &amp; OTP</strong>.</li>
-                <li>Tekan <strong>Buat kode akses OTP</strong>, lalu salin kode yang tampil atau periksa email Anda.</li>
-              </ol>
-              <Link className="button button-secondary button-sm" href="/orders">Buka pesanan saya</Link>
-            </section>
+            <>
+              <section className="card otp-help">
+                <KeyRound size={18} aria-hidden="true" />
+                <h2 className="h3">Login ChatGPT terlebih dahulu</h2>
+                <ol className="otp-steps">
+                  <li>Buka ChatGPT, masukkan email akun, lalu klik <strong>Lanjut</strong>.</li>
+                  <li>Masukkan password akun pada langkah berikutnya.</li>
+                  <li>Hanya jika ChatGPT meminta verifikasi email/OTP, kembali ke halaman ini untuk mengambil OTP.</li>
+                </ol>
+              </section>
+              <section className="card otp-help">
+                <KeyRound size={18} aria-hidden="true" />
+                <h2 className="h3">Belum punya kode akses?</h2>
+                <ol className="otp-steps">
+                  <li>Buka detail pesanan Anda.</li>
+                  <li>Cari bagian <strong>Akses akun &amp; OTP</strong>.</li>
+                  <li>Tekan <strong>Buat kode akses OTP</strong>, lalu buka halaman Ambil OTP.</li>
+                </ol>
+                <Link className="button button-secondary button-sm" href="/orders">Buka pesanan saya</Link>
+              </section>
+            </>
           )}
           <section className="card otp-video-slot" aria-label="Video tutorial penggunaan OTP">
             <span className="otp-video-slot-icon" aria-hidden="true"><PlayCircle size={20} /></span>
