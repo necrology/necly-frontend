@@ -39,7 +39,17 @@ describe("akses akun dan OTP pada detail pesanan", () => {
       created_at: "2026-10-21T09:00:00Z", updated_at: "2026-10-21T10:00:00Z",
     });
     listAccessMock.mockResolvedValue({
-      items: [{ order_item_id: ITEM_ID, product_name: "ChatGPT Plus", duration_name: "1 Bulan", account_label: "Akun utama", account_email: "family@example.test", otp_ready: true }],
+      items: [{
+        order_item_id: ITEM_ID,
+        product_name: "ChatGPT Plus",
+        duration_name: "1 Bulan",
+        account_label: "Akun utama",
+        account_email: "family@example.test",
+        otp_ready: true,
+        access_code_status: "valid",
+        access_code_expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        code_cooldown_until: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      }],
       otp_inbox_ready: true,
     });
     issueCodeMock.mockResolvedValue({
@@ -47,7 +57,7 @@ describe("akses akun dan OTP pada detail pesanan", () => {
     });
   });
 
-  it("menampilkan email akun dan menautkan kode akses ke halaman OTP", async () => {
+  it("menampilkan status kode otomatis dan menautkan email tanpa membocorkan kode", async () => {
     render(<OrderClient orderId={ORDER_ID} />);
 
     expect(await screen.findByText("Akses akun & OTP")).toBeInTheDocument();
@@ -55,16 +65,18 @@ describe("akses akun dan OTP pada detail pesanan", () => {
     expect(screen.getByText(/Alur login ChatGPT:/).closest("p")).toHaveTextContent(
       "Alur login ChatGPT: buka ChatGPT → masukkan email akun → klik Lanjut → masukkan password akun. Ambil OTP hanya jika ChatGPT kemudian meminta verifikasi email/OTP.",
     );
-    expect(screen.getByText(/Ikuti alur login platform/)).toHaveTextContent(
-      /Kode akses bukan kata sandi akun; kode akses dan OTP berlaku selama 5 menit/,
+    expect(screen.getByText(/Kode akses otomatis dikirim bersama email akun/)).toHaveTextContent(
+      /kode akses bukan password akun maupun OTP platform/,
     );
+    expect(screen.getByText("Kode akses sudah dikirim lewat email")).toHaveAttribute("role", "status");
+    expect(screen.getByText(/Salin kode akses dari email pengiriman/)).toBeInTheDocument();
+    expect(screen.queryByText("ABCD234567")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Buat kode akses OTP/i })).not.toBeInTheDocument();
+    expect(issueCodeMock).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole("button", { name: "Buat kode akses OTP" }));
-
-    await waitFor(() => expect(issueCodeMock).toHaveBeenCalledWith(ORDER_ID, ITEM_ID));
-    expect(await screen.findByText("ABCD234567")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "Buka halaman Ambil OTP" });
-    expect(link).toHaveAttribute("href", "/otp?email=family%40example.test&code=ABCD234567");
+    expect(link).toHaveAttribute("href", "/otp?email=family%40example.test");
+    expect(link).not.toHaveAttribute("href", expect.stringContaining("code="));
 
     const accessHeading = screen.getByRole("heading", { name: "Akses akun & OTP" });
     const progressHeading = screen.getByRole("heading", { name: "Progres Pesanan" });
@@ -85,13 +97,12 @@ describe("akses akun dan OTP pada detail pesanan", () => {
     expect(screen.queryByRole("heading", { name: "Akses akun & OTP" })).not.toBeInTheDocument();
   });
 
-  it("menonaktifkan pembuatan kode saat mailbox OTP belum aktif", async () => {
+  it("tidak menawarkan kirim ulang saat mailbox OTP belum aktif", async () => {
     listAccessMock.mockResolvedValue({ ...(await listAccessMock()), otp_inbox_ready: false });
     render(<OrderClient orderId={ORDER_ID} />);
 
-    const button = await screen.findByRole("button", { name: "Buat kode akses OTP" });
-    expect(button).toBeDisabled();
-    expect(screen.getByText(/Layanan ambil OTP belum aktif/)).toBeInTheDocument();
+    expect(await screen.findByText(/Layanan ambil OTP belum aktif/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Kirim ulang kode akses/ })).not.toBeInTheDocument();
   });
 
   it("menonaktifkan pembuatan kode saat akun belum punya sumber mailbox", async () => {
@@ -101,8 +112,61 @@ describe("akses akun dan OTP pada detail pesanan", () => {
     });
     render(<OrderClient orderId={ORDER_ID} />);
 
-    const button = await screen.findByRole("button", { name: "Buat kode akses OTP" });
-    expect(button).toBeDisabled();
-    expect(screen.getByText(/Layanan OTP untuk akun ini belum disiapkan/)).toBeInTheDocument();
+    expect(await screen.findByText(/Layanan OTP untuk akun ini belum disiapkan/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Kirim ulang kode akses/ })).not.toBeInTheDocument();
+  });
+
+  it("tidak menampilkan kode atau CTA resend ketika metadata valid ternyata sudah lewat waktu", async () => {
+    listAccessMock.mockResolvedValue({
+      items: [{
+        order_item_id: ITEM_ID,
+        product_name: "ChatGPT Plus",
+        duration_name: "1 Bulan",
+        account_label: "Akun utama",
+        account_email: "family@example.test",
+        otp_ready: true,
+        access_code_status: "valid",
+        access_code_expires_at: "2020-01-01T00:00:00Z",
+        code_cooldown_until: "2020-01-01T00:00:00Z",
+      }],
+      otp_inbox_ready: true,
+    });
+
+    render(<OrderClient orderId={ORDER_ID} />);
+
+    expect(await screen.findByText(/Kode akses dari email pengiriman sudah kedaluwarsa/)).toBeInTheDocument();
+    expect(screen.queryByText("Kode akses sudah dikirim lewat email")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Kirim ulang kode akses" })).toBeEnabled();
+  });
+
+  it("menawarkan kirim ulang hanya setelah kode otomatis kedaluwarsa", async () => {
+    listAccessMock.mockResolvedValue({
+      items: [{
+        order_item_id: ITEM_ID,
+        product_name: "ChatGPT Plus",
+        duration_name: "1 Bulan",
+        account_label: "Akun utama",
+        account_email: "family@example.test",
+        otp_ready: true,
+        access_code_status: "expired",
+      }],
+      otp_inbox_ready: true,
+    });
+    issueCodeMock.mockResolvedValue({
+      code: "ABCD234567",
+      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+      emails: ["family@example.test"],
+      email_sent: true,
+    });
+
+    render(<OrderClient orderId={ORDER_ID} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Kirim ulang kode akses" }));
+
+    await waitFor(() => expect(issueCodeMock).toHaveBeenCalledWith(ORDER_ID, ITEM_ID));
+    expect(await screen.findByText("ABCD234567")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Buka halaman Ambil OTP" })).toHaveAttribute(
+      "href",
+      "/otp?email=family%40example.test&code=ABCD234567",
+    );
   });
 });

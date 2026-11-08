@@ -77,7 +77,7 @@ function OtpForm() {
         <h1 className="h1 otp-title">Ambil kode OTP akun</h1>
         <p className="lede otp-lede">
           Buka halaman ini hanya jika platform meminta verifikasi email/OTP. Masukkan email akun dan
-          kode akses dari detail pesanan untuk mengambil email OTP terbaru tanpa membuka email akun.
+          kode akses dari email pengiriman untuk mengambil email OTP terbaru tanpa membuka email akun.
         </p>
       </header>
 
@@ -125,7 +125,7 @@ function OtpForm() {
             />
             {errors.code && <span className="field-error" role="alert">{errors.code}</span>}
             <span className="otp-hint">
-              Buat kode di detail pesanan pada bagian <strong>Akses akun &amp; OTP</strong>. Kode akses dan OTP berlaku 5 menit.
+              Salin kode akses dari email pengiriman akun. Kode akses berlaku 5 menit dan berbeda dari OTP platform.
             </span>
           </label>
 
@@ -172,11 +172,11 @@ function OtpForm() {
               </section>
               <section className="card otp-help">
                 <KeyRound size={18} aria-hidden="true" />
-                <h2 className="h3">Belum punya kode akses?</h2>
+                <h2 className="h3">Belum menemukan kode akses?</h2>
                 <ol className="otp-steps">
-                  <li>Buka detail pesanan Anda.</li>
-                  <li>Cari bagian <strong>Akses akun &amp; OTP</strong>.</li>
-                  <li>Tekan <strong>Buat kode akses OTP</strong>, lalu buka halaman Ambil OTP.</li>
+                  <li>Buka email pengiriman akun dari Necly.</li>
+                  <li>Salin kode akses 10 karakter yang berlaku selama 5 menit.</li>
+                  <li>Jika sudah kedaluwarsa, buka detail pesanan untuk meminta kirim ulang.</li>
                 </ol>
                 <Link className="button button-secondary button-sm" href="/orders">Buka pesanan saya</Link>
               </section>

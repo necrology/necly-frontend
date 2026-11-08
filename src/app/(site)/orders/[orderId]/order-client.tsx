@@ -21,7 +21,7 @@ type LoadError = {
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACCESS_CODE_COOLDOWN_MS = 5 * 60 * 1000;
-const ACCESS_CODE_COOLDOWN_COPY = "Kode akses & OTP dapat digunakan selama 5 menit, untuk saat ini gunakan kode akses yang sudah dibuat.";
+const ACCESS_CODE_COOLDOWN_COPY = "Kode akses berlaku 5 menit. Gunakan kode dari email pengiriman sebelum meminta kirim ulang.";
 const ACCESS_CODE_COOLDOWN_PREFIX = "necly-otp-code-cooldown:";
 
 function currentTimestamp() {
@@ -114,6 +114,8 @@ function OrderClientInner({ orderId }: OrderClientProps) {
   const [loading, setLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
   const [access, setAccess] = useState<ApiAccountAccessResponse | null>(null);
+  // Plaintext hanya masuk state memori bila fallback resend mengembalikannya;
+  // kode otomatis dari delivery tetap hanya ada di email pembeli.
   const [accessCodes, setAccessCodes] = useState<Record<string, ApiOTPAccessCode>>({});
   const [accessBusy, setAccessBusy] = useState("");
   const [accessError, setAccessError] = useState("");
@@ -230,12 +232,12 @@ function OrderClientInner({ orderId }: OrderClientProps) {
         } else if (payload?.code === "otp_unavailable") {
           setAccessError("Layanan ambil OTP belum aktif. Hubungi dukungan Necly dengan nomor pesanan ini.");
         } else if (payload?.code === "order_not_approved") {
-          setAccessError("Kode akses baru bisa dibuat setelah admin mengirim akun pesanan ini.");
+          setAccessError("Kode akses baru bisa dikirim setelah admin mengirim akun pesanan ini.");
         } else {
           setAccessError(failure.message);
         }
       } else {
-        setAccessError("Kode akses gagal dibuat. Coba lagi sebentar lagi.");
+        setAccessError("Kode akses gagal dikirim ulang. Coba lagi sebentar lagi.");
       }
     } finally {
       setAccessBusy("");
@@ -337,9 +339,9 @@ function OrderClientInner({ orderId }: OrderClientProps) {
             <section className="card order-access" style={{ padding: 27 }}>
               <h2 className="h3"><KeyRound size={17} aria-hidden="true" /> Akses akun &amp; OTP</h2>
               <p className="muted small" style={{ marginTop: 8 }}>
-                Ikuti alur login platform dengan kredensial akun yang diberikan. Hanya jika platform
-                meminta verifikasi email/OTP, buat kode akses di bawah lalu buka halaman Ambil OTP. Kode
-                akses bukan kata sandi akun; kode akses dan OTP berlaku selama 5 menit.
+                Kode akses otomatis dikirim bersama email akun dan berlaku selama 5 menit. Ikuti alur
+                login platform dengan email dan password akun. Buka halaman Ambil OTP hanya jika platform
+                meminta verifikasi email/OTP; kode akses bukan password akun maupun OTP platform.
               </p>
               {!access.otp_inbox_ready && (
                 <div className="demo-banner" role="status">
@@ -350,11 +352,21 @@ function OrderClientInner({ orderId }: OrderClientProps) {
               {accessError && <p className="otp-alert" role="alert">{accessError}</p>}
               <div className="order-access-list">
                 {access.items.map((item) => {
-                  const issued = accessCodes[item.order_item_id];
+                  const issuedCandidate = accessCodes[item.order_item_id];
+                  const issued = issuedCandidate && cooldownFrom(issuedCandidate.expires_at) > cooldownNow
+                    ? issuedCandidate
+                    : undefined;
                   const cooldownUntil = accessCooldowns[item.order_item_id] ?? 0;
                   const coolingDown = cooldownUntil > cooldownNow;
                   const cooldownSeconds = Math.max(0, Math.ceil((cooldownUntil - cooldownNow) / 1000));
                   const cooldownLabel = `${Math.floor(cooldownSeconds / 60)}:${String(cooldownSeconds % 60).padStart(2, "0")}`;
+                  const automaticExpiresAt = cooldownFrom(item.access_code_expires_at);
+                  const automaticCodeValid = item.access_code_status === "valid"
+                    && (automaticExpiresAt === 0 || automaticExpiresAt > cooldownNow);
+                  const automaticCodeExpired = item.access_code_status === "expired"
+                    || (item.access_code_status === "valid" && automaticExpiresAt > 0 && automaticExpiresAt <= cooldownNow);
+                  const automaticCodeUnavailable = item.access_code_status === "unavailable";
+                  const canResend = automaticCodeExpired && !coolingDown;
                   // Mailbox pusat bisa aktif sementara akun tertentu tetap tanpa
                   // app password, jadi kesiapan dicek per akun juga.
                   const otpReady = access.otp_inbox_ready && item.otp_ready !== false;
@@ -403,21 +415,49 @@ function OrderClientInner({ orderId }: OrderClientProps) {
                           {coolingDown && <span className="otp-cooldown-message" role="status">{ACCESS_CODE_COOLDOWN_COPY}</span>}
                         </div>
                       ) : (
-                        <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
-                          {!otpReady && (
+                        <div className="order-access-code">
+                          {!otpReady || automaticCodeUnavailable ? (
                             <span className="otp-alert" role="status">
                               Layanan OTP untuk akun ini belum disiapkan. Hubungi dukungan Necly dengan menyertakan nomor pesanan.
                             </span>
+                          ) : automaticCodeValid ? (
+                            <>
+                              <span className="badge status-success" role="status">Kode akses sudah dikirim lewat email</span>
+                              <span className="muted small">
+                                {item.access_code_expires_at
+                                  ? `Berlaku sampai ${formatDateTimeID(item.access_code_expires_at)}.`
+                                  : "Kode berlaku selama 5 menit sejak email dikirim."}
+                              </span>
+                              <Link
+                                className="button button-primary button-sm"
+                                href={`/otp?email=${encodeURIComponent(item.account_email)}`}
+                              >
+                                Buka halaman Ambil OTP
+                              </Link>
+                              <span className="otp-cooldown-message">
+                                Salin kode akses dari email pengiriman. Demi keamanan, kode tidak ditampilkan atau disimpan di halaman ini.
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="muted small" role="status">
+                                {automaticCodeExpired
+                                  ? "Kode akses dari email pengiriman sudah kedaluwarsa."
+                                  : "Periksa email pengiriman untuk kode akses yang berlaku 5 menit."}
+                              </span>
+                              {automaticCodeExpired && (
+                                <button
+                                  className="button button-secondary button-sm"
+                                  type="button"
+                                  disabled={!canResend || accessBusy === item.order_item_id}
+                                  onClick={() => issueAccessCode(item.order_item_id)}
+                                >
+                                  {accessBusy === item.order_item_id ? "Mengirim ulang…" : coolingDown ? `Kirim ulang dalam ${cooldownLabel}` : "Kirim ulang kode akses"}
+                                </button>
+                              )}
+                              {coolingDown && <span className="otp-cooldown-message" role="status">{ACCESS_CODE_COOLDOWN_COPY}</span>}
+                            </>
                           )}
-                          <button
-                            className="button button-primary button-sm"
-                            type="button"
-                            disabled={!otpReady || coolingDown || accessBusy === item.order_item_id}
-                            onClick={() => issueAccessCode(item.order_item_id)}
-                          >
-                            {accessBusy === item.order_item_id ? "Membuat kode…" : coolingDown ? `Buat kode dalam ${cooldownLabel}` : "Buat kode akses OTP"}
-                          </button>
-                          {coolingDown && <span className="otp-cooldown-message" role="status">{ACCESS_CODE_COOLDOWN_COPY}</span>}
                         </div>
                       )}
                     </div>

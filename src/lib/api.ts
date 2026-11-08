@@ -368,6 +368,10 @@ export type ApiAccountAccess = {
   account_email: string;
   /** False when neither the central mailbox nor this account's app password is configured. */
   otp_ready?: boolean;
+  /** Status kode otomatis; plaintext hanya tersedia di email pengiriman. */
+  access_code_status?: "valid" | "expired" | "unavailable";
+  /** Waktu kedaluwarsa kode otomatis, tanpa mengembalikan kode/hash. */
+  access_code_expires_at?: string | null;
   /** Metadata server-side untuk memulihkan cooldown tanpa mengembalikan token lama. */
   code_cooldown_until?: string | null;
 };
@@ -1056,8 +1060,9 @@ export const accountOtpApi = {
     apiRequest<ApiAccountAccessResponse>(`/orders/${encodeURIComponent(orderId)}/account-access`),
 
   /**
-   * Membuat kode akses berumur pendek. Kode dikembalikan sekali dan juga
-   * dikirim ke email pembeli; kata sandi akun/mailbox tidak pernah ikut.
+   * Fallback untuk mengirim ulang kode setelah kode otomatis kedaluwarsa.
+   * Kode dikembalikan sekali dan juga dikirim ke email pembeli; kata sandi
+   * akun/mailbox tidak pernah ikut.
    */
   issueCode: (orderId: string, itemId: string) =>
     apiRequest<ApiOTPAccessCode>(

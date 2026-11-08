@@ -25,7 +25,7 @@ import { ApiError } from "@/lib/api";
 import { OrderClient } from "./order-client";
 
 const ORDER_ID = "0192f0b0-0000-0000-0000-000000000001";
-const ACCESS_COOLDOWN_COPY = "Kode akses & OTP dapat digunakan selama 5 menit, untuk saat ini gunakan kode akses yang sudah dibuat.";
+const ACCESS_COOLDOWN_COPY = "Kode akses berlaku 5 menit. Gunakan kode dari email pengiriman sebelum meminta kirim ulang.";
 
 function order(overrides: Record<string, unknown> = {}) {
   return {
@@ -132,7 +132,7 @@ describe("halaman pelacakan pesanan (live)", () => {
     expect(screen.getByText(/1 Bulan × 1/)).toBeInTheDocument();
   });
 
-  it("menegakkan cooldown kode akses dari metadata server dan mempertahankannya setelah render ulang", async () => {
+  it("menegakkan cooldown kode otomatis dari metadata server dan mempertahankannya setelah render ulang", async () => {
     const cooldownUntil = new Date(Date.now() + 5 * 60 * 1000).toISOString();
     getOrderMock.mockResolvedValue(order({ status: "processing" }));
     listAccessMock.mockResolvedValue({
@@ -144,15 +144,15 @@ describe("halaman pelacakan pesanan (live)", () => {
         account_label: "Akun keluarga",
         account_email: "family@example.test",
         otp_ready: true,
+        access_code_status: "valid",
+        access_code_expires_at: cooldownUntil,
         code_cooldown_until: cooldownUntil,
       }],
     });
 
     const first = render(<OrderClient orderId={ORDER_ID} />);
-    const button = await screen.findByRole("button", { name: /Buat kode dalam/ });
-    expect(button).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent("Kode akses & OTP dapat digunakan selama 5 menit, untuk saat ini gunakan kode akses yang sudah dibuat.");
-    fireEvent.click(button);
+    expect(await screen.findByText("Kode akses sudah dikirim lewat email")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Kirim ulang kode akses/ })).not.toBeInTheDocument();
     expect(issueCodeMock).not.toHaveBeenCalled();
 
     first.unmount();
@@ -165,13 +165,15 @@ describe("halaman pelacakan pesanan (live)", () => {
         account_label: "Akun keluarga",
         account_email: "family@example.test",
         otp_ready: true,
+        access_code_status: "expired",
       }],
     });
     render(<OrderClient orderId={ORDER_ID} />);
-    expect(await screen.findByRole("button", { name: /Buat kode dalam/ })).toBeDisabled();
+    expect(await screen.findByText(/Kode akses dari email pengiriman sudah kedaluwarsa/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Kirim ulang kode akses/ })).not.toBeInTheDocument();
   });
 
-  it("memulai cooldown lima menit setelah API membuat kode tanpa mengandalkan timer sebagai enforcement server", async () => {
+  it("memulai cooldown lima menit setelah API mengirim ulang kode tanpa mengandalkan timer sebagai enforcement server", async () => {
     getOrderMock.mockResolvedValue(order({ status: "processing" }));
     listAccessMock.mockResolvedValue({
       otp_inbox_ready: true,
@@ -182,6 +184,7 @@ describe("halaman pelacakan pesanan (live)", () => {
         account_label: "Akun keluarga",
         account_email: "family@example.test",
         otp_ready: true,
+        access_code_status: "expired",
       }],
     });
     issueCodeMock.mockResolvedValue({
@@ -192,11 +195,11 @@ describe("halaman pelacakan pesanan (live)", () => {
     });
 
     render(<OrderClient orderId={ORDER_ID} />);
-    fireEvent.click(await screen.findByRole("button", { name: "Buat kode akses OTP" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Kirim ulang kode akses" }));
 
     await waitFor(() => expect(issueCodeMock).toHaveBeenCalledWith(ORDER_ID, "0192f0b2-0000-0000-0000-000000000001"));
     expect(screen.getByRole("button", { name: /Buat ulang dalam/ })).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent("Kode akses & OTP dapat digunakan selama 5 menit");
+    expect(screen.getByRole("status")).toHaveTextContent("Kode akses berlaku 5 menit");
   });
 
   it("mengikuti kontrak 429 backend untuk enforcement cooldown", async () => {
@@ -210,6 +213,7 @@ describe("halaman pelacakan pesanan (live)", () => {
         account_label: "Akun keluarga",
         account_email: "family@example.test",
         otp_ready: true,
+        access_code_status: "expired",
       }],
     });
     issueCodeMock.mockRejectedValue(new ApiError(ACCESS_COOLDOWN_COPY, 429, {
@@ -219,10 +223,10 @@ describe("halaman pelacakan pesanan (live)", () => {
     }));
 
     render(<OrderClient orderId={ORDER_ID} />);
-    fireEvent.click(await screen.findByRole("button", { name: "Buat kode akses OTP" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Kirim ulang kode akses" }));
 
-    expect(await screen.findByRole("button", { name: /Buat kode dalam/ })).toBeDisabled();
-    expect(screen.getByRole("status")).toHaveTextContent(ACCESS_COOLDOWN_COPY);
+    expect(await screen.findByText(ACCESS_COOLDOWN_COPY)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Kirim ulang kode akses" })).not.toBeInTheDocument();
   });
 
   it("memetakan status terminal refunded tanpa data contoh", async () => {

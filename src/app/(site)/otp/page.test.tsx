@@ -41,7 +41,9 @@ describe("halaman ambil OTP akun", () => {
 
     const formHeading = screen.getByRole("heading", { name: "Email akun & kode akses" });
     expect(screen.getByText("Kode akses digunakan untuk mengambil email OTP, bukan sebagai password akun.")).toBeInTheDocument();
-    expect(screen.getByText(/Kode akses dan OTP berlaku 5 menit/)).toBeInTheDocument();
+    expect(screen.getByText(/Salin kode akses dari email pengiriman akun/)).toHaveTextContent(
+      "Salin kode akses dari email pengiriman akun. Kode akses berlaku 5 menit dan berbeda dari OTP platform.",
+    );
     expect(screen.getByText(/Buka halaman ini hanya jika platform meminta verifikasi email\/OTP/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Login ChatGPT terlebih dahulu" })).toBeInTheDocument();
     expect(screen.getByText(/masukkan email akun, lalu klik/)).toHaveTextContent(
@@ -49,7 +51,9 @@ describe("halaman ambil OTP akun", () => {
     );
     expect(screen.getByText("Masukkan password akun pada langkah berikutnya.")).toBeInTheDocument();
     expect(screen.getByText(/Hanya jika ChatGPT meminta verifikasi email\/OTP/)).toBeInTheDocument();
-    expect(formHeading.compareDocumentPosition(screen.getByRole("heading", { name: "Belum punya kode akses?" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(formHeading.compareDocumentPosition(screen.getByRole("heading", { name: "Belum menemukan kode akses?" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByText("Buka email pengiriman akun dari Necly.")).toBeInTheDocument();
+    expect(screen.getByText(/Jika sudah kedaluwarsa/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Video tutorial segera hadir" })).toBeInTheDocument();
     expect(screen.getByLabelText(/Email akun/)).toHaveValue("family@example.test");
     expect(screen.getByLabelText(/Kode akses/)).toHaveValue("ABCD234567");
