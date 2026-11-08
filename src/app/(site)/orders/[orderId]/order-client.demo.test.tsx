@@ -30,6 +30,6 @@ describe("halaman pelacakan pesanan (demo)", () => {
     expect(screen.getByRole("link", { name: "Laporkan kendala" })).toHaveClass("button-warning");
     expect(getOrderMock).not.toHaveBeenCalled();
     expect(screen.queryByRole("heading", { name: "Akses akun & OTP" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Dapatkan akses Apps" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Buka halaman Ambil OTP" })).not.toBeInTheDocument();
   });
 });

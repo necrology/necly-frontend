@@ -35,11 +35,11 @@ describe("akses akun dan OTP pada detail pesanan", () => {
     getOrderMock.mockResolvedValue({
       id: ORDER_ID, number: "NEC-20261021-1", status: "processing",
       subtotal: 186000, discount: 0, total: 186000, currency: "IDR", payment_due_at: "2026-10-21T10:00:00Z",
-      items: [{ id: ITEM_ID, product_price_id: "price-1", product_name: "Netflix Premium", duration_name: "1 Bulan", unit_price: 186000, quantity: 1, line_total: 186000 }],
+      items: [{ id: ITEM_ID, product_price_id: "price-1", product_name: "ChatGPT Plus", duration_name: "1 Bulan", unit_price: 186000, quantity: 1, line_total: 186000 }],
       created_at: "2026-10-21T09:00:00Z", updated_at: "2026-10-21T10:00:00Z",
     });
     listAccessMock.mockResolvedValue({
-      items: [{ order_item_id: ITEM_ID, product_name: "Netflix Premium", duration_name: "1 Bulan", account_label: "Akun utama", account_email: "family@example.test", otp_ready: true }],
+      items: [{ order_item_id: ITEM_ID, product_name: "ChatGPT Plus", duration_name: "1 Bulan", account_label: "Akun utama", account_email: "family@example.test", otp_ready: true }],
       otp_inbox_ready: true,
     });
     issueCodeMock.mockResolvedValue({
@@ -52,12 +52,18 @@ describe("akses akun dan OTP pada detail pesanan", () => {
 
     expect(await screen.findByText("Akses akun & OTP")).toBeInTheDocument();
     expect(await screen.findByText(/family@example\.test/)).toBeInTheDocument();
+    expect(screen.getByText(/Alur login ChatGPT:/).closest("p")).toHaveTextContent(
+      "Alur login ChatGPT: buka ChatGPT → masukkan email akun → klik Lanjut → masukkan password akun. Ambil OTP hanya jika ChatGPT kemudian meminta verifikasi email/OTP.",
+    );
+    expect(screen.getByText(/Ikuti alur login platform/)).toHaveTextContent(
+      /Kode akses bukan kata sandi akun; kode akses dan OTP berlaku selama 5 menit/,
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Buat kode akses OTP" }));
 
     await waitFor(() => expect(issueCodeMock).toHaveBeenCalledWith(ORDER_ID, ITEM_ID));
     expect(await screen.findByText("ABCD234567")).toBeInTheDocument();
-    const link = screen.getByRole("link", { name: "Dapatkan akses Apps" });
+    const link = screen.getByRole("link", { name: "Buka halaman Ambil OTP" });
     expect(link).toHaveAttribute("href", "/otp?email=family%40example.test&code=ABCD234567");
 
     const accessHeading = screen.getByRole("heading", { name: "Akses akun & OTP" });
@@ -90,7 +96,7 @@ describe("akses akun dan OTP pada detail pesanan", () => {
 
   it("menonaktifkan pembuatan kode saat akun belum punya sumber mailbox", async () => {
     listAccessMock.mockResolvedValue({
-      items: [{ order_item_id: ITEM_ID, product_name: "Netflix Premium", duration_name: "1 Bulan", account_label: "Akun utama", account_email: "family@example.test", otp_ready: false }],
+      items: [{ order_item_id: ITEM_ID, product_name: "ChatGPT Plus", duration_name: "1 Bulan", account_label: "Akun utama", account_email: "family@example.test", otp_ready: false }],
       otp_inbox_ready: true,
     });
     render(<OrderClient orderId={ORDER_ID} />);

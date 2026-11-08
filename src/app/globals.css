@@ -2022,8 +2022,9 @@ body.modal-open { overflow: hidden; }
 .otp-title { font-size: clamp(1.45rem, 3.2vw, 1.75rem); line-height: 1.15; }
 .otp-lede { font-size: clamp(.92rem, 2vw, 1rem) !important; line-height: 1.65 !important; }
 .otp-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); gap: 22px; align-items: start; }
-.otp-form { padding: 26px; display: grid; gap: 18px; }
-.otp-form-heading { display: flex; gap: 12px; align-items: flex-start; }
+.otp-form { min-width: 0; padding: 26px; display: grid; gap: 18px; }
+.otp-form-heading { min-width: 0; display: flex; gap: 12px; align-items: flex-start; }
+.otp-form-heading > div { min-width: 0; }
 .otp-form-heading svg { color: var(--brand); flex: 0 0 auto; margin-top: 3px; }
 .otp-code-input { letter-spacing: .18em; font-weight: 700; text-transform: uppercase; }
 .otp-hint { color: var(--muted); font-size: 11px; line-height: 1.5; }
@@ -2031,7 +2032,7 @@ body.modal-open { overflow: hidden; }
 .otp-security { margin: 0; display: flex; gap: 8px; align-items: flex-start; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .otp-side { display: grid; gap: 16px; position: sticky; top: 90px; }
 .otp-result, .otp-help { padding: 24px; display: grid; gap: 14px; justify-items: start; }
-.otp-code { display: block; width: 100%; padding: 18px 14px; border: 1px dashed var(--brand); border-radius: 10px; color: var(--ink); background: #f7f3ff; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: clamp(30px, 5vw, 42px); font-weight: 800; letter-spacing: .28em; text-align: center; }
+.otp-code { display: block; overflow-wrap: anywhere; width: 100%; min-width: 0; padding: 18px 14px; border: 1px dashed var(--brand); border-radius: 10px; color: var(--ink); background: #f7f3ff; font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); font-size: clamp(30px, 5vw, 42px); font-weight: 800; letter-spacing: .28em; text-align: center; }
 .otp-result-note { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
 .otp-steps { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .otp-video-slot { display: flex; align-items: flex-start; gap: 12px; padding: 18px; }
@@ -2054,16 +2055,20 @@ body.modal-open { overflow: hidden; }
 .order-access h2 { display: flex; align-items: center; gap: 8px; }
 .order-access-list { display: grid; gap: 12px; margin-top: 16px; }
 .order-access-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 15px 16px; background: #fff; }
+.order-access-row > * { min-width: 0; }
 .order-access-email { display: flex; align-items: center; gap: 7px; margin: 8px 0 0; color: var(--ink); font-size: 12px; font-weight: 600; word-break: break-all; }
+.order-access-login-guide { max-width: 560px; margin: 9px 0 0; color: var(--muted); font-size: 11px; line-height: 1.55; overflow-wrap: anywhere; }
 .order-access-mail-icon { display: inline-grid; place-items: center; width: 18px; height: 18px; flex: 0 0 auto; border-radius: 50%; color: var(--brand); background: #f3eeff; font-size: 11px; font-weight: 800; }
 .order-access-code { display: grid; justify-items: end; gap: 7px; }
 .order-access-code code { border: 1px dashed var(--brand); border-radius: 7px; padding: 7px 12px; color: var(--ink); background: #f7f3ff; font-size: 18px; font-weight: 800; letter-spacing: .18em; }
 .order-access-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .otp-cooldown-message { max-width: 390px; color: #75520d; font-size: 11px; font-weight: 600; line-height: 1.5; text-align: left; }
 @media (max-width: 700px) {
-  .order-access-row { grid-template-columns: 1fr; }
-  .order-access-code { justify-items: start; }
-  .order-access-actions { justify-content: flex-start; }
+  .order-access-row { grid-template-columns: minmax(0, 1fr); }
+  .order-access-code { width: 100%; justify-items: start; }
+  .order-access-code code { max-width: 100%; overflow-wrap: anywhere; }
+  .order-access-actions { width: 100%; justify-content: flex-start; }
+  .order-access-actions .button { max-width: 100%; white-space: normal; }
 }
 
 .account-head-links { display: flex; flex-wrap: wrap; gap: 10px; }
