@@ -59,6 +59,25 @@ describe("halaman lupa kata sandi", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Masukkan alamat email yang valid.");
   });
 
+  // Baris 70: judul konfirmasi harus berbunyi "berhasil terkirim" dengan ikon
+  // sukses, paragraf spam berwarna merah, dan tautan balik berbunyi "Kembali Log In".
+  it("memakai copy konfirmasi baris 70 dan tidak lagi menulis Kembali ke masuk", async () => {
+    render(<ForgotPasswordPage />);
+    fireEvent.change(screen.getByLabelText(/alamat email/i), { target: { value: "soraya@example.com" } });
+    fireEvent.submit(screen.getByRole("button", { name: /kirim tautan/i }));
+
+    await waitFor(() => expect(forgotMock).toHaveBeenCalled());
+
+    expect(await screen.findByText(/tautan atur ulang berhasil terkirim/i)).toBeTruthy();
+
+    const spam = screen.getByText(/tidak menerima email\?/i);
+    expect(spam.className).toContain("auth-reset-spam");
+
+    const back = screen.getAllByRole("link", { name: /kembali log in/i });
+    expect(back.length).toBeGreaterThan(0);
+    expect(screen.queryByText(/kembali ke masuk/i)).toBeNull();
+  });
+
   it("menampilkan galat ketika permintaan gagal dikirim", async () => {
     forgotMock.mockRejectedValue(new Error("network down"));
     render(<ForgotPasswordPage />);
