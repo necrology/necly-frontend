@@ -1151,7 +1151,8 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
   .commerce-mobile-nav[inert] { display: none; }
   .commerce-mobile-nav-link { min-height: 50px; display: flex; align-items: center; border-radius: 14px; padding: 0 14px; color: #ede6ff; font-size: 14px; font-weight: 600; }
   .commerce-mobile-nav-link:hover, .commerce-mobile-nav-link.active { color: #fff; background: rgb(255 255 255 / .15); }
-  .commerce-mobile-login { min-height: 52px; display: grid; place-items: center; margin-top: 8px; border-radius: 999px; color: var(--commerce-violet-dark); background: var(--commerce-gold); font-size: 15px; font-weight: 700; }
+  /* Baris 85: font tombol Log In di menu titik tiga harus hitam, bukan ungu. */
+  .commerce-mobile-login { min-height: 52px; display: grid; place-items: center; margin-top: 8px; border-radius: 999px; color: #000; background: var(--commerce-gold); font-size: 15px; font-weight: 700; }
   /* Ketiga aksi autentikasi memakai geometri yang sama di semua state menu. */
   .commerce-mobile-auth-action { width: 100%; max-width: 220px; min-height: 52px; justify-self: start; border: 0; border-radius: 10px; padding-inline: 24px; color: #000; text-align: center; }
 }
