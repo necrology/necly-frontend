@@ -567,6 +567,26 @@ export function apiErrorNumber(error: unknown, field: string): number | null {
 
 const AUTH_EXPIRY_KEY = "necly-auth-expires-at";
 
+/** Event yang dipakai SessionExpiryGuard untuk bereaksi tanpa menunggu refresh. */
+export const SESSION_EXPIRED_EVENT = "necly:session-expired";
+let sessionExpiredFlag = false;
+
+/**
+ * QA baris 80: tandai sesi berakhir sekali supaya guard tetap tahu walau state
+ * autentikasi sudah dibersihkan oleh permintaan API yang keburu gagal 401.
+ */
+function markSessionExpired() {
+  sessionExpiredFlag = true;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+}
+
+/** Dibaca guard saat mount: jangan sampai sinyal kedaluwarsa hilang karena race. */
+export function consumeSessionExpiredSignal() {
+  const expired = sessionExpiredFlag;
+  sessionExpiredFlag = false;
+  return expired;
+}
+
 function readStoredExpiry(): number | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(AUTH_EXPIRY_KEY);
@@ -612,6 +632,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   isLoading: false,
   setAuth: (user, accessToken, expiresIn) => {
     const expiresAt = sessionExpiryFrom(accessToken, expiresIn);
+    sessionExpiredFlag = false;
     persistExpiry(expiresAt);
     set({ user, accessToken, expiresAt, isAuthenticated: true, isLoading: false });
   },
@@ -700,6 +721,7 @@ export async function apiRequest<T>(
   // Jangan coba memakai sesi yang menurut jam perangkat sudah kedaluwarsa.
   // Endpoint auth tetap diizinkan agar logout/login bisa membersihkan sesi.
   if (!endpoint.startsWith("/auth/") && isSessionExpired(state.expiresAt)) {
+    markSessionExpired();
     throw new ApiError("Sesi Anda sudah berakhir. Silakan masuk kembali.", 401, { code: "session_expired" });
   }
   const firstToken = state.accessToken;
@@ -710,13 +732,19 @@ export async function apiRequest<T>(
       await refreshSession();
       response = await fetchApi(endpoint, options, useAuthStore.getState().accessToken);
     } catch {
+      markSessionExpired();
       useAuthStore.getState().clearAuth();
     }
   }
 
   const payload = await readPayload(response);
   if (!response.ok) {
-    if (response.status === 401) useAuthStore.getState().clearAuth();
+    if (response.status === 401) {
+      // Sesi yang ditolak saat navigasi juga harus langsung memicu redirect,
+      // bukan hanya saat halaman di-refresh.
+      if (firstToken || useAuthStore.getState().expiresAt) markSessionExpired();
+      useAuthStore.getState().clearAuth();
+    }
     throw new ApiError(messageFromPayload(payload, response.status), response.status, payload);
   }
   return payload as T;
@@ -737,14 +765,25 @@ async function publicApiRequest<T>(endpoint: string, options: RequestInit = {}):
 }
 
 async function sameOriginRequest<T>(endpoint: string, options: RequestInit): Promise<T> {
-  const response = await fetch(endpoint, {
-    ...options,
-    credentials: "same-origin",
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      ...options,
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    });
+  } catch {
+    // Jangan biarkan pesan bawaan peramban seperti "Load failed" / "Loading
+    // Failed" muncul sebagai alasan kegagalan yang tidak bisa ditindaklanjuti.
+    throw new ApiError(
+      "Koneksi ke layanan terputus. Periksa jaringan Anda lalu coba lagi.",
+      0,
+      { code: "network_error" },
+    );
+  }
   const payload = await readPayload(response);
   if (!response.ok) {
     throw new ApiError(messageFromPayload(payload, response.status), response.status, payload);
@@ -782,6 +821,7 @@ export async function bootstrapAuth() {
   // pulihkan sesi lewat refresh cookie. Akhiri sesi server sekali agar mengubah
   // tanggal kembali tidak membuat pengguna otomatis masuk lagi.
   if (isSessionExpired(state.expiresAt)) {
+    markSessionExpired();
     try {
       await apiRequest<{ message: string }>("/auth/logout", { method: "POST" });
     } catch {
@@ -856,12 +896,34 @@ export const authApi = {
 
   // Sama seperti lupa kata sandi: lewat Route Handler same-origin agar
   // penyimpanan kata sandi baru tidak gagal karena CORS/jaringan lintas origin
-  // di browser mobile (Safari menampilkan "Load failed").
-  resetPassword: (data: { token: string; password: string }) =>
-    sameOriginRequest<{ message: string; user: ApiUser }>("/api/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+  // di browser mobile (Safari menampilkan "Load failed"). Bila Route Handler
+  // tidak tersedia di deployment, panggil endpoint backend langsung sebagai
+  // fallback supaya kata sandi tetap bisa disimpan.
+  resetPassword: async (data: { token: string; password: string }) => {
+    const body = JSON.stringify(data);
+    try {
+      return await sameOriginRequest<{ message: string; user: ApiUser }>("/api/auth/reset-password", {
+        method: "POST",
+        body,
+      });
+    } catch (error) {
+      const routeMissing = error instanceof ApiError && [404, 405, 501].includes(error.status);
+      if (!routeMissing) throw error;
+      try {
+        return await apiRequest<{ message: string; user: ApiUser }>("/auth/reset-password", {
+          method: "POST",
+          body,
+        });
+      } catch (fallbackError) {
+        if (fallbackError instanceof ApiError) throw fallbackError;
+        throw new ApiError(
+          "Koneksi ke layanan terputus. Periksa jaringan Anda lalu coba lagi.",
+          0,
+          { code: "network_error" },
+        );
+      }
+    }
+  },
 
   // Menyertakan kata sandi saat ini walau pemanggilnya sudah punya sesi, supaya
   // token akses yang dicuri sendirian tidak cukup untuk mengunci pemilik akun.

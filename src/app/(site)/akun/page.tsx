@@ -33,6 +33,11 @@ function formatMoment(value: string) {
   return new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
+// QA baris 77: info sukses wajib menyebut sesi lain berakhir, lalu sesi ini
+// dipaksa keluar beberapa detik kemudian menuju halaman Log In.
+const PASSWORD_CHANGED_NOTICE = "Perubahan kata sandi berhasil. Sesi lain sudah berakhir";
+const PASSWORD_CHANGED_LOGOUT_DELAY_MS = 3000;
+
 export default function AccountPage() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
@@ -98,11 +103,10 @@ export default function AccountPage() {
 
     setSavingPassword(true);
     try {
-      const response = await authApi.changePassword({ current_password: currentPassword, new_password: newPassword });
-      setNotice(response.message);
+      await authApi.changePassword({ current_password: currentPassword, new_password: newPassword });
+      setNotice(PASSWORD_CHANGED_NOTICE);
       form.reset();
-      await loadSessions();
-      // QA baris 78: setelah kata sandi berubah, sesi ini juga harus berakhir.
+      // QA baris 77: setelah kata sandi berubah, sesi ini juga harus berakhir.
       // Beri waktu singkat agar pesan sukses terbaca, lalu logout dan ke login.
       if (logoutTimer.current) clearTimeout(logoutTimer.current);
       logoutTimer.current = setTimeout(async () => {
@@ -111,7 +115,8 @@ export default function AccountPage() {
         } finally {
           router.replace("/login?passwordChanged=1");
         }
-      }, 2500);
+      }, PASSWORD_CHANGED_LOGOUT_DELAY_MS);
+      await loadSessions();
     } catch (error) {
       setErrors({ submit: error instanceof ApiError ? error.message : "Kata sandi gagal diubah. Coba lagi." });
     } finally {

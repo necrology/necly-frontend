@@ -3,11 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { registerMock } = vi.hoisted(() => ({ registerMock: vi.fn() }));
 
-vi.mock("@/lib/api", () => ({
-  DEMO_MODE: false,
-  authApi: { register: registerMock, authProviders: () => Promise.resolve({ password: true, google: false }) },
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    DEMO_MODE: false,
+    authApi: { ...actual.authApi, register: registerMock, authProviders: () => Promise.resolve({ password: true, google: false }) },
+  };
+});
 
+import { ApiError } from "@/lib/api";
 import RegisterPage from "./page";
 
 describe("halaman pendaftaran", () => {
@@ -50,5 +55,39 @@ describe("halaman pendaftaran", () => {
 
     expect(screen.getByText("Kata sandi terlalu panjang. Gunakan maksimal 72 karakter.")).toBeInTheDocument();
     expect(registerMock).not.toHaveBeenCalled();
+  });
+
+  it("menampilkan pesan email tidak valid di dekat field email (baris 69)", () => {
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByLabelText("Nama lengkap"), { target: { value: "Soraya" } });
+    const emailInput = screen.getByLabelText("Alamat email");
+    fireEvent.change(emailInput, { target: { value: "sorayanra@gmail,com" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi"), { target: { value: "NurAuliaSoraya!!?#" } });
+    fireEvent.change(screen.getByLabelText("Konfirmasi kata sandi"), { target: { value: "NurAuliaSoraya!!?#" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: /buat akun/i }));
+
+    expect(emailInput).toHaveAttribute("aria-invalid", "true");
+    expect(emailInput.parentElement).toHaveTextContent("Email tidak valid, silahkan input dengan email yang valid");
+    expect(registerMock).not.toHaveBeenCalled();
+  });
+
+  it("menampilkan pesan email sudah terdaftar di dekat field email (baris 69)", async () => {
+    registerMock.mockRejectedValueOnce(new ApiError("Email sudah terdaftar", 409, { code: "conflict" }));
+    render(<RegisterPage />);
+
+    const emailInput = screen.getByLabelText("Alamat email");
+    fireEvent.change(screen.getByLabelText("Nama lengkap"), { target: { value: "Soraya" } });
+    fireEvent.change(emailInput, { target: { value: "sorayanra@gmail.com" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi"), { target: { value: "NurAuliaSoraya!!?#" } });
+    fireEvent.change(screen.getByLabelText("Konfirmasi kata sandi"), { target: { value: "NurAuliaSoraya!!?#" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: /buat akun/i }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Email tersebut terdata sudah terdaftar, silakan melakukan log in akun",
+    );
+    expect(emailInput).toHaveAttribute("aria-invalid", "true");
   });
 });

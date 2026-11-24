@@ -30,13 +30,15 @@ describe("halaman atur ulang kata sandi", () => {
     search.value = "token=raw-token-123";
   });
 
-  it("mengirim token dari URL bersama kata sandi baru", async () => {
+  it("mengirim token dari URL bersama kata sandi baru (baris 91)", async () => {
     render(<ResetPasswordPage />);
 
     await fillAndSubmit();
 
     await waitFor(() => expect(resetMock).toHaveBeenCalledWith({ token: "raw-token-123", password: "N3w-strong-password!" }));
     expect(await screen.findByText("Kata sandi diperbarui.")).toBeInTheDocument();
+    // Simpan kata sandi berhasil tanpa warning jaringan bawaan peramban.
+    expect(screen.queryByText(/Load(ing)? failed/i)).not.toBeInTheDocument();
   });
 
   it("menolak konfirmasi kata sandi yang tidak cocok tanpa menghubungi backend", () => {

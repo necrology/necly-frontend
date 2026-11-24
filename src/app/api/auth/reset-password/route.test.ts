@@ -17,7 +17,7 @@ describe("POST /api/auth/reset-password", () => {
     vi.unstubAllGlobals();
   });
 
-  it("meneruskan token dan kata sandi baru ke endpoint backend", async () => {
+  it("meneruskan token dan kata sandi baru ke endpoint backend (baris 91)", async () => {
     vi.stubEnv("NEXT_PUBLIC_API_URL", "https://api.example.test/api/v1");
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(
       JSON.stringify({ message: "Kata sandi berhasil diperbarui.", user: { id: "usr-1" } }),
@@ -100,7 +100,7 @@ describe("POST /api/auth/reset-password", () => {
     });
   });
 
-  it("mengubah kegagalan jaringan backend menjadi respons 502", async () => {
+  it("mengubah kegagalan jaringan backend menjadi respons 502 (baris 91)", async () => {
     vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockRejectedValue(new TypeError("Load failed")));
 
     const response = await POST(request({ token: "raw-token-123", password: "N3w-strong-password!" }));

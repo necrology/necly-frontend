@@ -79,4 +79,44 @@ describe("apiRequest", () => {
       }),
     );
   });
+
+  it("menyimpan kata sandi baru lewat route same-origin (baris 91)", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({ message: "Kata sandi berhasil diperbarui.", user: { id: "usr-1" } }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await authApi.resetPassword({ token: "raw-token-123", password: "N3w-strong-password!" });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/auth/reset-password",
+      expect.objectContaining({
+        method: "POST",
+        credentials: "same-origin",
+        body: JSON.stringify({ token: "raw-token-123", password: "N3w-strong-password!" }),
+      }),
+    );
+  });
+
+  it("memakai endpoint backend langsung bila Route Handler tidak tersedia (baris 91)", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ error: "Not Found" }, 404))
+      .mockResolvedValueOnce(
+        jsonResponse({ message: "Kata sandi berhasil diperbarui.", user: { id: "usr-1" } }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await authApi.resetPassword({ token: "raw-token-123", password: "N3w-strong-password!" });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/auth/reset-password");
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain("/auth/reset-password");
+  });
+
+  it("tidak menampilkan Load failed saat koneksi reset kata sandi terputus (baris 91)", async () => {
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>().mockRejectedValue(new TypeError("Load failed")));
+
+    await expect(authApi.resetPassword({ token: "raw-token-123", password: "N3w-strong-password!" }))
+      .rejects.toThrow("Koneksi ke layanan terputus. Periksa jaringan Anda lalu coba lagi.");
+  });
 });

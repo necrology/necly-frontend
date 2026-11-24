@@ -1,10 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { bootstrapMock, listSessionsMock, replaceMock } = vi.hoisted(() => ({
+const { bootstrapMock, listSessionsMock, replaceMock, changePasswordMock, logoutMock } = vi.hoisted(() => ({
   bootstrapMock: vi.fn(),
   listSessionsMock: vi.fn(),
   replaceMock: vi.fn(),
+  changePasswordMock: vi.fn(),
+  logoutMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -19,10 +21,10 @@ vi.mock("@/lib/api", async (importOriginal) => {
     authApi: {
       ...actual.authApi,
       listSessions: listSessionsMock,
-      changePassword: vi.fn(),
+      changePassword: changePasswordMock,
       revokeSession: vi.fn(),
       revokeOtherSessions: vi.fn(),
-      logout: vi.fn(),
+      logout: logoutMock,
     },
   };
 });
@@ -44,7 +46,11 @@ describe("halaman akun", () => {
     bootstrapMock.mockReset();
     listSessionsMock.mockReset();
     replaceMock.mockReset();
+    changePasswordMock.mockReset();
+    logoutMock.mockReset();
     listSessionsMock.mockResolvedValue({ sessions: [] });
+    changePasswordMock.mockResolvedValue({ message: "Kata sandi berhasil diubah. Sesi lain sudah diakhiri." });
+    logoutMock.mockResolvedValue({ message: "Berhasil keluar" });
   });
 
   it("mengalihkan pengunjung yang belum masuk ke halaman login", async () => {
@@ -106,5 +112,39 @@ describe("halaman akun", () => {
     render(<AccountPage />);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Gagal mengambil daftar sesi");
+  });
+
+  it("menyediakan tautan Lupa sandi saat ini? di card ubah kata sandi (baris 76)", async () => {
+    bootstrapMock.mockResolvedValue(user);
+
+    render(<AccountPage />);
+
+    const link = await screen.findByRole("link", { name: "Lupa sandi saat ini?" });
+    expect(link).toHaveAttribute("href", "/forgot-password");
+    // Tautan berada di card Ubah kata sandi, dekat field kata sandi saat ini.
+    expect(link.closest("article")).toHaveTextContent("Ubah kata sandi");
+  });
+
+  it("menampilkan info sukses lalu memaksa logout ke Log In (baris 77)", async () => {
+    bootstrapMock.mockResolvedValue(user);
+
+    render(<AccountPage />);
+
+    await screen.findByText("Budi Santoso");
+    fireEvent.change(screen.getByLabelText(/Kata sandi saat ini/), { target: { value: "NurAuliaSoraya030307!!?#" } });
+    fireEvent.change(screen.getByLabelText(/Kata sandi baru/), { target: { value: "NurAuliaSoraya030307!!?##" } });
+    fireEvent.change(screen.getByLabelText(/Konfirmasi kata sandi baru/), { target: { value: "NurAuliaSoraya030307!!?##" } });
+    fireEvent.click(screen.getByRole("button", { name: /simpan kata sandi baru/i }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Perubahan kata sandi berhasil. Sesi lain sudah berakhir",
+    );
+    expect(changePasswordMock).toHaveBeenCalledWith({
+      current_password: "NurAuliaSoraya030307!!?#",
+      new_password: "NurAuliaSoraya030307!!?##",
+    });
+
+    await waitFor(() => expect(replaceMock).toHaveBeenCalledWith("/login?passwordChanged=1"), { timeout: 5000 });
+    expect(logoutMock).toHaveBeenCalled();
   });
 });

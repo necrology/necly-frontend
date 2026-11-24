@@ -6,8 +6,12 @@ import { FormEvent, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { GoogleSignInButton } from "@/components/google-sign-in";
 import { PasswordField } from "@/components/password-field";
-import { authApi, DEMO_MODE } from "@/lib/api";
+import { ApiError, apiErrorCode, authApi, DEMO_MODE } from "@/lib/api";
 import { passwordError } from "@/lib/auth-validation";
+
+// QA baris 69: pesan validasi muncul di bawah field email yang bersangkutan.
+const EMAIL_INVALID_MESSAGE = "Email tidak valid, silahkan input dengan email yang valid";
+const EMAIL_TAKEN_MESSAGE = "Email tersebut terdata sudah terdaftar, silakan melakukan log in akun";
 
 export default function RegisterPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -40,7 +44,7 @@ export default function RegisterPage() {
     const next: Record<string, string> = {};
 
     if (name.length < 2) next.name = "Masukkan nama lengkap Anda.";
-    if (!/^\S+@\S+\.\S+$/.test(nextEmail)) next.email = "Masukkan alamat email yang valid.";
+    if (!/^\S+@\S+\.\S+$/.test(nextEmail)) next.email = EMAIL_INVALID_MESSAGE;
     const passwordValidation = passwordError(password);
     if (passwordValidation) next.password = passwordValidation;
     if (password !== String(data.get("confirm") ?? "")) next.confirm = "Konfirmasi kata sandi tidak cocok.";
@@ -60,8 +64,11 @@ export default function RegisterPage() {
       setEmail(nextEmail);
       setVerificationToken(response.verification_token);
       setDone(true);
-    } catch {
-      setErrors({ submit: "Pendaftaran gagal. Alamat email mungkin sudah digunakan atau data belum valid." });
+    } catch (error) {
+      const emailTaken = error instanceof ApiError
+        && (error.status === 409 || apiErrorCode(error) === "conflict" || /sudah terdaftar/i.test(error.message));
+      if (emailTaken) setErrors({ email: EMAIL_TAKEN_MESSAGE });
+      else setErrors({ submit: "Pendaftaran gagal. Alamat email mungkin sudah digunakan atau data belum valid." });
     } finally {
       setSubmitting(false);
     }
