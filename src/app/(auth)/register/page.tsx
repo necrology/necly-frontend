@@ -60,8 +60,20 @@ export default function RegisterPage() {
       setEmail(nextEmail);
       setVerificationToken(response.verification_token);
       setDone(true);
-    } catch {
-      setErrors({ submit: "Pendaftaran gagal. Alamat email mungkin sudah digunakan atau data belum valid." });
+    } catch (error) {
+      // Baris 69: pesan harus tegas membedakan email yang sudah terdaftar dari
+      // email yang formatnya tidak valid, bukan pesan gabungan yang ambigu.
+      const status = (error as { status?: number } | null)?.status;
+      const raw = error instanceof Error ? error.message : "";
+      const alreadyRegistered = status === 409 || /sudah|terdaftar|used|exists|duplicate/i.test(raw);
+      const invalidEmail = status === 422 || /tidak valid|invalid/i.test(raw);
+      if (alreadyRegistered) {
+        setErrors({ email: "Email tersebut terdata sudah terdaftar, silakan melakukan log in akun." });
+      } else if (invalidEmail) {
+        setErrors({ email: "Email tidak valid, silahkan input dengan email yang valid." });
+      } else {
+        setErrors({ submit: "Pendaftaran gagal. Coba lagi beberapa saat lagi atau hubungi admin." });
+      }
     } finally {
       setSubmitting(false);
     }

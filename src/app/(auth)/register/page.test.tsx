@@ -16,6 +16,38 @@ describe("halaman pendaftaran", () => {
     registerMock.mockResolvedValue({ user: { id: "usr-1" } });
   });
 
+  // Baris 69: email yang sudah terdaftar harus mendapat pesan tegas, bukan pesan
+  // gabungan "mungkin sudah digunakan atau data belum valid".
+  it("memberi pesan tegas ketika email sudah terdaftar (baris 69)", async () => {
+    registerMock.mockRejectedValue(Object.assign(new Error("conflict"), { status: 409 }));
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByLabelText("Nama lengkap"), { target: { value: "Soraya" } });
+    fireEvent.change(screen.getByLabelText("Alamat email"), { target: { value: "soraya@example.com" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi"), { target: { value: "NurAuliaSoraya!!?#" } });
+    fireEvent.change(screen.getByLabelText("Konfirmasi kata sandi"), { target: { value: "NurAuliaSoraya!!?#" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: /buat akun/i }));
+
+    await waitFor(() => expect(screen.getByText(/terdata sudah terdaftar/i)).toBeTruthy());
+    expect(screen.queryByText(/mungkin sudah digunakan atau data belum valid/i)).toBeNull();
+  });
+
+  // Baris 69: email dengan format tidak valid harus memakai kalimat yang diminta QA.
+  it("memberi pesan email tidak valid (baris 69)", async () => {
+    registerMock.mockRejectedValue(Object.assign(new Error("invalid"), { status: 422 }));
+    render(<RegisterPage />);
+
+    fireEvent.change(screen.getByLabelText("Nama lengkap"), { target: { value: "Soraya" } });
+    fireEvent.change(screen.getByLabelText("Alamat email"), { target: { value: "soraya@example.com" } });
+    fireEvent.change(screen.getByLabelText("Kata sandi"), { target: { value: "NurAuliaSoraya!!?#" } });
+    fireEvent.change(screen.getByLabelText("Konfirmasi kata sandi"), { target: { value: "NurAuliaSoraya!!?#" } });
+    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("button", { name: /buat akun/i }));
+
+    await waitFor(() => expect(screen.getByText(/Email tidak valid, silahkan input dengan email yang valid/i)).toBeTruthy());
+  });
+
   it("mendaftarkan akun melalui API live dan menampilkan langkah verifikasi", async () => {
     render(<RegisterPage />);
 
