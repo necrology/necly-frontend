@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, MailCheck, Send } from "lucide-react";
+import { ArrowLeft, CheckCircle2, MailCheck, Send } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
@@ -56,17 +56,17 @@ export default function ForgotPasswordPage() {
       <div className="auth-form" style={{ justifyItems: "start" }}>
         <div className="mobile-menu-button" style={{ display: "block" }}><BrandLogo href="/" /></div>
         <span className="success-mark"><MailCheck size={25} /></span>
-        <div><span className="eyebrow">{DEMO_MODE ? "Mode demo" : "Periksa email Anda"}</span><h1 className="h2" style={{ marginTop: 10 }}>Tautan atur ulang dikirim.</h1></div>
+        <div><span className="eyebrow">{DEMO_MODE ? "Mode demo" : "Periksa email Anda"}</span><h1 className="h2" style={{ marginTop: 10 }}>Tautan atur ulang berhasil terkirim</h1><p className="auth-reset-success" style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 8, color: "var(--green, #12805c)", fontWeight: 600 }}><CheckCircle2 size={18} aria-hidden="true" /> Tautan sudah kami kirim ke email Anda.</p></div>
         <p className="muted" style={{ margin: 0 }}>
           {DEMO_MODE
             ? "Mode demo tidak mengirim email. Di produk langsung, tautan atur ulang kata sandi dikirim ke alamat yang terdaftar."
             : <>Kami sudah mengirim tautan atur ulang kata sandi ke <strong style={{ color: "var(--ink)" }}>{email}</strong>. Tautan hanya dapat digunakan sekali dan berlaku terbatas.</>}
         </p>
-        <p className="muted small" style={{ margin: 0 }}>
+        <p className="muted small auth-reset-spam" style={{ margin: "6px 0 0", color: "#c62828" }}>
           Tidak menerima email? Periksa folder spam, lalu tunggu beberapa menit sebelum mengirim ulang. Masih terkendala? <a href="mailto:necly.services@gmail.com">Hubungi admin via email</a>.
         </p>
         <button className="button button-secondary" style={{ width: "100%", marginTop: 8 }} type="button" onClick={() => setSent(false)}>Kirim ulang</button>
-        <Link className="button button-ghost" style={{ width: "100%" }} href="/login"><ArrowLeft size={14} /> Kembali ke masuk</Link>
+        <Link className="button button-ghost" style={{ width: "100%" }} href="/login"><ArrowLeft size={14} /> Kembali Log In</Link>
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function ForgotPasswordPage() {
         {unregistered && <Link className="button button-secondary" href="/register">Buat akun sekarang</Link>}
         <button className="button button-primary" type="submit" disabled={submitting}>{submitting ? "Mengirim…" : <>Kirim tautan atur ulang <Send size={14} /></>}</button>
       </form>
-      <Link className="button button-ghost" href="/login"><ArrowLeft size={14} /> Kembali ke masuk</Link>
+      <Link className="button button-ghost" href="/login"><ArrowLeft size={14} /> Kembali Log In</Link>
     </div>
   );
 }
