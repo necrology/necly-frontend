@@ -17,6 +17,10 @@ const safeguards = [["Pembayaran Aman", "Semua transaksi diproses dengan enkrips
 const MANUAL_PAYMENTS = ["Alfamart", "BNI", "BSI", "BANK BRI", "mandiri"];
 const DEMO_ORDER_ID = "NCL-DEMO-260906";
 
+// Penonaktifan sementara tombol voucher atas permintaan pemilik produk (NEC-231).
+// Ubah ke `false` untuk mengaktifkan kembali alur voucher tanpa mengubah markup lain.
+const VOUCHER_ENTRY_DISABLED = true;
+
 // Id harga dari katalog API selalu UUID; id data contoh lokal berbentuk slug.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -366,20 +370,34 @@ export function CheckoutCommerceClient() {
         </section>
         <section className="commerce-checkout-section commerce-voucher-section">
           <h2>Voucher</h2>
-          <button
-            type="button"
-            disabled
-            className="commerce-voucher-disabled"
-            title="Fitur voucher sementara dinonaktifkan"
-            aria-disabled="true"
-          >
-            <CircleDollarSign size={26} />
-            <span>Punya kode voucher Akunmu?</span>
-            <ChevronRight size={26} />
-          </button>
-          <p className="commerce-voucher-disabled-message" role="status">
-            Fitur voucher sementara dinonaktifkan. Silakan lanjutkan pembayaran tanpa voucher.
-          </p>
+          {VOUCHER_ENTRY_DISABLED ? (
+            <>
+              <button
+                type="button"
+                disabled
+                className="commerce-voucher-disabled"
+                title="Fitur voucher sementara dinonaktifkan"
+                aria-disabled="true"
+              >
+                <CircleDollarSign size={26} />
+                <span>Punya kode voucher Akunmu?</span>
+                <ChevronRight size={26} />
+              </button>
+              <p className="commerce-voucher-disabled-message" role="status">
+                Kode voucher sementara belum dapat dipakai. Silakan lanjutkan pembayaran tanpa voucher.
+              </p>
+            </>
+          ) : voucherOpen ? (
+            <div className="commerce-voucher-input">
+              <input aria-label="Kode voucher" value={voucher} onChange={(event) => setVoucher(event.target.value)} placeholder="Masukkan kode voucher" />
+              <button type="button" onClick={applyVoucher}>Pakai</button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setVoucherOpen(true)}><CircleDollarSign size={26} />Punya kode voucher Akunmu?<ChevronRight size={26} /></button>
+          )}
+          {!VOUCHER_ENTRY_DISABLED && voucherMessage && (voucherFailed
+            ? <p className="commerce-voucher-message is-error" role="alert"><AlertCircle size={16} />{voucherMessage}</p>
+            : <p className="commerce-voucher-message"><BadgeCheck size={16} />{voucherMessage}</p>)}
         </section>
         <section className="commerce-checkout-section">
           <h2>Pilih Metode Pembayaran</h2>

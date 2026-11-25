@@ -1141,7 +1141,6 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 @media (max-width: 900px) {
   .commerce-menu-trigger.desktop-menu-trigger { display: none; }
   .commerce-menu-trigger.mobile-menu-trigger { display: inline-grid; }
-  .commerce-header-logo { margin-right: auto; }
   .commerce-header-logo img { width: 30px; height: 30px; }
   .commerce-login-link { display: none; }
   .commerce-mobile-profile { display: inline-grid; }

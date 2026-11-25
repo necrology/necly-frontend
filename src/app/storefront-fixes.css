@@ -57,14 +57,15 @@ img, svg { max-width: 100%; }
 
 /* Header stays blue while its lower edge has a soft curve. */
 .site-header { overflow: visible; border-radius: 0 0 26px 26px; background: #4c1ef9; }
-.site-header .site-nav { min-height: 56px; position: relative; justify-content: space-between; }
+.site-header .site-nav { min-height: 56px; position: relative; justify-content: flex-start; gap: 10px; }
 .site-header .commerce-menu-trigger, .site-header .commerce-mobile-profile { width: 44px; height: 44px; border-radius: 12px; }
 .site-header .commerce-menu-trigger svg { width: 27px; height: 27px; }
 .site-header .commerce-mobile-profile { border-radius: 50%; }
 .site-header .commerce-mobile-profile svg { width: 28px; height: 28px; }
-.site-header .commerce-header-logo { position: absolute; left: 50%; transform: translateX(-50%); margin: 0; }
+.site-header .commerce-header-logo { position: static; order: -1; margin: 0; flex: 0 0 auto; }
 .site-header .commerce-header-logo img { width: 34px; height: 34px; padding: 2px; border-width: 1px; }
 .site-header .nav-links { gap: 1px; margin-left: 10px; }
+.site-header .nav-actions { margin-left: auto; }
 .site-header .nav-link { min-height: 34px; padding: 0 8px; font-size: 11px; }
 .site-header .nav-link.active::after { right: 8px; bottom: 3px; left: 8px; }
 .site-header .commerce-login-link { min-height: 34px; padding: 0 14px; font-size: 11px; }
