@@ -9,6 +9,7 @@ import "@fontsource/montserrat/700.css";
 import "./globals.css";
 import "./storefront-fixes.css";
 import { SessionExpiryGuard } from "@/components/session-expiry-guard";
+import { ToastProvider } from "@/components/toast-provider";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 const siteDescription = "Solusi hemat berlangganan akun premium, aman dan terpercaya. Bandingkan harga, durasi, stok akses, dan aktivasi resmi.";
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="id">
       <body>
         <SessionExpiryGuard />
+        <ToastProvider />
         <a className="skip-link" href="#main-content">Lewati ke konten utama</a>
         {children}
       </body>
