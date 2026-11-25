@@ -2,9 +2,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
+const { toastMock } = vi.hoisted(() => ({ toastMock: vi.fn() }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: pushMock }) }));
 vi.mock("@/stores/cart-store", () => ({ useCartStore: (selector: (state: unknown) => unknown) => selector({ addItem: vi.fn() }) }));
+vi.mock("@/hooks/use-toast", () => ({ useToast: () => ({ toast: toastMock }) }));
 
 import { ProductDetailClient } from "./product-detail-client";
 import { products } from "@/data/products";
@@ -71,5 +73,16 @@ describe("QA halaman detail produk", () => {
     expect(screen.getByText(/÷ 6 = Rp 55\.000/)).toBeInTheDocument();
     expect(screen.getByText("Rp 30.000")).toBeInTheDocument();
     expect(screen.getByText("5 orang + admin")).toBeInTheDocument();
+  });
+
+  it("memanggil toast sukses dengan nama produk saat menambah ke keranjang dari halaman detail (baris 128)", () => {
+    render(<ProductDetailClient product={product} />);
+
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(product.packageName) }));
+    fireEvent.click(screen.getByRole("button", { name: "1 Bulan" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Pesan/ })[0]);
+
+    expect(toastMock).toHaveBeenCalledWith(`${product.name} berhasil masuk keranjang.`, "success");
+    expect(pushMock).toHaveBeenCalledWith("/checkout");
   });
 });

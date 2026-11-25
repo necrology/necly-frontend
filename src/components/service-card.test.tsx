@@ -65,4 +65,28 @@ describe("ServiceCard", () => {
     expect(screen.queryByText("4.9 (184)")).not.toBeInTheDocument();
     expect(document.querySelector(".rating")).not.toBeInTheDocument();
   });
+
+  it("menampilkan informasi daftar tunggu saat semua paket stoknya habis (baris 135)", () => {
+    const product = {
+      ...services[0],
+      stock: 0,
+      priceOptions: services[0].priceOptions.map((opt) => ({ ...opt, stock: 0 })),
+    };
+
+    render(<ServiceCard product={product} />);
+
+    expect(screen.getByText(/Stok habis, saat ini masuk daftar tunggu/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Pesan" })).toHaveAttribute("href", `/products/${product.slug}`);
+  });
+
+  it("tidak menampilkan informasi daftar tunggu ketika masih ada paket tersedia", () => {
+    const product = {
+      ...services[0],
+      priceOptions: services[0].priceOptions.map((opt, i) => ({ ...opt, stock: i === 0 ? 5 : 0 })),
+    };
+
+    render(<ServiceCard product={product} />);
+
+    expect(screen.queryByText(/Stok habis, saat ini masuk daftar tunggu/)).not.toBeInTheDocument();
+  });
 });

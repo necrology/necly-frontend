@@ -117,7 +117,7 @@ describe("riwayat pesanan pelanggan", () => {
     );
     expect(screen.getByText(/Menampilkan 1–2 dari 2 pesanan/)).toBeInTheDocument();
     const css = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
-    expect(css).toMatch(/\.orders-summary \{[^}]*margin-bottom: 8px;/);
+    expect(css).toMatch(/\.orders-summary \{[^}]*margin-bottom: 16px;/);
     expect(screen.queryByRole("button", { name: "Hapus pesanan ORD-W12-1 dari riwayat" })).not.toBeInTheDocument();
   });
 
