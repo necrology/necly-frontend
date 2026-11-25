@@ -197,7 +197,9 @@ describe("CheckoutCommerceClient", () => {
     for (const button of screen.getAllByRole("button", { name: "Bayar" })) {
       expect(button).toBeEnabled();
     }
-    expect(screen.getByRole("status")).toHaveTextContent(/diperbarui otomatis/);
+    const statusMessages = screen.getAllByRole("status");
+    const staleMessage = statusMessages.find((el) => el.textContent.includes("diperbarui otomatis"));
+    expect(staleMessage).toBeInTheDocument();
   });
 
   it("menolak membayar ketika keranjang kosong", () => {
@@ -218,7 +220,10 @@ describe("CheckoutCommerceClient", () => {
 
     render(<CheckoutCommerceClient />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("Keranjang masih kosong, jadi belum ada yang bisa dibayar.");
+    const statusMessages = screen.getAllByRole("status");
+    const emptyMessage = statusMessages.find((el) => el.textContent.includes("Keranjang masih kosong"));
+    expect(emptyMessage).toBeInTheDocument();
+    expect(emptyMessage).toHaveTextContent("Keranjang masih kosong, jadi belum ada yang bisa dibayar.");
   });
 
   it("menjelaskan alasan tombol Bayar mati saat item berasal dari katalog lama", () => {
@@ -226,7 +231,10 @@ describe("CheckoutCommerceClient", () => {
 
     render(<CheckoutCommerceClient />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("1 item di keranjang berasal dari katalog lama dan akan diperbarui otomatis");
+    const statusMessages = screen.getAllByRole("status");
+    const staleMessage = statusMessages.find((el) => el.textContent.includes("katalog lama"));
+    expect(staleMessage).toBeInTheDocument();
+    expect(staleMessage).toHaveTextContent("1 item di keranjang berasal dari katalog lama dan akan diperbarui otomatis");
   });
 
   it("menampilkan pesan galat saat checkout gagal", async () => {

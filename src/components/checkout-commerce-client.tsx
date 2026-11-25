@@ -57,6 +57,73 @@ type ReviewedPrice = {
   fingerprint: string;
 };
 
+/** SVG logo untuk setiap metode pembayaran. */
+function PaymentLogo({ channel }: { channel: string }) {
+  const logos: Record<string, React.ReactNode> = {
+    qris: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#E2382F" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="48" fontWeight="bold" fill="white">QRIS</text>
+      </svg>
+    ),
+    ovo: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#2A1170" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="40" fontWeight="bold" fill="white">OVO</text>
+      </svg>
+    ),
+    dana: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#118EEA" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="white">DANA</text>
+      </svg>
+    ),
+    shopeepay: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#EE4D2D" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="white">ShopeePay</text>
+      </svg>
+    ),
+    linkaja: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#E02B2B" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="white">LinkAja</text>
+      </svg>
+    ),
+    alfamart: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#E01F26" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="white">Alfamart</text>
+      </svg>
+    ),
+    bni_va: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#F36F21" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="40" fontWeight="bold" fill="white">BNI</text>
+      </svg>
+    ),
+    bsi_va: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#00A39D" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="40" fontWeight="bold" fill="white">BSI</text>
+      </svg>
+    ),
+    bri_va: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#0A5BB5" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="white">BRI</text>
+      </svg>
+    ),
+    mandiri_va: (
+      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="120" height="120" rx="16" fill="#1A3F8F" />
+        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="white">Mandiri</text>
+      </svg>
+    ),
+  };
+  return logos[channel] ?? <span aria-hidden="true">{channel}</span>;
+}
+
 export function CheckoutCommerceClient() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
@@ -299,21 +366,24 @@ export function CheckoutCommerceClient() {
         </section>
         <section className="commerce-checkout-section commerce-voucher-section">
           <h2>Voucher</h2>
-          {voucherOpen ? (
-            <div className="commerce-voucher-input">
-              <input aria-label="Kode voucher" value={voucher} onChange={(event) => setVoucher(event.target.value)} placeholder="Masukkan kode voucher" />
-              <button type="button" onClick={applyVoucher}>Pakai</button>
-            </div>
-          ) : (
-            <button type="button" onClick={() => setVoucherOpen(true)}><CircleDollarSign size={26} />Punya kode voucher Akunmu?<ChevronRight size={26} /></button>
-          )}
-          {voucherMessage && (voucherFailed
-            ? <p className="commerce-voucher-message is-error" role="alert"><AlertCircle size={16} />{voucherMessage}</p>
-            : <p className="commerce-voucher-message"><BadgeCheck size={16} />{voucherMessage}</p>)}
+          <button
+            type="button"
+            disabled
+            className="commerce-voucher-disabled"
+            title="Fitur voucher sementara dinonaktifkan"
+            aria-disabled="true"
+          >
+            <CircleDollarSign size={26} />
+            <span>Punya kode voucher Akunmu?</span>
+            <ChevronRight size={26} />
+          </button>
+          <p className="commerce-voucher-disabled-message" role="status">
+            Fitur voucher sementara dinonaktifkan. Silakan lanjutkan pembayaran tanpa voucher.
+          </p>
         </section>
         <section className="commerce-checkout-section">
           <h2>Pilih Metode Pembayaran</h2>
-          <div className="commerce-payment-grid">{PAYMENT_METHODS.map(({ label, tone }) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""} ${unsupportedChannel === label ? "is-unsupported" : ""}`} type="button" aria-pressed={payment === label} onClick={() => { setPayment(label); setUnsupportedChannel(null); setError(""); }}><span>{label}</span></button>)}</div>
+          <div className="commerce-payment-grid">{PAYMENT_METHODS.map(({ label, tone, channel }) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""} ${unsupportedChannel === label ? "is-unsupported" : ""}`} type="button" aria-pressed={payment === label} onClick={() => { setPayment(label); setUnsupportedChannel(null); setError(""); }}><PaymentLogo channel={channel} /><span>{label}</span></button>)}</div>
           {/* Baris 50/no. 25: elemen yang ditandai pada dokumentasi memakai warning
               merah muda yang sama dengan validasi di halaman detail pesanan. */}
           {MANUAL_PAYMENTS.includes(payment) && <div className="commerce-field-warning commerce-payment-note" role="alert"><AlertCircle size={15} /><p>Pilih durasi minimal 6 bulan untuk metode bank/alfa.</p></div>}

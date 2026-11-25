@@ -299,7 +299,7 @@ img, svg { max-width: 100%; }
     box-shadow: none;
     position: relative;
   }
-  .figma-desktop-brand { width: 56px; height: 56px; display: grid; place-items: center; }
+  .figma-desktop-brand { width: 56px; height: 56px; display: grid; place-items: start center; }
   .figma-desktop-brand > span { width: 56px; height: 56px; display: block; }
   .figma-desktop-brand img { width: 56px; max-width: none; height: 56px; object-fit: contain; }
   .figma-desktop-nav-links { position: static; display: flex; align-items: center; justify-content: center; gap: clamp(22px, 2.6vw, 42px); }
