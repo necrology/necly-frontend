@@ -87,7 +87,9 @@ describe("halaman pembayaran (live)", () => {
 
     await waitFor(() => expect(screen.getByText("Pembayaran berhasil")).toBeInTheDocument());
     expect(screen.getByRole("link", { name: "Pesanan saya" })).toHaveAttribute("href", "/orders");
-    expect(screen.getByRole("link", { name: "Lihat pesanan" })).toHaveAttribute("href", "/orders/ord-1");
+    // Tombol "Lihat pesanan" sengaja dihapus: tautan "Pesanan saya" di atasnya
+    // sudah menuju halaman yang sama, jadi tombol itu hanya duplikat.
+    expect(screen.queryByRole("link", { name: "Lihat pesanan" })).toBeNull();
   });
 
   it.each(["expired", "cancelled", "refunded"] as const)(

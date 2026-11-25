@@ -64,7 +64,6 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
           <span className="badge status-success">Simulasi selesai</span>
           <h1 className="h2" style={{ fontSize: 28 }}>Pembayaran demo berhasil</h1>
           <p className="muted" style={{ maxWidth: 470, margin: 0 }}>Tidak ada dana yang diproses pada mode demo. Semua pesanan Anda tersedia di <Link className="payment-orders-link" href="/orders">Pesanan saya</Link>.</p>
-          <Link className="button button-primary" href={`/orders/${orderId}`}>Lihat pesanan</Link>
         </div>
       );
     }
@@ -103,7 +102,6 @@ export function PaymentClient({ orderId }: PaymentClientProps) {
         <span className="badge status-success">Pembayaran dikonfirmasi</span>
         <h1 className="h2" style={{ fontSize: 28 }}>Pembayaran berhasil</h1>
         <p className="muted" style={{ maxWidth: 470, margin: 0 }}>Pesanan {order.number} sudah tercatat dan akan diproses. Semua pesanan Anda tersedia di <Link className="payment-orders-link" href="/orders">Pesanan saya</Link>.</p>
-        <Link className="button button-primary" href={`/orders/${order.id}`}>Lihat pesanan</Link>
       </div>
     );
   }
