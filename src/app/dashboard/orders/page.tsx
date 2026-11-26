@@ -1,8 +1,8 @@
 "use client";
 
-import { Download, Eye, Search } from "lucide-react";
-import Link from "next/link";
+import { Download, Eye, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Modal } from "@/components/modal";
 import { PageHeader } from "@/components/page-header";
 import { SearchableSelect } from "@/components/searchable-select";
 import { StatusBadge } from "@/components/status-badge";
@@ -14,6 +14,7 @@ import { downloadCsv } from "@/lib/csv";
 import type { DashboardOrder } from "@/lib/types";
 import { ORDER_STATUS_OPTIONS } from "@/lib/order-status";
 import { useSearchQueryParam } from "@/lib/use-search-query-param";
+import { AdminOrderDetail } from "./[orderId]/admin-order-detail";
 
 const statuses = ["Semua", ...ORDER_STATUS_OPTIONS] as const;
 type StatusType = (typeof statuses)[number];
@@ -28,6 +29,7 @@ export default function OrdersAdminPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (DEMO_MODE) {
@@ -205,9 +207,14 @@ export default function OrdersAdminPage() {
                     <td>{formatDateID(order.date)}</td>
                     <td>{order.due}</td>
                     <td>
-                      <Link className="table-action" href={`/dashboard/orders/${encodeURIComponent(order.apiId ?? order.id)}`} aria-label={`Lihat ${order.id}`}>
+                      <button
+                        className="table-action"
+                        type="button"
+                        aria-label={`Lihat ${order.id}`}
+                        onClick={() => setDetailOrderId(order.apiId ?? order.id)}
+                      >
                         <Eye size={13} />
-                      </Link>
+                      </button>
                     </td>
                   </tr>
                 );
@@ -222,6 +229,16 @@ export default function OrdersAdminPage() {
             {loadingMore ? "Memuat…" : "Muat lebih banyak pesanan"}
           </button>
         </div>
+      )}
+      {detailOrderId && (
+        <Modal
+          title={`Detail Pesanan ${detailOrderId}`}
+          description="Informasi lengkap pesanan, pembayaran, dan pengiriman akun."
+          onClose={() => setDetailOrderId(null)}
+          size="lg"
+        >
+          <AdminOrderDetail orderId={detailOrderId} />
+        </Modal>
       )}
     </div>
   );

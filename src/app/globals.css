@@ -1141,7 +1141,6 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 @media (max-width: 900px) {
   .commerce-menu-trigger.desktop-menu-trigger { display: none; }
   .commerce-menu-trigger.mobile-menu-trigger { display: inline-grid; }
-  .commerce-header-logo { margin-inline: auto; }
   .commerce-header-logo img { width: 30px; height: 30px; }
   .commerce-login-link { display: none; }
   .commerce-mobile-profile { display: inline-grid; }
@@ -1424,12 +1423,12 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 /* ---------- Checkout ---------- */
 .commerce-checkout-page { padding-bottom: 64px; background: var(--commerce-paper); }
 .commerce-checkout-hero { padding: 34px 0 30px; background: linear-gradient(112deg, #f2f4ff, #eae3ff); }
-.commerce-checkout-hero-inner { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 30px; align-items: center; }
+/* Hero checkout tanpa gambar dummy (NEC-234/247): teks melebar penuh, tanpa kolom kosong. */
+.commerce-checkout-hero-inner { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; align-items: center; }
 .commerce-checkout-hero-inner nav { color: var(--commerce-muted); font-size: 11px; }
 .commerce-checkout-hero-inner nav span { color: #4c1ef9; font-weight: 700; }
 .commerce-checkout-hero h1 { margin: 10px 0 0; color: var(--commerce-ink); font-size: clamp(1.8rem, 3.2vw, 2.4rem); font-weight: 700; letter-spacing: -.05em; }
 .commerce-checkout-hero p { margin: 10px 0 0; color: var(--commerce-muted); font-size: 13px; }
-.commerce-checkout-hero img { width: 100%; height: auto; max-width: 300px; justify-self: end; }
 .commerce-checkout-layout { display: grid; grid-template-columns: minmax(0, 1fr) 336px; gap: 20px; align-items: start; padding-top: 24px; }
 .commerce-checkout-content { display: grid; gap: 16px; }
 .commerce-checkout-section { border: 1px solid var(--commerce-line); border-radius: 22px; padding: 20px; background: #fff; }
@@ -1447,11 +1446,17 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .commerce-checkout-product > b small { color: var(--commerce-muted); font-size: 10px; font-weight: 600; }
 .commerce-voucher-section > button { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 11px; border: 1px dashed #c3ccfb; border-radius: 16px; padding: 0 16px; color: #4c1ef9; background: #f4f6ff; font-size: 12px; font-weight: 700; cursor: pointer; }
 .commerce-voucher-section > button svg:last-child { margin-left: auto; }
+.commerce-voucher-disabled { width: 100%; min-height: 56px; display: flex; align-items: center; gap: 11px; border: 1px dashed #c3ccfb; border-radius: 16px; padding: 0 16px; color: #94a1b1; background: #f7f7fb; font-size: 12px; font-weight: 700; cursor: not-allowed; opacity: 0.6; }
+.commerce-voucher-disabled svg:last-child { margin-left: auto; }
+.commerce-voucher-disabled-message { margin: 14px 0 0; color: var(--commerce-muted); font-size: 11px; font-weight: 500; }
 .commerce-voucher-input { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; }
 .commerce-voucher-input input { min-height: 48px; border: 1px solid var(--commerce-line); border-radius: 14px; padding: 0 15px; color: var(--commerce-ink); background: #fff; font-size: 12px; }
 .commerce-voucher-input button { min-width: 90px; border: 0; border-radius: 14px; color: #fff; background: #4c1ef9; font-size: 12px; font-weight: 700; cursor: pointer; }
 .commerce-payment-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-.commerce-payment-option { min-height: 72px; display: grid; place-items: center; border: 1px solid var(--commerce-line); border-radius: 15px; padding: 10px 8px; color: #4b4570; background: #fff; font-size: 13px; font-weight: 800; letter-spacing: -.02em; cursor: pointer; transition: border-color .16s ease, background .16s ease; }
+.commerce-payment-option { min-height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--commerce-line); border-radius: 15px; padding: 10px 8px; color: #4b4570; background: #fff; font-size: 13px; font-weight: 800; letter-spacing: -.02em; cursor: pointer; transition: border-color .16s ease, background .16s ease; }
+.commerce-payment-option svg { width: 48px; height: 48px; flex-shrink: 0; }
+/* Logo asli metode pembayaran (NEC-232): kotak netral, contain agar rasio asli tiap brand utuh. */
+.commerce-payment-option img.commerce-payment-logo { width: 100%; height: 34px; max-width: 84px; flex-shrink: 0; object-fit: contain; object-position: center; }
 .commerce-payment-option span { text-align: center; line-height: 1.25; }
 .commerce-payment-option:hover { border-color: #c3ccfb; }
 .commerce-payment-option.selected { border: 2px solid #4c1ef9; background: #f2f4ff; box-shadow: 0 0 0 3px rgb(76 30 249 / .1); }
@@ -1659,7 +1664,6 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
   .commerce-checkout-page { padding-bottom: 128px; }
   .commerce-checkout-hero { padding: 22px 0 24px; }
   .commerce-checkout-hero-inner { grid-template-columns: 1fr; gap: 14px; }
-  .commerce-checkout-hero img { max-width: 200px; justify-self: start; }
   .commerce-checkout-layout { grid-template-columns: 1fr; gap: 14px; padding-top: 18px; }
   .commerce-checkout-section { border-radius: 18px; padding: 16px; }
   .commerce-duration-choice-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
@@ -1745,8 +1749,7 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 
 /* ---------- Halaman checkout (QA baris 43–46, 49, 50) ---------- */
 /* Baris 44: ukuran ilustrasi disamakan dengan halaman detail order. */
-.commerce-checkout-hero-inner { grid-template-columns: minmax(0, 1fr) 360px; }
-.commerce-checkout-hero img { max-width: 360px; }
+.commerce-checkout-hero-inner { grid-template-columns: minmax(0, 1fr); }
 /* Baris 45: pesan voucher tampil merah dan diberi jarak dari field. */
 .commerce-voucher-message { display: flex; align-items: center; gap: 8px; margin: 14px 0 0; color: #147a58; font-size: 11px; font-weight: 600; }
 .commerce-voucher-message svg { flex: 0 0 auto; }
@@ -1772,7 +1775,6 @@ body { background: #f4f4f4; font-family: "Montserrat", "Avenir Next", ui-sans-se
 .commerce-checkout-mailto:hover { color: #4c1ef9; }
 @media (max-width: 767px) {
   .commerce-checkout-hero-inner { grid-template-columns: 1fr; }
-  .commerce-checkout-hero img { max-width: none; width: 100%; justify-self: stretch; }
   /* Baris 43: revisi terbaru meminta breadcrumb diperbesar lagi. */
   .commerce-breadcrumbs { font-size: 16px; gap: 11px; }
   .commerce-breadcrumbs a svg { width: 22px; height: 22px; }

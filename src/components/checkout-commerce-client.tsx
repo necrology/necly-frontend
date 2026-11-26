@@ -17,6 +17,10 @@ const safeguards = [["Pembayaran Aman", "Semua transaksi diproses dengan enkrips
 const MANUAL_PAYMENTS = ["Alfamart", "BNI", "BSI", "BANK BRI", "mandiri"];
 const DEMO_ORDER_ID = "NCL-DEMO-260906";
 
+// Penonaktifan sementara tombol voucher atas permintaan pemilik produk (NEC-231).
+// Ubah ke `false` untuk mengaktifkan kembali alur voucher tanpa mengubah markup lain.
+const VOUCHER_ENTRY_DISABLED = true;
+
 // Id harga dari katalog API selalu UUID; id data contoh lokal berbentuk slug.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -56,6 +60,42 @@ type ReviewedPrice = {
   /** Persetujuan hanya berlaku untuk isi keranjang/kanal yang sama. */
   fingerprint: string;
 };
+
+/**
+ * Logo asli tiap metode pembayaran (NEC-232). Aset disimpan lokal di
+ * public/payment-logos/ agar tidak bergantung pada CDN pihak ketiga saat
+ * runtime; hotlink ke server bank/e-wallet rapuh dan bisa mati sewaktu-waktu.
+ */
+const PAYMENT_LOGO_SRC: Record<string, string> = {
+  qris: "/payment-logos/qris.svg",
+  ovo: "/payment-logos/ovo.svg",
+  dana: "/payment-logos/dana.svg",
+  shopeepay: "/payment-logos/shopeepay.svg",
+  linkaja: "/payment-logos/linkaja.svg",
+  alfamart: "/payment-logos/alfamart.svg",
+  bni_va: "/payment-logos/bni_va.svg",
+  bsi_va: "/payment-logos/bsi_va.svg",
+  bri_va: "/payment-logos/bri_va.svg",
+  mandiri_va: "/payment-logos/mandiri_va.svg",
+};
+
+/** SVG inline tetap dipakai sebagai cadangan bila aset lokal gagal dimuat. */
+function PaymentLogo({ channel }: { channel: string }) {
+  const src = PAYMENT_LOGO_SRC[channel];
+  if (!src) return <span aria-hidden="true">{channel}</span>;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- SVG statis lokal, tanpa optimasi next/image
+    <img
+      className="commerce-payment-logo"
+      src={src}
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+    />
+  );
+}
 
 export function CheckoutCommerceClient() {
   const router = useRouter();
@@ -299,7 +339,24 @@ export function CheckoutCommerceClient() {
         </section>
         <section className="commerce-checkout-section commerce-voucher-section">
           <h2>Voucher</h2>
-          {voucherOpen ? (
+          {VOUCHER_ENTRY_DISABLED ? (
+            <>
+              <button
+                type="button"
+                disabled
+                className="commerce-voucher-disabled"
+                title="Fitur voucher sementara dinonaktifkan"
+                aria-disabled="true"
+              >
+                <CircleDollarSign size={26} />
+                <span>Punya kode voucher Akunmu?</span>
+                <ChevronRight size={26} />
+              </button>
+              <p className="commerce-voucher-disabled-message" role="status">
+                Kode voucher sementara belum dapat dipakai. Silakan lanjutkan pembayaran tanpa voucher.
+              </p>
+            </>
+          ) : voucherOpen ? (
             <div className="commerce-voucher-input">
               <input aria-label="Kode voucher" value={voucher} onChange={(event) => setVoucher(event.target.value)} placeholder="Masukkan kode voucher" />
               <button type="button" onClick={applyVoucher}>Pakai</button>
@@ -307,13 +364,13 @@ export function CheckoutCommerceClient() {
           ) : (
             <button type="button" onClick={() => setVoucherOpen(true)}><CircleDollarSign size={26} />Punya kode voucher Akunmu?<ChevronRight size={26} /></button>
           )}
-          {voucherMessage && (voucherFailed
+          {!VOUCHER_ENTRY_DISABLED && voucherMessage && (voucherFailed
             ? <p className="commerce-voucher-message is-error" role="alert"><AlertCircle size={16} />{voucherMessage}</p>
             : <p className="commerce-voucher-message"><BadgeCheck size={16} />{voucherMessage}</p>)}
         </section>
         <section className="commerce-checkout-section">
           <h2>Pilih Metode Pembayaran</h2>
-          <div className="commerce-payment-grid">{PAYMENT_METHODS.map(({ label, tone }) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""} ${unsupportedChannel === label ? "is-unsupported" : ""}`} type="button" aria-pressed={payment === label} onClick={() => { setPayment(label); setUnsupportedChannel(null); setError(""); }}><span>{label}</span></button>)}</div>
+          <div className="commerce-payment-grid">{PAYMENT_METHODS.map(({ label, tone, channel }) => <button key={label} className={`commerce-payment-option ${tone} ${payment === label ? "selected" : ""} ${unsupportedChannel === label ? "is-unsupported" : ""}`} type="button" aria-pressed={payment === label} onClick={() => { setPayment(label); setUnsupportedChannel(null); setError(""); }}><PaymentLogo channel={channel} /><span>{label}</span></button>)}</div>
           {/* Baris 50/no. 25: elemen yang ditandai pada dokumentasi memakai warning
               merah muda yang sama dengan validasi di halaman detail pesanan. */}
           {MANUAL_PAYMENTS.includes(payment) && <div className="commerce-field-warning commerce-payment-note" role="alert"><AlertCircle size={15} /><p>Pilih durasi minimal 6 bulan untuk metode bank/alfa.</p></div>}
