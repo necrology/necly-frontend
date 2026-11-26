@@ -43,6 +43,19 @@ describe("dashboard overview localization", () => {
     expect(productsSource).not.toContain("product.testimonials");
   });
 
+  // NEC-235: detail data di dashboard harus muncul sebagai modal, bukan dirender
+  // inline di bawah tabel/daftar tempat pengguna tidak tahu di mana datanya muncul.
+  it("menampilkan detail akun inventaris sebagai modal, bukan panel inline", () => {
+    const accountsSource = readSource("src/app/dashboard/accounts/page.tsx");
+    expect(accountsSource).toContain('import { Modal } from "@/components/modal";');
+    expect(accountsSource).toMatch(/<Modal[\s\S]*?title=\{`Detail akun/);
+    // Panel inline lama tidak boleh kembali.
+    expect(accountsSource).not.toContain('<section className="card panel" aria-label="Detail akun"');
+
+    const ordersSource = readSource("src/app/dashboard/orders/page.tsx");
+    expect(ordersSource).toMatch(/<Modal[\s\S]*?AdminOrderDetail/);
+  });
+
   it("menggunakan judul metadata admin berbahasa Indonesia", () => {
     expect(layoutSource).toContain('default: "Dasbor"');
     expect(layoutSource).toContain('template: "%s | Admin Necly"');

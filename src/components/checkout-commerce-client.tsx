@@ -61,71 +61,40 @@ type ReviewedPrice = {
   fingerprint: string;
 };
 
-/** SVG logo untuk setiap metode pembayaran. */
+/**
+ * Logo asli tiap metode pembayaran (NEC-232). Aset disimpan lokal di
+ * public/payment-logos/ agar tidak bergantung pada CDN pihak ketiga saat
+ * runtime; hotlink ke server bank/e-wallet rapuh dan bisa mati sewaktu-waktu.
+ */
+const PAYMENT_LOGO_SRC: Record<string, string> = {
+  qris: "/payment-logos/qris.svg",
+  ovo: "/payment-logos/ovo.svg",
+  dana: "/payment-logos/dana.svg",
+  shopeepay: "/payment-logos/shopeepay.svg",
+  linkaja: "/payment-logos/linkaja.svg",
+  alfamart: "/payment-logos/alfamart.svg",
+  bni_va: "/payment-logos/bni_va.svg",
+  bsi_va: "/payment-logos/bsi_va.svg",
+  bri_va: "/payment-logos/bri_va.svg",
+  mandiri_va: "/payment-logos/mandiri_va.svg",
+};
+
+/** SVG inline tetap dipakai sebagai cadangan bila aset lokal gagal dimuat. */
 function PaymentLogo({ channel }: { channel: string }) {
-  const logos: Record<string, React.ReactNode> = {
-    qris: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#E2382F" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="48" fontWeight="bold" fill="white">QRIS</text>
-      </svg>
-    ),
-    ovo: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#2A1170" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="40" fontWeight="bold" fill="white">OVO</text>
-      </svg>
-    ),
-    dana: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#118EEA" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="white">DANA</text>
-      </svg>
-    ),
-    shopeepay: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#EE4D2D" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="white">ShopeePay</text>
-      </svg>
-    ),
-    linkaja: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#E02B2B" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="white">LinkAja</text>
-      </svg>
-    ),
-    alfamart: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#E01F26" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="white">Alfamart</text>
-      </svg>
-    ),
-    bni_va: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#F36F21" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="40" fontWeight="bold" fill="white">BNI</text>
-      </svg>
-    ),
-    bsi_va: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#00A39D" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="40" fontWeight="bold" fill="white">BSI</text>
-      </svg>
-    ),
-    bri_va: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#0A5BB5" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="white">BRI</text>
-      </svg>
-    ),
-    mandiri_va: (
-      <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        <rect width="120" height="120" rx="16" fill="#1A3F8F" />
-        <text x="60" y="78" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="36" fontWeight="bold" fill="white">Mandiri</text>
-      </svg>
-    ),
-  };
-  return logos[channel] ?? <span aria-hidden="true">{channel}</span>;
+  const src = PAYMENT_LOGO_SRC[channel];
+  if (!src) return <span aria-hidden="true">{channel}</span>;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- SVG statis lokal, tanpa optimasi next/image
+    <img
+      className="commerce-payment-logo"
+      src={src}
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+      draggable={false}
+    />
+  );
 }
 
 export function CheckoutCommerceClient() {

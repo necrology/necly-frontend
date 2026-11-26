@@ -464,10 +464,16 @@ export default function AccountsPage() {
     }
   }, [accounts]);
 
+  /** Tutup modal detail dan bersihkan state turunannya (NEC-235). */
+  const closeDetail = () => {
+    setDetailId(null);
+    setDetail({ loading: false, error: null, account: null, slots: [] });
+    setSlotForm(null);
+  };
+
   const openDetail = (account: ManagedAccount) => {
     if (detailId === account.id) {
-      setDetailId(null);
-      setDetail({ loading: false, error: null, account: null, slots: [] });
+      closeDetail();
       return;
     }
     setDetailId(account.id);
@@ -1532,12 +1538,14 @@ export default function AccountsPage() {
       </section>
 
       {detailId && (
-        <section className="card panel" aria-label="Detail akun" aria-live="polite">
-          <div className="panel-header">
-            <h2 className="panel-title">
-              Detail akun — {detailAccount?.label ?? "memuat…"}
-            </h2>
-            <div className="table-actions" style={{ justifyContent: "flex-end" }}>
+        <Modal
+          title={`Detail akun — ${detailAccount?.label ?? "memuat…"}`}
+          description="Informasi akun inventaris, kuota slot, dan riwayat pemakaian."
+          onClose={closeDetail}
+          size="lg"
+        >
+          <div aria-live="polite">
+            <div className="table-actions" style={{ justifyContent: "flex-end", marginBottom: 14 }}>
               {detailAccount && (
                 <>
                   <button
@@ -1565,20 +1573,7 @@ export default function AccountsPage() {
                   </button>
                 </>
               )}
-              <button
-                className="table-action"
-                type="button"
-                onClick={() => {
-                  setDetailId(null);
-                  setDetail({ loading: false, error: null, account: null, slots: [] });
-                  setSlotForm(null);
-                }}
-                aria-label="Tutup detail akun"
-              >
-                <X size={13} />
-              </button>
             </div>
-          </div>
 
           {detail.loading ? (
             <p className="muted" style={{ margin: 0, fontSize: 12 }}>Memuat detail akun…</p>
@@ -1739,7 +1734,8 @@ export default function AccountsPage() {
               )}
             </>
           ) : null}
-        </section>
+          </div>
+        </Modal>
       )}
 
       {!loading && !loadError && accounts.length === 0 && !form && (

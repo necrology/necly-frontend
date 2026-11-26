@@ -17,9 +17,14 @@ describe("QA mobile fixes on checkout and product detail", () => {
     expect(css).toContain(".commerce-breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 11px; margin-bottom: 18px; color: var(--commerce-muted); font-size: 16px;");
   });
 
-  it("samakan ukuran ilustrasi checkout dengan halaman detail order (baris 44)", () => {
-    expect(css).toContain(".commerce-checkout-hero-inner { grid-template-columns: minmax(0, 1fr) 360px; }");
-    expect(css).toContain(".commerce-checkout-hero img { max-width: none; width: 100%; justify-self: stretch; }");
+  it("hero checkout tidak lagi memuat gambar dummy dan teksnya melebar penuh (baris 44, NEC-234/247)", () => {
+    // Gambar dummy /illustrations/product-workspace.svg dihapus atas permintaan pemilik
+    // produk; hero harus satu kolom agar tidak menyisakan kolom kosong selebar 300-360px.
+    expect(page).not.toContain("product-workspace.svg");
+    expect(page).not.toContain('from "next/image"');
+    expect(css).toContain(".commerce-checkout-hero-inner { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px; align-items: center; }");
+    // Aturan img yang sudah tidak punya elemen sasaran tidak boleh tertinggal.
+    expect(css).not.toContain(".commerce-checkout-hero img {");
   });
 
   it('voucher hanya menampilkan "Kode Voucher Tidak dikenali" berwarna merah (baris 45)', () => {

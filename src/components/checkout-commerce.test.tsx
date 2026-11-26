@@ -247,6 +247,23 @@ describe("CheckoutCommerceClient", () => {
     expect(clearCartMock).not.toHaveBeenCalled();
   });
 
+  // NEC-232: setiap metode pembayaran menampilkan logo asli dari aset lokal,
+  // bukan hanya teks dan bukan hotlink ke CDN pihak ketiga.
+  it("menampilkan logo asli untuk setiap metode pembayaran dari aset lokal", () => {
+    render(<CheckoutCommerceClient />);
+
+    const logos = Array.from(document.querySelectorAll<HTMLImageElement>(".commerce-payment-logo"));
+    expect(logos).toHaveLength(10);
+    for (const logo of logos) {
+      expect(logo.getAttribute("src")).toMatch(/^\/payment-logos\/[a-z_]+\.svg$/);
+      expect(logo.getAttribute("aria-hidden")).toBe("true");
+      expect(logo.getAttribute("alt")).toBe("");
+    }
+    // Label tetap tampil sebagai teks pendamping logo.
+    expect(screen.getByRole("button", { name: /QRIS/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ShopeePay/ })).toBeInTheDocument();
+  });
+
   // Jumlah perangkat diambil dari item keranjang (default 1), tidak ada lagi pemilih manual.
   it("tidak menampilkan pemilih jumlah perangkat", () => {
     render(<CheckoutCommerceClient />);
