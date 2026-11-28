@@ -211,10 +211,13 @@ export default function DashboardPage() {
         }
         const inventory = await adminApi.listInventoryAccounts({ page: 1, per_page: 100 });
         if (cancelled) return;
-        const accounts = (inventory.accounts ?? []) as any[];
-        const lowSlotCount = accounts.filter(
-          (account) => (account.remaining_slots ?? 0) <= 1,
-        ).length;
+        // `remaining_slots` bisa absen pada respons lama. Akun tanpa field itu
+        // tidak boleh dihitung sebagai "slot menipis" — `?? 0` akan melaporkan
+        // alarm palsu untuk setiap akun yang field-nya hilang.
+        const lowSlotCount = (inventory.accounts ?? []).filter((account) => {
+          const remaining = account.remaining_slots;
+          return typeof remaining === "number" && remaining <= 1;
+        }).length;
         setLowSlotAccounts(lowSlotCount);
       } catch {
         // Jika gagal, biarkan null sehingga banner tidak tampil
@@ -455,7 +458,7 @@ export default function DashboardPage() {
             <AlertTriangle size={24} style={{ color: "var(--danger)", flexShrink: 0 }} />
             <div style={{ flex: 1, minWidth: 200 }}>
               <strong style={{ fontSize: 14 }}>
-                {lowSlotAccounts} akun inventaris {lowSlotAccounts === 1 ? "memiliki" : "memiliki"} sisa slot ≤ 1
+                {lowSlotAccounts} akun inventaris memiliki sisa slot ≤ 1
               </strong>
               <p className="muted" style={{ margin: "4px 0 0", fontSize: 12 }}>Segera siapkan atau beli akun baru untuk menghindari kehabisan stok.</p>
             </div>
