@@ -134,7 +134,8 @@ export function CheckoutCommerceClient() {
   // ditambahkan sebelum katalog dari API selesai dimuat. Id seperti itu tidak ada
   // di database; checkout akan merekonsiliasinya dengan katalog lebih dulu.
   const staleCount = items.filter((item) => !UUID.test(item.product_price_id ?? "")).length;
-  const payDisabled = submitting || items.length === 0 || priceReview !== null;
+  const hasZeroStock = items.some((item) => (item.selectedStock ?? item.stock ?? 1) <= 0);
+  const payDisabled = submitting || items.length === 0 || priceReview !== null || hasZeroStock;
 
   // Satu kunci untuk satu kombinasi keranjang/voucher/kanal. Retry setelah
   // gangguan jaringan memakai kunci yang sama sehingga backend mengembalikan
@@ -292,6 +293,12 @@ export function CheckoutCommerceClient() {
         return;
       }
 
+      if (code === "product_already_subscribed") {
+        // Wording baru wajib persis (NEC-250 baris 137 / PO D)
+        setError("Akun yang Anda gunakan sudah berlangganan produk ini. Silakan pilih produk lain atau gunakan akun berbeda untuk melakukan transaksi.");
+        return;
+      }
+
       if (code === "out_of_stock") {
         setStockNotice("Stok paket yang dipilih sudah habis. Perbarui keranjang lalu pilih paket yang masih tersedia.");
         setError("Stok paket yang dipilih sudah habis.");
@@ -382,6 +389,18 @@ export function CheckoutCommerceClient() {
         <div><span>Subtotal ({totalUnits} item)</span><strong>{formatRupiahLabel(subtotal)}</strong></div>
         <div><span>Metode</span><strong>{payment}</strong></div>
         <div><span>Voucher</span><strong>{voucher.trim() ? voucher.trim().toUpperCase() : "—"}</strong></div>
+        {items.length > 0 && (
+          <div>
+            <span>Sisa slot paket</span>
+            <strong>
+              {items.map((item, index) => (
+                <span key={index} style={{ display: "block", fontSize: 13 }}>
+                  {item.name}: {item.selectedStock ?? item.stock ?? 0} slot tersisa
+                </span>
+              ))}
+            </strong>
+          </div>
+        )}
         {priceAdjustment !== 0 && <div><span>Penyesuaian harga server</span><strong>{priceAdjustment > 0 ? "+" : ""}{formatRupiahLabel(priceAdjustment)}</strong></div>}
         <hr />
         <div className="commerce-checkout-total"><span>Total Bayar</span><b>{formatRupiahLabel(approvedSubtotal)}</b></div>

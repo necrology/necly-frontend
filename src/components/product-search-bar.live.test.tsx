@@ -12,6 +12,7 @@ vi.mock("@/lib/api", async (importOriginal) => {
     catalogApi: { ...actual.catalogApi, listProducts: listProductsMock },
   };
 });
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 import { ProductSearchBar } from "./product-search-bar";
 
@@ -53,7 +54,8 @@ describe("katalog live", () => {
 
     expect(await screen.findByText("Netflix Premium")).toBeInTheDocument();
     expect(listProductsMock).toHaveBeenCalledWith({ per_page: 100 });
-    expect(screen.getAllByRole("link", { name: "Pesan" })[0]).toHaveAttribute("href", "/products/netflix-premium");
+    // Tombol Pesan sekarang adalah button yang push ke /checkout, bukan link
+    expect(screen.getAllByRole("button", { name: "Pesan" })[0]).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: "Pilih kategori" })).toBeInTheDocument();
     expect(searchableSelectedText("Pilih kategori")).toBe("Semua Kategori");
   });

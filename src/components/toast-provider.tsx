@@ -20,14 +20,16 @@ export function ToastProvider() {
       {toasts.map((toast) => (
         <div key={toast.id} className={`toast toast-${toast.type}`} role="status">
           <span>{toast.message}</span>
-          <button
-            type="button"
-            className="toast-close"
-            onClick={() => removeToast(toast.id)}
-            aria-label="Tutup notifikasi"
-          >
-            <X size={14} strokeWidth={2.5} />
-          </button>
+          {toast.showClose !== false && (
+            <button
+              type="button"
+              className="toast-close"
+              onClick={() => removeToast(toast.id)}
+              aria-label="Tutup notifikasi"
+            >
+              <X size={14} strokeWidth={2.5} />
+            </button>
+          )}
         </div>
       ))}
     </div>

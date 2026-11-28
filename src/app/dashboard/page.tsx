@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Banknote, Boxes, CircleCheckBig, ShoppingCart } from "lucide-react";
+import { AlertTriangle, ArrowRight, Banknote, Boxes, CircleCheckBig, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
@@ -93,6 +93,8 @@ export default function DashboardPage() {
   const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [analyticsReloadToken, setAnalyticsReloadToken] = useState(0);
   const [sessionReady, setSessionReady] = useState(DEMO_MODE);
+  const [lowSlotAccounts, setLowSlotAccounts] = useState<number | null>(null);
+  const [lowSlotLoading, setLowSlotLoading] = useState(!DEMO_MODE);
 
   useEffect(() => {
     if (DEMO_MODE) {
@@ -180,6 +182,48 @@ export default function DashboardPage() {
 
     loadDashboard();
 
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Ambil data akun untuk hitung akun dengan slot menipis (<= 1)
+  useEffect(() => {
+    if (DEMO_MODE) {
+      // Demo: gunakan data simulasi dari buildDemoAccounts
+      // Akun dengan remainingSlots 0, 1, 2, 3, 4 -> yang <= 1 adalah 2 akun
+      Promise.resolve().then(() => {
+        setLowSlotAccounts(2);
+        setLowSlotLoading(false);
+      });
+      return;
+    }
+
+    let cancelled = false;
+    async function loadLowSlotAccounts() {
+      setLowSlotLoading(true);
+      try {
+        const user = await bootstrapAuth();
+        if (cancelled) return;
+        if (!user || user.role !== "admin") {
+          setLowSlotLoading(false);
+          return;
+        }
+        const inventory = await adminApi.listInventoryAccounts({ page: 1, per_page: 100 });
+        if (cancelled) return;
+        const accounts = (inventory.accounts ?? []) as any[];
+        const lowSlotCount = accounts.filter(
+          (account) => (account.remaining_slots ?? 0) <= 1,
+        ).length;
+        setLowSlotAccounts(lowSlotCount);
+      } catch {
+        // Jika gagal, biarkan null sehingga banner tidak tampil
+        setLowSlotAccounts(null);
+      } finally {
+        if (!cancelled) setLowSlotLoading(false);
+      }
+    }
+    void loadLowSlotAccounts();
     return () => {
       cancelled = true;
     };
@@ -405,6 +449,22 @@ export default function DashboardPage() {
           </>
         }
       />
+      {lowSlotAccounts !== null && lowSlotAccounts > 0 && !lowSlotLoading && (
+        <section className="card panel" style={{ marginBottom: 16, borderLeft: "4px solid var(--danger)" }} role="alert">
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, flexWrap: "wrap" }}>
+            <AlertTriangle size={24} style={{ color: "var(--danger)", flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <strong style={{ fontSize: 14 }}>
+                {lowSlotAccounts} akun inventaris {lowSlotAccounts === 1 ? "memiliki" : "memiliki"} sisa slot ≤ 1
+              </strong>
+              <p className="muted" style={{ margin: "4px 0 0", fontSize: 12 }}>Segera siapkan atau beli akun baru untuk menghindari kehabisan stok.</p>
+            </div>
+            <Link className="button button-secondary button-sm" href="/dashboard/accounts">
+              Lihat manajemen akun
+            </Link>
+          </div>
+        </section>
+      )}
       <section className="metric-grid" aria-label="Metrik kunci">
         <MetricCard
           label="Pendapatan kotor"

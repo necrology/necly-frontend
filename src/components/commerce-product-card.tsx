@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Clock3, Eye, Flame, ShoppingCart, Sparkles, Trophy, Zap } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { CommerceProduct } from "@/data/products";
 import { formatRupiahLabel } from "@/lib/money";
@@ -21,6 +22,7 @@ type CommerceProductCardProps = {
 const badgeIcons = { Populer: Flame, "Best Seller": Trophy, Trending: Zap, Baru: Sparkles, Preorder: Clock3, "Coming Soon": Clock3 } as const;
 
 export function CommerceProductCard({ product, compact = false, actionLabel = "Pesan" }: CommerceProductCardProps) {
+  const router = useRouter();
   const comingSoon = product.comingSoon === true;
   const badgeLabel = comingSoon ? "Coming Soon" : product.badge;
   const BadgeIcon = badgeLabel ? badgeIcons[badgeLabel] : null;
@@ -54,7 +56,29 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
     addItem(cartItem);
     const message = `${product.name} ditambahkan ke keranjang.`;
     setCartFeedback(message);
-    toast(message, "success");
+    // Toast keranjang: auto-hide 5 detik, tanpa tombol close (NEC-250 baris 138)
+    toast(message, "success", { duration: 5000, showClose: false });
+  };
+
+  const handleOrder = () => {
+    if (!firstPriceOption) return;
+    const cartItem = {
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      category: product.category,
+      categoryName: product.categoryName,
+      price: firstPriceOption.price,
+      stock: firstPriceOption.stock ?? product.stock,
+      accessType: product.accessType,
+      product_price_id: firstPriceOption.id,
+      selectedDuration: firstPriceOption.duration,
+      selectedPrice: firstPriceOption.price,
+      selectedStock: firstPriceOption.stock,
+      selectedDevice: product.deviceOptions?.[0] ?? 1,
+    };
+    addItem(cartItem);
+    router.push("/checkout");
   };
 
   return (
@@ -96,7 +120,14 @@ export function CommerceProductCard({ product, compact = false, actionLabel = "P
         ) : (
           <>
             <Link href={`/products/${product.slug}`} className="commerce-scheme-link"><Eye size={15} />Lihat Skema Harga</Link>
-            <Link href={`/products/${product.slug}`} className="commerce-order-link">{actionLabel}</Link>
+            <button
+              type="button"
+              className={`commerce-order-link ${isOutOfStock ? "is-disabled" : ""}`}
+              onClick={handleOrder}
+              disabled={isOutOfStock}
+            >
+              {actionLabel}
+            </button>
             <button
               className={`commerce-cart-link ${isOutOfStock ? "is-disabled" : ""}`}
               type="button"
