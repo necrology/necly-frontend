@@ -1444,6 +1444,11 @@ export default function AccountsPage() {
                           Perlu review
                         </span>
                       )}
+                      {account.remainingSlots <= 1 && (
+                        <span className="badge badge-dot status-warning" style={{ marginTop: 4 }}>
+                          Sisa {account.remainingSlots} slot — siapkan atau beli akun baru
+                        </span>
+                      )}
                     </td>
                     <td><StatusBadge status={account.status} /></td>
                     <td>

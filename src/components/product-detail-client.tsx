@@ -129,8 +129,7 @@ export function ProductDetailClient({ product }: { product: CommerceProduct }) {
     // mengizinkan jumlah yang lebih besar daripada slot paket yang dipilih.
     const durationStock = duration.stock ?? product.stock;
     addItem({ id: product.id, slug: product.slug, name: product.name, category: product.category, price: duration.price, stock: durationStock, accessType: product.accessType, product_price_id: duration.id, selectedDuration: duration.label, selectedPrice: duration.price, selectedStock: durationStock });
-    // Toast sukses sebelum navigasi agar terlihat di halaman checkout (toast store global).
-    toast(`${product.name} berhasil masuk keranjang.`, "success");
+    // Langsung ke checkout tanpa toast keranjang (NEC-250 PO A).
     setAdded(true);
     router.push("/checkout");
   };

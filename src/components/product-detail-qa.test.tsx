@@ -75,14 +75,14 @@ describe("QA halaman detail produk", () => {
     expect(screen.getByText("5 orang + admin")).toBeInTheDocument();
   });
 
-  it("memanggil toast sukses dengan nama produk saat menambah ke keranjang dari halaman detail (baris 128)", () => {
+  it("langsung ke checkout tanpa toast keranjang saat menambah dari halaman detail (NEC-250)", () => {
     render(<ProductDetailClient product={product} />);
 
     fireEvent.click(screen.getByRole("button", { name: new RegExp(product.packageName) }));
     fireEvent.click(screen.getByRole("button", { name: "1 Bulan" }));
     fireEvent.click(screen.getAllByRole("button", { name: /Pesan/ })[0]);
 
-    expect(toastMock).toHaveBeenCalledWith(`${product.name} berhasil masuk keranjang.`, "success");
+    expect(toastMock).not.toHaveBeenCalled();
     expect(pushMock).toHaveBeenCalledWith("/checkout");
   });
 });
